@@ -1,5 +1,5 @@
 {
-  "name": "react-native-sortable-flatlist",
+  "name": "react-native-draggable-flatlist",
   "version": "1.0.0",
   "description": "Sortable FlatList component for React Native",
   "main": "index.js",
@@ -8,18 +8,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/computerjazz/react-native-sortable-flatlist.git"
+    "url": "git+https://github.com/computerjazz/react-native-draggable-flatlist.git"
   },
   "keywords": [
-    "React",
-    "Native",
-    "Sortable",
-    "FlatList"
+    "react-native",
+    "sortable",
+    "draggable",
+    "flatlist",
+    "drag",
+    "drop",
+    "sort",
+    "list"
   ],
   "author": "Daniel Merrill",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/computerjazz/react-native-sortable-flatlist/issues"
+    "url": "https://github.com/computerjazz/react-native-draggable-flatlist/issues"
   },
-  "homepage": "https://github.com/computerjazz/react-native-sortable-flatlist#readme"
+  "homepage": "https://github.com/computerjazz/react-native-draggable-flatlist#readme"
 }
