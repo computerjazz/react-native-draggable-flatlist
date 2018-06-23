@@ -1,6 +1,6 @@
 {
   "name": "react-native-draggable-flatlist",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A drag-and-drop-enabled FlatList component for React Native",
   "main": "index.js",
   "scripts": {
