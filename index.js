@@ -43,6 +43,7 @@ class SortableFlatList extends Component {
       onStartShouldSetPanResponderCapture: (evt, gestureState) => {
         const { pageY } = evt.nativeEvent
         const tappedRow = this._pixels[Math.floor(this._scrollOffset + pageY)]
+        if (tappedRow === undefined) return false
         this._additionalOffset = (pageY + this._scrollOffset) - this._measurements[tappedRow].y
         this._moveYAnim.setValue(pageY)
         this._moveY = pageY

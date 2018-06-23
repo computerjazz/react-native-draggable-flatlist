@@ -1,7 +1,7 @@
 {
   "name": "react-native-draggable-flatlist",
   "version": "1.0.1",
-  "description": "Sortable FlatList component for React Native",
+  "description": "A drag-and-drop-enabled FlatList component for React Native",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
