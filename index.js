@@ -8,6 +8,7 @@ import {
   PanResponder,
   Platform,
   UIManager,
+  StatusBar,
   StyleSheet,
 } from 'react-native'
 
