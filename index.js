@@ -6,6 +6,7 @@ import {
   FlatList,
   View,
   PanResponder,
+  Platform,
   UIManager,
   StyleSheet,
 } from 'react-native'
@@ -36,6 +37,7 @@ class SortableFlatList extends Component {
   _hasMoved = false
   _refs = []
   _additionalOffset = 0
+  _androidStatusBarOffset = 0
 
   constructor(props) {
     super(props)
@@ -47,7 +49,16 @@ class SortableFlatList extends Component {
         this._additionalOffset = (pageY + this._scrollOffset) - this._measurements[tappedRow].y
         this._moveYAnim.setValue(pageY)
         this._moveY = pageY
-        this._offset.setValue((this._additionalOffset + this._containerOffset) * -1)
+
+        // compensate for translucent StatusBar on android
+        if (Platform.OS === 'android') {
+          const isTranslucent = StatusBar._propsStack.reduce(((acc, cur) => {
+            return cur.translucent === undefined ? acc : cur.translucent
+          }), false)
+          this._androidStatusBarOffset = isTranslucent ? StatusBar.currentHeight : 0
+        }
+
+        this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset) * -1)
         return false
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
