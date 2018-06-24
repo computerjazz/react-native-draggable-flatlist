@@ -58,7 +58,6 @@ class SortableFlatList extends Component {
           }), false)
           this._androidStatusBarOffset = isTranslucent ? StatusBar.currentHeight : 0
         }
-
         this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset) * -1)
         return false
       },
@@ -67,7 +66,6 @@ class SortableFlatList extends Component {
         const shouldSet = activeRow > -1
         this._moveYAnim.setValue(gestureState.moveY)
         if (shouldSet) {
-          this.props.onRowActive && this.props.onRowActive(activeRow)
           this.setState({ showHoverComponent: true })
           // Kick off recursive row animation
           this.animate()
@@ -88,7 +86,7 @@ class SortableFlatList extends Component {
         const activeMeasurements = this._measurements[activeRow]
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
-        const sortedData = this.getSortedList(this.props.data, activeRow, spacerIndex)
+        const sortedData = this.getSortedList(data, activeRow, spacerIndex)
 
         // If user flings row up and lets go in the middle of an animation measurements can error out. 
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
@@ -114,7 +112,7 @@ class SortableFlatList extends Component {
           this.props.onMoveEnd && this.props.onMoveEnd({
             row: this.props.data[activeRow],
             from: activeRow,
-            to: spacerIndex,
+            to: spacerIndex - (isAfterActive ? 1 : 0),
             data: sortedData,
           })
         }))
@@ -138,7 +136,7 @@ class SortableFlatList extends Component {
 
   animate = () => {
     const { activeRow } = this.state
-    const { scrollPercent } = this.props
+    const { scrollPercent, data } = this.props
     const scrollRatio = scrollPercent / 100
     if (activeRow === -1) return
     const nextSpacerIndex = this.getSpacerIndex(this._moveY, activeRow)
@@ -149,11 +147,13 @@ class SortableFlatList extends Component {
     }
 
     // Scroll if hovering in top or bottom of container and have set a scroll %
+    const isLastItem = activeRow === data.length - 1
+    const isFirstItem = activeRow === 0
     const hoverItemTopPosition = Math.max(0, this._moveY - (this._additionalOffset + this._containerOffset))
     const hoverItemBottomPosition = Math.min(this._containerHeight, hoverItemTopPosition + this._measurements[activeRow].height)
     const fingerPosition = Math.max(0, this._moveY - this._containerOffset)
-    const shouldScrollUp = fingerPosition < (this._containerHeight * scrollRatio)
-    const shouldScrollDown = fingerPosition > (this._containerHeight * (1 - scrollRatio))
+    const shouldScrollUp = !isFirstItem && fingerPosition < (this._containerHeight * scrollRatio)
+    const shouldScrollDown = !isLastItem && fingerPosition > (this._containerHeight * (1 - scrollRatio))
     if (shouldScrollUp) this.scroll(-5, nextSpacerIndex)
     else if (shouldScrollDown) this.scroll(5, nextSpacerIndex)
 
@@ -161,7 +161,8 @@ class SortableFlatList extends Component {
   }
 
   scroll = (scrollAmt, spacerIndex) => {
-    if (spacerIndex > this.props.data.length - 1) return
+    if (spacerIndex >= this.props.data.length) return this._flatList.scrollToEnd()
+    if (spacerIndex === -1) return 
     const currentScrollOffset = this._scrollOffset
     const newOffset = currentScrollOffset + scrollAmt
     const offset = Math.max(0, newOffset)
