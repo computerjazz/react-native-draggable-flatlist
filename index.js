@@ -144,10 +144,11 @@ class SortableFlatList extends Component {
       LayoutAnimation.easeInEaseOut()
       this.setState({ spacerIndex: nextSpacerIndex })
       this._spacerIndex = nextSpacerIndex
+      if (nextSpacerIndex === data.length) this._flatList.scrollToEnd()
     }
 
     // Scroll if hovering in top or bottom of container and have set a scroll %
-    const isLastItem = activeRow === data.length - 1
+    const isLastItem = (activeRow === data.length - 1) || nextSpacerIndex === data.length
     const isFirstItem = activeRow === 0
     const hoverItemTopPosition = Math.max(0, this._moveY - (this._additionalOffset + this._containerOffset))
     const hoverItemBottomPosition = Math.min(this._containerHeight, hoverItemTopPosition + this._measurements[activeRow].height)
