@@ -299,7 +299,7 @@ class SortableFlatList extends Component {
   keyExtractor = (item, index) => `sortable-flatlist-item-${index}`
 
   render() {
-    const { data, keyExtractor, contentContainerStyle, horizontal } = this.props
+    const { data, keyExtractor, contentContainerStyle, horizontal, refreshing, onRefresh } = this.props
     return (
       <View
         onLayout={e => console.log('layout', e.nativeEvent)}
@@ -318,8 +318,8 @@ class SortableFlatList extends Component {
           onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
           scrollEventThrottle={16}
           contentContainerStyle={contentContainerStyle}
-          refreshing={this.props.refreshing}
-          onRefresh={this.props.onRefresh}        
+          refreshing={refreshing}
+          onRefresh={onRefresh}        
         />
         {this.renderHoverComponent()}
       </View>
