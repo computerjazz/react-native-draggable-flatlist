@@ -162,8 +162,7 @@ class SortableFlatList extends Component {
     // Scroll if hovering in top or bottom of container and have set a scroll %
     const isLastItem = (activeRow === data.length - 1) || nextSpacerIndex === data.length
     const isFirstItem = activeRow === 0
-
-    const rowSize = horizontal ? this._measurements[activeRow].width : this._measurements[activeRow].height
+    const rowSize = this._measurements[activeRow][horizontal ? 'width' : 'height']
     const hoverItemTopPosition = Math.max(0, this._move - (this._additionalOffset + this._containerOffset))
     const hoverItemBottomPosition = Math.min(this._containerSize, hoverItemTopPosition + rowSize)
     const fingerPosition = Math.max(0, this._move - this._containerOffset)
@@ -214,7 +213,7 @@ class SortableFlatList extends Component {
       try {
         // Using stashed ref prevents measuring an unmounted componenet, which throws an error
         this._refs[index].measureInWindow(((x, y, width, height) => {
-          if (y >= 0 && (width || height) && activeRow === -1) {
+          if ((width || height) && activeRow === -1) {
             const ypos = y + this._scrollOffset
             const xpos = x + this._scrollOffset
             const pos = horizontal ? xpos : ypos
