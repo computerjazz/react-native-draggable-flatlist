@@ -11,13 +11,14 @@
 
 Props:
 - `data` (Array) Items to be rendered.
+- `horizontal` (boolean) Orientation of list.
 - `renderItem` (Function) `({ item, index, move, moveEnd, isActive }) => <Component />`. Call `move` when the row should become active (in an `onPress`, `onLongPress`, etc). Call `moveEnd` when the gesture is complete (in `onPressOut`).
 - `keyExtractor` (Function) `(item, index) => string`
 - `contentContainerStyle` (Object)
 - `scrollPercent` (Number) Sets where scrolling begins. A value of `5` will scroll up if the finger is in the top 5% of the FlatList container and scroll down in the bottom 5%. 
 - `onMoveEnd` (Function) `({ data, to, from, row }) => void` Returns updated ordering of `data` 
 - `onMoveBegin` (Function) `(index) => void` Called when row becomes active.
-
+- All props are spread onto underlying FlatList
 
 
 ## Example

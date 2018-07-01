@@ -299,7 +299,7 @@ class SortableFlatList extends Component {
   keyExtractor = (item, index) => `sortable-flatlist-item-${index}`
 
   render() {
-    const { data, keyExtractor, contentContainerStyle, horizontal, refreshing, onRefresh } = this.props
+    const { horizontal, keyExtractor } = this.props
     return (
       <View
         onLayout={e => console.log('layout', e.nativeEvent)}
@@ -308,18 +308,14 @@ class SortableFlatList extends Component {
         style={{ flex: 1, opacity: 1 }} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
       >
         <FlatList
-          horizontal={horizontal}
+          {...this.props}
           scrollEnabled={this.state.activeRow === -1}
           ref={ref => this._flatList = ref}
-          data={data}
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
           onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
           scrollEventThrottle={16}
-          contentContainerStyle={contentContainerStyle}
-          refreshing={refreshing}
-          onRefresh={onRefresh}        
         />
         {this.renderHoverComponent()}
       </View>
