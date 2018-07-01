@@ -318,6 +318,8 @@ class SortableFlatList extends Component {
           onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
           scrollEventThrottle={16}
           contentContainerStyle={contentContainerStyle}
+          refreshing={this.props.refreshing}
+          onRefresh={this.props.onRefresh}        
         />
         {this.renderHoverComponent()}
       </View>
