@@ -53,12 +53,17 @@ class SortableFlatList extends Component {
         this._moveAnim.setValue(tappedPixel)
         this._move = tappedPixel
 
-        // compensate for translucent StatusBar on android
+        // compensate for translucent or hidden StatusBar on android
         if (Platform.OS === 'android' && !horizontal) {
           const isTranslucent = StatusBar._propsStack.reduce(((acc, cur) => {
             return cur.translucent === undefined ? acc : cur.translucent
           }), false)
-          this._androidStatusBarOffset = isTranslucent ? StatusBar.currentHeight : 0
+
+          const isHidden = StatusBar._propsStack.reduce(((acc, cur) => {
+            return cur.hidden === null ? acc : cur.hidden.value
+          }), false)
+
+          this._androidStatusBarOffset = (isTranslucent || isHidden) ? StatusBar.currentHeight : 0
         }
         this._offset.setValue((this._additionalOffset + this._containerOffset - this._androidStatusBarOffset) * -1)
         return false
