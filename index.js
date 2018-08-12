@@ -27,6 +27,7 @@ const initialState = {
 class SortableFlatList extends Component {
   _moveAnim = new Animated.Value(0)
   _offset = new Animated.Value(0)
+  _scale = new Animated.Value(1)
   _hoverAnim = Animated.add(this._moveAnim, this._offset)
   _spacerIndex = -1
   _pixels = []
@@ -114,6 +115,11 @@ class SortableFlatList extends Component {
         const pos = offset - this._scrollOffset + this._additionalOffset + (isLastElement ? size : 0)
         const activeItemSize = horizontal ? activeMeasurements.width : activeMeasurements.height
 
+         Animated.timing(this._scale, {
+          duration: 250,
+          useNativeDriver: true,
+          toValue: 1,
+        }).start()
 
         Animated.spring(this._moveAnim, {
           toValue: pos - (isAfterActive ? activeItemSize : 0),
@@ -141,6 +147,16 @@ class SortableFlatList extends Component {
   componentWillReceiveProps(nextProps) {
     if (this.props.data.length !== nextProps.data.length) {
       LayoutAnimation.easeInEaseOut()
+    }
+  }
+
+  componentDidUpdate() {
+    if (!!this.props.activeScale && !!this.state.hoverComponent) {
+      Animated.timing(this._scale, {
+        duration: 250,
+        useNativeDriver: true,
+        toValue: this.props.activeScale,
+      }).start()
     }
   }
 
@@ -287,7 +303,12 @@ class SortableFlatList extends Component {
     return !!hoverComponent && (
       <Animated.View style={[
         horizontal ? styles.hoverComponentHorizontal : styles.hoverComponentVertical,
-        { transform: [horizontal ? { translateX: this._hoverAnim } : { translateY: this._hoverAnim }] }]} >
+        { transform: [
+            horizontal ? { translateX: this._hoverAnim } : { translateY: this._hoverAnim },
+            { scale: this._scale },
+          ] 
+        }]} 
+      >
         {hoverComponent}
       </Animated.View>
     )
