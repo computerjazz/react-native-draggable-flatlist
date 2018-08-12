@@ -138,6 +138,12 @@ class SortableFlatList extends Component {
     this.state = initialState
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (this.props.data.length !== nextProps.data.length) {
+      LayoutAnimation.easeInEaseOut()
+    }
+  }
+
   getSortedList = (data, activeRow, spacerIndex) => {
     if (activeRow === spacerIndex) return data
     const sortedData = data.reduce((acc, cur, i, arr) => {
