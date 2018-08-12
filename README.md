@@ -18,6 +18,7 @@ Props:
 - `scrollPercent` (Number) Sets where scrolling begins. A value of `5` will scroll up if the finger is in the top 5% of the FlatList container and scroll down in the bottom 5%. 
 - `onMoveEnd` (Function) `({ data, to, from, row }) => void` Returns updated ordering of `data` 
 - `onMoveBegin` (Function) `(index) => void` Called when row becomes active.
+- `activeScale`(Number) If set, the active item will scale by the set value while being dragged.
 - All props are spread onto underlying FlatList
 
 
