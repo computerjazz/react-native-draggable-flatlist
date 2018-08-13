@@ -69,6 +69,7 @@ class Example extends Component {
           keyExtractor={(item, index) => `draggable-item-${item.key}`}
           scrollPercent={5}
           onMoveEnd={({ data }) => this.setState({ data })}
+          activeScale={1.03}
         />
       </View>
     )
