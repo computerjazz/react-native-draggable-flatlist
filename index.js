@@ -33,6 +33,7 @@ class SortableFlatList extends Component {
   _pixels = []
   _measurements = []
   _scrollOffset = 0
+  _container
   _containerSize
   _containerOffset
   _move = 0
@@ -260,7 +261,6 @@ class SortableFlatList extends Component {
       this.onReleaseAnimationEnd()
       return
     }
-    this._refs.forEach((ref, index) => this.measureItem(ref, index))
     this._spacerIndex = index
     this.setState({
       activeRow: index,
@@ -316,16 +316,17 @@ class SortableFlatList extends Component {
     )
   }
 
-  measureContainer = ref => {
-    if (ref && this._containerOffset === undefined) {
+  measureContainer = () => {
+    if (this._container) {
       // setTimeout required or else dimensions reported as 0
       setTimeout(() => {
         const { horizontal } = this.props
-        ref.measure((x, y, width, height, pageX, pageY) => {
+        this._container.measure((x, y, width, height, pageX, pageY) => {
           this._containerOffset = horizontal ? pageX : pageY
           this._containerSize = horizontal ? width : height
+          this._refs.forEach((ref, index) => this.measureItem(index))
         })
-      }, 50)
+      }, this.props.measureDelay || 50)
     }
   }
 
@@ -338,28 +339,36 @@ class SortableFlatList extends Component {
   }
 
   render() {
-    const { horizontal, keyExtractor } = this.props
+    const { wrap } = this.props
     return (
       <View
-        onLayout={e => {
-          console.log('layout', e.nativeEvent)
-        }}
-        ref={this.measureContainer}
+        onLayout={this.measureContainer}
+        ref={ref => (this._container = ref)}
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
       >
-        <FlatList
-          {...this.props}
-          scrollEnabled={this.state.activeRow === -1}
-          ref={ref => this._flatList = ref}
-          renderItem={this.renderItem}
-          extraData={this.state}
-          keyExtractor={keyExtractor || this.keyExtractor}
-          onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
-          scrollEventThrottle={16}
-        />
+        {wrap ? wrap(this.renderFlatList()) : this.renderFlatList()}
         {this.renderHoverComponent()}
       </View>
+    )
+  }
+
+  renderFlatList() {
+    const { horizontal, keyExtractor } = this.props
+    return (
+      <FlatList
+        {...this.props}
+        scrollEnabled={this.state.activeRow === -1}
+        ref={ref => (this._flatList = ref)}
+        renderItem={this.renderItem}
+        extraData={this.state}
+        keyExtractor={keyExtractor || this.keyExtractor}
+        onScroll={({ nativeEvent }) =>
+          (this._scrollOffset =
+            nativeEvent.contentOffset[horizontal ? 'x' : 'y'])
+        }
+        scrollEventThrottle={16}
+      />
     )
   }
 }

@@ -18,6 +18,8 @@ Props:
 - `scrollPercent` (Number) Sets where scrolling begins. A value of `5` will scroll up if the finger is in the top 5% of the FlatList container and scroll down in the bottom 5%. 
 - `onMoveEnd` (Function) `({ data, to, from, row }) => void` Returns updated ordering of `data` 
 - `onMoveBegin` (Function) `(index) => void` Called when row becomes active.
+- `wrap` (Function) `(flatList) => wrappedFlatList` Allows wrapping the internal FlatList component.
+- `measureDelay` (number) Delay in ms to wait after the layout event to measure the container. Allows any animations to complete before container is measured. Default: `50`.
 - All props are spread onto underlying FlatList
 
 
