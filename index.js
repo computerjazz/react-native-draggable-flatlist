@@ -383,7 +383,7 @@ class RowItem extends PureComponent {
 
     // Rendering the final row requires padding to be applied at the bottom
     return (
-      <View ref={setRef(index)} style={{ opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
+      <View ref={setRef(index)} collapsable={false} style={{ opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
         {!!spacerSize && this.renderSpacer(spacerSize)}
         <View style={[
           horizontal ? { width: isActiveRow ? 0 : undefined } : { height: isActiveRow ? 0 : undefined },
