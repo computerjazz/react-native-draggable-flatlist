@@ -121,11 +121,13 @@ class SortableFlatList extends Component {
         const pos = offset - this._scrollOffset + this._additionalOffset + (isLastElement ? size : 0)
         const activeItemSize = horizontal ? activeMeasurements.width : activeMeasurements.height
 
-         Animated.timing(this._scale, {
-          duration: 250,
-          useNativeDriver: true,
-          toValue: 1,
-        }).start()
+        if (!!this.props.activeScale) {
+          Animated.timing(this._scale, {
+            duration: 250,
+            useNativeDriver: true,
+            toValue: 1,
+          }).start()
+        }
 
 
         this._releaseVal = pos - (isAfterActive ? activeItemSize : 0)
@@ -143,12 +145,7 @@ class SortableFlatList extends Component {
     })
     this.state = initialState
   }
-
-  componentWillReceiveProps(nextProps) {
-    if (this.props.data.length !== nextProps.data.length) {
-      LayoutAnimation.easeInEaseOut()
-    }
-  }
+  
 
   onReleaseAnimationEnd = () => {
     const { data, onMoveEnd } = this.props
