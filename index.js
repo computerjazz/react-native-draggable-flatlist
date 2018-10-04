@@ -150,15 +150,6 @@ class SortableFlatList extends Component {
     }
   }
 
-  componentDidUpdate() {
-    if (!!this.props.activeScale && !!this.state.hoverComponent) {
-      Animated.timing(this._scale, {
-        duration: 250,
-        useNativeDriver: true,
-        toValue: this.props.activeScale,
-      }).start()
-    }
-
   onReleaseAnimationEnd = () => {
     const { data, onMoveEnd } = this.props
     const { activeRow, spacerIndex } = this.state
@@ -363,6 +354,14 @@ class SortableFlatList extends Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (prevProps.extraData !== this.props.extraData) {
       this.setState({ extraData: this.props.extraData })
+    }
+
+    if (!!this.props.activeScale && !!this.state.hoverComponent) {
+      Animated.timing(this._scale, {
+        duration: 250,
+        useNativeDriver: true,
+        toValue: this.props.activeScale,
+      }).start()
     }
   }
 
