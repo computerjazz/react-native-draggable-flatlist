@@ -396,7 +396,7 @@ class RowItem extends PureComponent {
         {!!spacerSize && this.renderSpacer(spacerSize)}
         <View style={[
           horizontal ? { width: isActiveRow ? 0 : undefined } : { height: isActiveRow ? 0 : undefined },
-          { opacity: isActiveRow ? 0 : 1, overflow: 'hidden' }
+          { opacity: isActiveRow ? 0 : 1 }
         ]}>
           {component}
         </View>
