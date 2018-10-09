@@ -194,7 +194,7 @@ class SortableFlatList extends Component {
 
   animate = () => {
     const { activeRow } = this.state;
-    const { scrollPercent, data, horizontal, scrollSpeed } = this.props;
+    const { scrollPercent, data, horizontal } = this.props;
     const scrollRatio = scrollPercent / 100;
     if (activeRow === -1) return;
     const nextSpacerIndex = this.getSpacerIndex(this._move, activeRow);
@@ -226,8 +226,8 @@ class SortableFlatList extends Component {
         !isFirstItem && fingerPosition < this._containerSize * scrollRatio;
       const shouldScrollDown =
         !isLastItem && fingerPosition > this._containerSize * (1 - scrollRatio);
-      if (shouldScrollUp) this.scroll(-scrollSpeed, nextSpacerIndex);
-      else if (shouldScrollDown) this.scroll(scrollSpeed, nextSpacerIndex);
+      if (shouldScrollUp) this.scroll(-5, nextSpacerIndex);
+      else if (shouldScrollDown) this.scroll(5, nextSpacerIndex);
     }
 
     requestAnimationFrame(this.animate);
@@ -438,8 +438,7 @@ export default SortableFlatList;
 
 SortableFlatList.defaultProps = {
   scrollPercent: 5,
-  contentContainerStyle: {},
-  scrollSpeed: 5
+  contentContainerStyle: {}
 };
 
 class RowItem extends PureComponent {
