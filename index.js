@@ -104,7 +104,7 @@ class SortableFlatList extends Component {
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
 
-        // If user flings row up and lets go in the middle of an animation measurements can error out. 
+        // If user flings row up and lets go in the middle of an animation measurements can error out.
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
 
         // Spacers have different positioning depending on whether the spacer row is before or after the active row.
@@ -368,7 +368,6 @@ export default SortableFlatList
 
 SortableFlatList.defaultProps = {
   scrollPercent: 5,
-  contentContainerStyle: {},
 }
 
 class RowItem extends PureComponent {

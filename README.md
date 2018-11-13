@@ -5,7 +5,7 @@
 ## Install
 
 1. `npm install react-native-draggable-flatlist` or `yarn add react-native-draggable-flatlist`
-2. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
+2. `import DraggableFlatList from 'react-native-draggable-flatlist'`
 
 ## Api
 
@@ -14,9 +14,8 @@ Props:
 - `horizontal` (boolean) Orientation of list.
 - `renderItem` (Function) `({ item, index, move, moveEnd, isActive }) => <Component />`. Call `move` when the row should become active (in an `onPress`, `onLongPress`, etc). Call `moveEnd` when the gesture is complete (in `onPressOut`).
 - `keyExtractor` (Function) `(item, index) => string`
-- `contentContainerStyle` (Object)
-- `scrollPercent` (Number) Sets where scrolling begins. A value of `5` will scroll up if the finger is in the top 5% of the FlatList container and scroll down in the bottom 5%. 
-- `onMoveEnd` (Function) `({ data, to, from, row }) => void` Returns updated ordering of `data` 
+- `scrollPercent` (Number) Sets where scrolling begins. A value of `5` will scroll up if the finger is in the top 5% of the FlatList container and scroll down in the bottom 5%.
+- `onMoveEnd` (Function) `({ data, to, from, row }) => void` Returns updated ordering of `data`
 - `onMoveBegin` (Function) `(index) => void` Called when row becomes active.
 - All props are spread onto underlying FlatList
 
@@ -41,17 +40,17 @@ class Example extends Component {
   renderItem = ({ item, index, move, moveEnd, isActive }) => {
     return (
       <TouchableOpacity
-        style={{ 
-          height: 100, 
+        style={{
+          height: 100,
           backgroundColor: isActive ? 'blue' : item.backgroundColor,
-          alignItems: 'center', 
-          justifyContent: 'center' 
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         onLongPress={move}
         onPressOut={moveEnd}
       >
-        <Text style={{ 
-          fontWeight: 'bold', 
+        <Text style={{
+          fontWeight: 'bold',
           color: 'white',
           fontSize: 32,
         }}>{item.label}</Text>
@@ -76,4 +75,3 @@ class Example extends Component {
 
 export default Example
 ```
-
