@@ -371,7 +371,7 @@ SortableFlatList.defaultProps = {
   contentContainerStyle: {},
 }
 
-class RowItem extends PureComponent {
+class RowItem extends React.Component {
 
   renderSpacer = (size) => <View style={this.props.horizontal ? { width: size } : { height: size }} />
 
