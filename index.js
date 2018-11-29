@@ -42,6 +42,7 @@ class SortableFlatList extends Component {
   _androidStatusBarOffset = 0
   _releaseVal = null
   _releaseAnim = null
+  _timeouts = []
 
   constructor(props) {
     super(props)
@@ -104,7 +105,7 @@ class SortableFlatList extends Component {
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
 
-        // If user flings row up and lets go in the middle of an animation measurements can error out. 
+        // If user flings row up and lets go in the middle of an animation measurements can error out.
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
 
         // Spacers have different positioning depending on whether the spacer row is before or after the active row.
@@ -231,26 +232,27 @@ class SortableFlatList extends Component {
     const { activeRow } = this.state
     const { horizontal } = this.props
     // setTimeout required or else dimensions reported as 0
-    !!this._refs[index] && setTimeout(() => {
-      try {
-        // Using stashed ref prevents measuring an unmounted componenet, which throws an error
-        !!this._refs[index] && this._refs[index].measureInWindow(((x, y, width, height) => {
-          if ((width || height) && activeRow === -1) {
-            const ypos = y + this._scrollOffset
-            const xpos = x + this._scrollOffset
-            const pos = horizontal ? xpos : ypos
-            const size = horizontal ? width : height
-            const rowMeasurements = { y: ypos, x: xpos, width, height }
-            this._measurements[index] = rowMeasurements
-            for (let i = Math.floor(pos); i < pos + size; i++) {
-              this._pixels[i] = index
+    !!this._refs[index] &&
+      this._timeouts.push(setTimeout(() => {
+        try {
+          // Using stashed ref prevents measuring an unmounted componenet, which throws an error
+          !!this._refs[index] && this._refs[index].measureInWindow(((x, y, width, height) => {
+            if ((width || height) && activeRow === -1) {
+              const ypos = y + this._scrollOffset
+              const xpos = x + this._scrollOffset
+              const pos = horizontal ? xpos : ypos
+              const size = horizontal ? width : height
+              const rowMeasurements = { y: ypos, x: xpos, width, height }
+              this._measurements[index] = rowMeasurements
+              for (let i = Math.floor(pos); i < pos + size; i++) {
+                this._pixels[i] = index
+              }
             }
-          }
-        }))
-      } catch (e) {
-        console.log('## measure error -- index: ', index, activeRow, this._refs[index], e)
-      }
-    }, 100)
+          }))
+        } catch (e) {
+          console.log('## measure error -- index: ', index, activeRow, this._refs[index], e)
+        }
+      }, 100))
   }
 
   move = (hoverComponent, index) => {
@@ -319,13 +321,15 @@ class SortableFlatList extends Component {
   measureContainer = ref => {
     if (ref && this._containerOffset === undefined) {
       // setTimeout required or else dimensions reported as 0
-      setTimeout(() => {
-        const { horizontal } = this.props
-        ref.measure((x, y, width, height, pageX, pageY) => {
-          this._containerOffset = horizontal ? pageX : pageY
-          this._containerSize = horizontal ? width : height
-        })
-      }, 50)
+      this._timeouts.push(
+        setTimeout(() => {
+          const { horizontal } = this.props
+          ref.measure((x, y, width, height, pageX, pageY) => {
+            this._containerOffset = horizontal ? pageX : pageY
+            this._containerSize = horizontal ? width : height
+          })
+        }, 50)
+      )
     }
   }
 
@@ -335,6 +339,13 @@ class SortableFlatList extends Component {
     if (prevProps.extraData !== this.props.extraData) {
       this.setState({ extraData: this.props.extraData })
     }
+  }
+
+  componentWillUnmount() {
+    this._timeouts.forEach(timeoutId => {
+      clearTimeout(timeoutId)
+    })
+    this._timeouts = [];
   }
 
   render() {
