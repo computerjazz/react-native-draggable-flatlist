@@ -1,7 +1,6 @@
 import React, { Component, PureComponent } from 'react'
 import {
   LayoutAnimation,
-  YellowBox,
   Animated,
   FlatList,
   View,
@@ -13,7 +12,6 @@ import {
 } from 'react-native'
 
 // Measure function triggers false positives
-YellowBox.ignoreWarnings(['Warning: isMounted(...) is deprecated'])
 UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
 
 const initialState = {
@@ -341,9 +339,6 @@ class SortableFlatList extends Component {
     const { horizontal, keyExtractor } = this.props
     return (
       <View
-        onLayout={e => {
-          console.log('layout', e.nativeEvent)
-        }}
         ref={this.measureContainer}
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
