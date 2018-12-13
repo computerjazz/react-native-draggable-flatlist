@@ -32,7 +32,7 @@ class SortableFlatList extends Component {
   _measurements = []
   _scrollOffset = 0
   _containerSize
-  _containerOffset
+  _containerOffset = 0
   _move = 0
   _hasMoved = false
   _refs = []
