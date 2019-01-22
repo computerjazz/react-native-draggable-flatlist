@@ -34,7 +34,7 @@ class SortableFlatList extends Component {
   _measurements = []
   _scrollOffset = 0
   _containerSize
-  _containerOffset
+  _containerOffset = 0
   _move = 0
   _hasMoved = false
   _refs = []
@@ -42,6 +42,7 @@ class SortableFlatList extends Component {
   _androidStatusBarOffset = 0
   _releaseVal = null
   _releaseAnim = null
+  _wrapperRef = null
 
   constructor(props) {
     super(props)
@@ -316,12 +317,20 @@ class SortableFlatList extends Component {
     )
   }
 
+  remeasureContainer = () => {
+    this._containerOffset = undefined;
+
+    this.measureContainer();
+  };
+
   measureContainer = ref => {
-    if (ref && this._containerOffset === undefined) {
+    if (ref) this._wrapperRef = ref;
+
+    if (this._wrapperRef && this._containerOffset === undefined) {
       // setTimeout required or else dimensions reported as 0
       setTimeout(() => {
         const { horizontal } = this.props
-        ref.measure((x, y, width, height, pageX, pageY) => {
+        this._wrapperRef.measure((x, y, width, height, pageX, pageY) => {
           this._containerOffset = horizontal ? pageX : pageY
           this._containerSize = horizontal ? width : height
         })
@@ -341,9 +350,7 @@ class SortableFlatList extends Component {
     const { horizontal, keyExtractor } = this.props
     return (
       <View
-        onLayout={e => {
-          console.log('layout', e.nativeEvent)
-        }}
+        onLayout={this.remeasureContainer}
         ref={this.measureContainer}
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
