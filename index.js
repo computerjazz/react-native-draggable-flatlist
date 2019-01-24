@@ -396,7 +396,7 @@ class RowItem extends PureComponent {
       <View ref={setRef(index)} collapsable={false} style={{ opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
         {!!spacerSize && this.renderSpacer(spacerSize)}
         <View style={[
-          horizontal ? { width: isActiveRow ? 0 : undefined } : { height: isActiveRow ? 0 : undefined },
+          horizontal ? { width: isActiveRow ? 1 : undefined } : { height: isActiveRow ? 1 : undefined },
           { opacity: isActiveRow ? 0 : 1, overflow: 'hidden' }
         ]}>
           {component}
