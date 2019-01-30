@@ -339,6 +339,8 @@ class SortableFlatList extends Component {
 
   render() {
     const { horizontal, keyExtractor } = this.props
+    this._refs = [];
+
     return (
       <View
         onLayout={e => {
