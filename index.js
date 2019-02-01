@@ -305,9 +305,10 @@ class SortableFlatList extends Component {
     const spacerSize = (isSpacerRow && this._measurements[activeRow]) ? this._measurements[activeRow][horizontal ? 'width' : 'height'] : 0
     const endPadding = index === data.length - 1 && spacerIndex === data.length && this._measurements[activeRow][horizontal ? 'width' : 'height']
     const isActiveRow = activeRow === index
+
     return (
-      <View style={styles.fullOpacity}>
-        {!!spacerSize && <View style={{ height: spacerSize }} />}
+      <View style={[styles.fullOpacity, { flexDirection: horizontal ? 'row' : 'column' }]} >
+        {!!spacerSize && <View style={{ [horizontal ? 'width' : 'height']: spacerSize }} />}
         <RowItem
           horizontal={horizontal}
           index={index}
