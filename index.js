@@ -25,6 +25,20 @@ const initialState = {
   extraData: null,
 }
 
+// Note using LayoutAnimation.easeInEaseOut() was causing blank spaces to
+// show up in list: https://github.com/facebook/react-native/issues/13207
+const layoutAnimConfig = {
+  duration: 300,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.scaleXY,
+  },
+  update: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.scaleXY,
+  }
+}
+
 class SortableFlatList extends Component {
   _moveAnim = new Animated.Value(0)
   _offset = new Animated.Value(0)
@@ -103,7 +117,7 @@ class SortableFlatList extends Component {
         const activeMeasurements = this._measurements[activeRow]
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
-
+        if (activeRow === -1) return
         // If user flings row up and lets go in the middle of an animation measurements can error out. 
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
 
@@ -140,17 +154,24 @@ class SortableFlatList extends Component {
     const { activeRow, spacerIndex } = this.state
     const sortedData = this.getSortedList(data, activeRow, spacerIndex)
     const isAfterActive = spacerIndex > activeRow
+    const from = activeRow
+    const to = spacerIndex - (isAfterActive ? 1 : 0)
+    if (from === to) {
+      this.forceUpdate()
+    }
+
     this._moveAnim.setValue(this._releaseVal)
     this._spacerIndex = -1
-    this.setState(initialState)
     this._hasMoved = false
     this._move = 0
     this._releaseAnim = null
-    onMoveEnd && onMoveEnd({
-      row: data[activeRow],
-      from: activeRow,
-      to: spacerIndex - (isAfterActive ? 1 : 0),
-      data: sortedData,
+    this.setState(initialState, () => {
+      onMoveEnd && onMoveEnd({
+        row: data[activeRow],
+        from,
+        to,
+        data: sortedData,
+      })
     })
   }
 
@@ -174,7 +195,9 @@ class SortableFlatList extends Component {
     if (activeRow === -1) return
     const nextSpacerIndex = this.getSpacerIndex(this._move, activeRow)
     if (nextSpacerIndex > -1 && nextSpacerIndex !== this._spacerIndex) {
-      LayoutAnimation.easeInEaseOut()
+      // TODO: This is causing a white item on Android when row is dragged
+      LayoutAnimation.configureNext(layoutAnimConfig);
+
       this.setState({ spacerIndex: nextSpacerIndex })
       this._spacerIndex = nextSpacerIndex
       if (nextSpacerIndex === data.length) this._flatList.scrollToEnd()
@@ -287,20 +310,24 @@ class SortableFlatList extends Component {
     const isSpacerRow = spacerIndex === index
     const spacerSize = (isSpacerRow && this._measurements[activeRow]) ? this._measurements[activeRow][horizontal ? 'width' : 'height'] : 0
     const endPadding = index === data.length - 1 && spacerIndex === data.length && this._measurements[activeRow][horizontal ? 'width' : 'height']
+    const isActiveRow = activeRow === index
     return (
-      <RowItem
-        horizontal={horizontal}
-        index={index}
-        isActiveRow={activeRow === index}
-        spacerSize={spacerSize}
-        renderItem={renderItem}
-        item={item}
-        setRef={this.setRef}
-        move={this.move}
-        moveEnd={this.moveEnd}
-        endPadding={endPadding}
-        extraData={this.state.extraData}
-      />
+      <View style={styles.fullOpacity}>
+        {!!spacerSize && <View style={{ height: spacerSize }} />}
+        <RowItem
+          horizontal={horizontal}
+          index={index}
+          isActiveRow={isActiveRow}
+          spacerSize={spacerSize}
+          renderItem={renderItem}
+          item={item}
+          setRef={this.setRef}
+          move={this.move}
+          moveEnd={this.moveEnd}
+          endPadding={endPadding}
+          extraData={this.state.extraData}
+        />
+      </View>
     )
   }
 
@@ -339,12 +366,11 @@ class SortableFlatList extends Component {
 
   render() {
     const { horizontal, keyExtractor } = this.props
-    this._refs = [];
 
     return (
       <View
         onLayout={e => {
-          console.log('layout', e.nativeEvent)
+          // console.log('layout', e.nativeEvent)
         }}
         ref={this.measureContainer}
         {...this._panResponder.panHandlers}
@@ -370,11 +396,11 @@ export default SortableFlatList
 
 SortableFlatList.defaultProps = {
   scrollPercent: 5,
-  scrollSpeed:5,
+  scrollSpeed: 5,
   contentContainerStyle: {},
 }
 
-class RowItem extends PureComponent {
+class RowItem extends React.PureComponent {
 
   renderSpacer = (size) => <View style={this.props.horizontal ? { width: size } : { height: size }} />
 
@@ -383,9 +409,8 @@ class RowItem extends PureComponent {
     const hoverComponent = renderItem({ isActive: true, item, index, move: () => null, moveEnd })
     move(hoverComponent, index)
   }
-
   render() {
-    const { moveEnd, isActiveRow, horizontal, endPadding, spacerSize, renderItem, item, index, setRef } = this.props
+    const { moveEnd, isActiveRow, horizontal, endPadding, renderItem, item, index, setRef } = this.props
     const component = renderItem({
       isActive: false,
       item,
@@ -393,14 +418,14 @@ class RowItem extends PureComponent {
       move: this.move,
       moveEnd,
     })
+    let wrapperStyle = { opacity: 1 }
+    if (horizontal && isActiveRow) wrapperStyle = { width: 0, opacity: 0 }
+    else if (!horizontal && isActiveRow) wrapperStyle = { height: 0, opacity: 0 }
+
     // Rendering the final row requires padding to be applied at the bottom
     return (
-      <View ref={setRef(index)} collapsable={false} style={{ opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
-        {!!spacerSize && this.renderSpacer(spacerSize)}
-        <View style={[
-          horizontal ? { width: isActiveRow ? 0 : undefined } : { height: isActiveRow ? 0 : undefined },
-          { opacity: isActiveRow ? 0 : 1 }
-        ]}>
+      <View ref={setRef(index)} collapsable={false} style={{ backgroundColor: 'green', opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
+        <View style={wrapperStyle}>
           {component}
         </View>
         {!!endPadding && this.renderSpacer(endPadding)}
@@ -420,5 +445,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     top: 0,
   },
-  wrapper: { flex: 1, opacity: 1 }
+  wrapper: { flex: 1, opacity: 1 },
+  fullOpacity: { opacity: 1 }
 })
