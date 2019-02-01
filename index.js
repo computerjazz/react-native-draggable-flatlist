@@ -156,10 +156,6 @@ class SortableFlatList extends Component {
     const isAfterActive = spacerIndex > activeRow
     const from = activeRow
     const to = spacerIndex - (isAfterActive ? 1 : 0)
-    if (from === to) {
-      this.forceUpdate()
-    }
-
     this._moveAnim.setValue(this._releaseVal)
     this._spacerIndex = -1
     this._hasMoved = false
@@ -195,9 +191,7 @@ class SortableFlatList extends Component {
     if (activeRow === -1) return
     const nextSpacerIndex = this.getSpacerIndex(this._move, activeRow)
     if (nextSpacerIndex > -1 && nextSpacerIndex !== this._spacerIndex) {
-      // TODO: This is causing a white item on Android when row is dragged
       LayoutAnimation.configureNext(layoutAnimConfig);
-
       this.setState({ spacerIndex: nextSpacerIndex })
       this._spacerIndex = nextSpacerIndex
       if (nextSpacerIndex === data.length) this._flatList.scrollToEnd()
@@ -424,7 +418,7 @@ class RowItem extends React.PureComponent {
 
     // Rendering the final row requires padding to be applied at the bottom
     return (
-      <View ref={setRef(index)} collapsable={false} style={{ backgroundColor: 'green', opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
+      <View ref={setRef(index)} collapsable={false} style={{ opacity: 1, flexDirection: horizontal ? 'row' : 'column' }}>
         <View style={wrapperStyle}>
           {component}
         </View>
