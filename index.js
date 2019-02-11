@@ -118,7 +118,7 @@ class SortableFlatList extends Component {
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
         if (activeRow === -1) return
-        // If user flings row up and lets go in the middle of an animation measurements can error out. 
+        // If user flings row up and lets go in the middle of an animation measurements can error out.
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
 
         // Spacers have different positioning depending on whether the spacer row is before or after the active row.
@@ -301,29 +301,27 @@ class SortableFlatList extends Component {
   renderItem = ({ item, index }) => {
     const { renderItem, data, horizontal } = this.props
     const { activeRow, spacerIndex } = this.state
-    const isActiveRow = activeRow === index
     const isSpacerRow = spacerIndex === index
-    const isLastItem = index === data.length - 1
-    const spacerAfterLastItem = spacerIndex >= data.length
-    const activeRowSize = this._measurements[activeRow] ? this._measurements[activeRow][horizontal ? 'width' : 'height'] : 0
-    const endPadding = (isLastItem && spacerAfterLastItem)
-    const spacerStyle = { [horizontal ? 'width' : 'height']: activeRowSize }
+    const spacerSize = (isSpacerRow && this._measurements[activeRow]) ? this._measurements[activeRow][horizontal ? 'width' : 'height'] : 0
+    const endPadding = index === data.length - 1 && spacerIndex === data.length && this._measurements[activeRow][horizontal ? 'width' : 'height']
+    const isActiveRow = activeRow === index
 
     return (
       <View style={[styles.fullOpacity, { flexDirection: horizontal ? 'row' : 'column' }]} >
-        {isSpacerRow && <View style={spacerStyle} />}
+        {!!spacerSize && <View style={{ [horizontal ? 'width' : 'height']: spacerSize }} />}
         <RowItem
           horizontal={horizontal}
           index={index}
           isActiveRow={isActiveRow}
+          spacerSize={spacerSize}
           renderItem={renderItem}
           item={item}
           setRef={this.setRef}
           move={this.move}
           moveEnd={this.moveEnd}
+          endPadding={endPadding}
           extraData={this.state.extraData}
         />
-        {endPadding && <View style={spacerStyle} />}
       </View>
     )
   }
@@ -380,7 +378,7 @@ class SortableFlatList extends Component {
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
-          onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
+          onScroll={({ nativeEvent }) => { this.state.activeRow === -1 ? this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y'] : this._scrollOffset = this._scrollOffset }}
           scrollEventThrottle={16}
         />
         {this.renderHoverComponent()}
@@ -399,14 +397,15 @@ SortableFlatList.defaultProps = {
 
 class RowItem extends React.PureComponent {
 
+  renderSpacer = (size) => <View style={this.props.horizontal ? { width: size } : { height: size }} />
+
   move = () => {
     const { move, moveEnd, renderItem, item, index } = this.props
     const hoverComponent = renderItem({ isActive: true, item, index, move: () => null, moveEnd })
     move(hoverComponent, index)
   }
-
   render() {
-    const { moveEnd, isActiveRow, horizontal, renderItem, item, index, setRef } = this.props
+    const { moveEnd, isActiveRow, horizontal, endPadding, renderItem, item, index, setRef } = this.props
     const component = renderItem({
       isActive: false,
       item,
@@ -424,6 +423,7 @@ class RowItem extends React.PureComponent {
         <View style={wrapperStyle}>
           {component}
         </View>
+        {!!endPadding && this.renderSpacer(endPadding)}
       </View>
     )
   }
