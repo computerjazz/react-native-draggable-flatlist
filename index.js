@@ -288,7 +288,10 @@ class SortableFlatList extends Component {
   }
 
   moveEnd = () => {
-    if (!this._hasMoved) this.setState(initialState)
+    if (!this._hasMoved) {
+      this.setState(initialState)
+      if(this.props.onMoveCancel) this.props.onMoveCancel();
+    }
   }
 
   setRef = index => (ref) => {
