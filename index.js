@@ -27,17 +27,17 @@ const initialState = {
 
 // Note using LayoutAnimation.easeInEaseOut() was causing blank spaces to
 // show up in list: https://github.com/facebook/react-native/issues/13207
-const layoutAnimConfig = {
-  duration: 300,
-  create: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.scaleXY,
-  },
-  update: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.scaleXY,
-  }
-}
+// const layoutAnimConfig = {
+//   duration: 300,
+//   create: {
+//     type: LayoutAnimation.Types.easeInEaseOut,
+//     property: LayoutAnimation.Properties.scaleXY,
+//   },
+//   update: {
+//     type: LayoutAnimation.Types.easeInEaseOut,
+//     property: LayoutAnimation.Properties.scaleXY,
+//   }
+// }
 
 class SortableFlatList extends Component {
   _moveAnim = new Animated.Value(0)
@@ -191,7 +191,7 @@ class SortableFlatList extends Component {
     if (activeRow === -1) return
     const nextSpacerIndex = this.getSpacerIndex(this._move, activeRow)
     if (nextSpacerIndex > -1 && nextSpacerIndex !== this._spacerIndex) {
-      LayoutAnimation.configureNext(layoutAnimConfig);
+      // LayoutAnimation.configureNext(layoutAnimConfig);
       this.setState({ spacerIndex: nextSpacerIndex })
       this._spacerIndex = nextSpacerIndex
       if (nextSpacerIndex === data.length) this._flatList.scrollToEnd()
