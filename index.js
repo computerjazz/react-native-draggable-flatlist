@@ -223,6 +223,9 @@ class SortableFlatList extends Component {
     this._flatList.scrollToOffset({ offset, animated: false })
   }
 
+  scrollToIndex = (index) => {
+    this._flatList.scrollToIndex(index)
+  }
 
   getSpacerIndex = (move, activeRow) => {
     const { horizontal } = this.props
