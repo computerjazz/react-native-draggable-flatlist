@@ -227,6 +227,14 @@ class SortableFlatList extends Component {
     this._flatList.scrollToIndex(index)
   }
 
+  scrollToEnd = (params) => {
+		this._flatList.scrollToEnd(params)
+  }	
+  
+  set getItemLayout(func) {
+    this._flatList.getItemLayout = func
+  }
+
   getSpacerIndex = (move, activeRow) => {
     const { horizontal } = this.props
     if (activeRow === -1 || !this._measurements[activeRow]) return -1
