@@ -64,9 +64,9 @@ class SortableFlatList extends Component {
         const { pageX, pageY } = evt.nativeEvent
         const { horizontal } = this.props
         const tappedPixel = horizontal ? pageX : pageY
-        const tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel)]
+        const tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel  + this.toolbarOffset)]
         if (tappedRow === undefined) return false
-        this._additionalOffset = (tappedPixel + this._scrollOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
+        this._additionalOffset = (tappedPixel + this._scrollOffset + this.toolbarOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
         if (this._releaseAnim) {
           return false
         }
@@ -264,6 +264,9 @@ class SortableFlatList extends Component {
         // Using stashed ref prevents measuring an unmounted componenet, which throws an error
         !!this._refs[index] && this._refs[index].measureInWindow(((x, y, width, height) => {
           if ((width || height) && activeRow === -1) {
+            if (index == 0) {
+              this.toolbarOffset = y
+            }
             const ypos = y + this._scrollOffset
             const xpos = x + this._scrollOffset
             const pos = horizontal ? xpos : ypos
