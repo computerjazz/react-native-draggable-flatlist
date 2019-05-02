@@ -362,7 +362,7 @@ class SortableFlatList extends Component {
   }
 
   render() {
-    const { horizontal, keyExtractor } = this.props
+    const { horizontal, keyExtractor, contentContainerStyle } = this.props
 
     return (
       <View
@@ -371,7 +371,7 @@ class SortableFlatList extends Component {
         }}
         ref={this.measureContainer}
         {...this._panResponder.panHandlers}
-        style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
+        style={[styles.wrapper, contentContainerStyle]} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
       >
         <FlatList
           {...this.props}
