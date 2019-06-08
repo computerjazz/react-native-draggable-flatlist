@@ -66,7 +66,7 @@ class SortableFlatList extends Component {
     this._panResponder = PanResponder.create({
       onStartShouldSetPanResponderCapture: (evt, gestureState) => {
         const { pageX, pageY } = evt.nativeEvent
-        const { horizontal, numColumns } = this.props
+        const { data, horizontal, numColumns } = this.props
         const tappedPixel = horizontal ? pageX : pageY
         let tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel)]
         if (tappedRow === undefined) return false
@@ -76,7 +76,9 @@ class SortableFlatList extends Component {
         const horizontalDistanceToLeftEdge = pageX - this._measurements[tappedRow]['x']
         
         const rowOffset = Math.floor(horizontalDistanceToLeftEdge/totalWidth)
-        tappedRow+=rowOffset
+        tappedRow = Math.min[tappedRow+rowOffset, data.length - 1]
+
+	if (!this._measurements[tappedRow]) return false
 
         this._additionalOffset = (tappedPixel + this._scrollOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
         if (this._releaseAnim) {
@@ -206,7 +208,7 @@ class SortableFlatList extends Component {
       } else acc.push(cur)
       return acc
     }, [])
-    if (spacerIndex >= data.length) sortedData.push(data[activeRow])
+    if (spacerIndex >= data.length -1) sortedData.push(data[activeRow])
     return sortedData
   }
 
