@@ -70,16 +70,7 @@ class SortableFlatList extends Component {
         const tappedPixel = horizontal ? pageX : pageY
         let tappedRow = this._pixels[Math.floor(this._scrollOffset + tappedPixel)]
         if (tappedRow === undefined) return false
-        const columsMeasurementsForThisRow = this._measurements.slice(tappedRow,tappedRow+numColumns - 1)
-        const rowWidths = columsMeasurementsForThisRow.map(m => m['width'])
-        const totalWidth = rowWidths.reduce( (p,v) => { return p+v }, 0)
-        const horizontalDistanceToLeftEdge = pageX - this._measurements[tappedRow]['x']
         
-        const rowOffset = Math.floor(horizontalDistanceToLeftEdge/totalWidth)
-        tappedRow = Math.min[tappedRow+rowOffset, data.length - 1]
-
-	if (!this._measurements[tappedRow]) return false
-
         this._additionalOffset = (tappedPixel + this._scrollOffset) - this._measurements[tappedRow][horizontal ? 'x' : 'y']
         if (this._releaseAnim) {
           return false
@@ -87,9 +78,7 @@ class SortableFlatList extends Component {
         this._moveAnim.setValue(tappedPixel)
         this._move = tappedPixel
         if (numColumns > 1) {
-          this._moveHorizontalAnim.setValue(pageX)
-          this._moveHorizontal = pageX
-          this._offsetHorizontal.setValue(-pageX)          
+          this._offsetHorizontal.setValue(-this._measurements[tappedRow]['width']) 
         }
 
         // compensate for translucent or hidden StatusBar on android
@@ -116,6 +105,7 @@ class SortableFlatList extends Component {
         const shouldSet = activeRow > -1
         this._moveAnim.setValue(move)
         if (numColumns > 1) {
+          this._moveHorizontal = moveX
           this._moveHorizontalAnim.setValue(moveX)
         }
         
