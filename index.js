@@ -380,7 +380,10 @@ class SortableFlatList extends Component {
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
-          onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
+          onScroll={(props) => {
+            this._scrollOffset = props.nativeEvent.contentOffset[horizontal ? 'x' : 'y']
+            this.props.onScroll(props)
+          }}
           scrollEventThrottle={16}
         />
         {this.renderHoverComponent()}
