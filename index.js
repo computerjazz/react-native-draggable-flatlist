@@ -362,12 +362,13 @@ class SortableFlatList extends Component {
   }
 
   onScroll = (props) => {
+    const { onScroll, horizontal } = this.props
     this._scrollOffset = props.nativeEvent.contentOffset[horizontal ? 'x' : 'y']
-    this.props.onScroll && this.props.onScroll(props)
+    onScroll && onScroll(props)
   }
 
   render() {
-    const { horizontal, keyExtractor } = this.props
+    const { keyExtractor } = this.props
 
     return (
       <View
