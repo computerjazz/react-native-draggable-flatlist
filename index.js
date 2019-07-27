@@ -361,6 +361,11 @@ class SortableFlatList extends Component {
     }
   }
 
+  onScroll = (props) => {
+    this._scrollOffset = props.nativeEvent.contentOffset[horizontal ? 'x' : 'y']
+    this.props.onScroll && this.props.onScroll(props)
+  }
+
   render() {
     const { horizontal, keyExtractor } = this.props
 
@@ -380,10 +385,7 @@ class SortableFlatList extends Component {
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
-          onScroll={(props) => {
-            this._scrollOffset = props.nativeEvent.contentOffset[horizontal ? 'x' : 'y']
-            this.props.onScroll(props)
-          }}
+          onScroll={this.onScroll}
           scrollEventThrottle={16}
         />
         {this.renderHoverComponent()}
