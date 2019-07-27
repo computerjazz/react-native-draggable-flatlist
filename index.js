@@ -340,16 +340,13 @@ class SortableFlatList extends Component {
     )
   }
 
-  measureContainer = ref => {
-    if (ref && this._containerOffset === undefined) {
-      // setTimeout required or else dimensions reported as 0
-      setTimeout(() => {
-        const { horizontal } = this.props
-        ref.measure((x, y, width, height, pageX, pageY) => {
-          this._containerOffset = horizontal ? pageX : pageY
-          this._containerSize = horizontal ? width : height
-        })
-      }, 50)
+  measureContainer = event => {
+    if (this.containerView) {
+      const { horizontal } = this.props
+      this.containerView.measure((x, y, width, height, pageX, pageY) => {
+        this._containerOffset = horizontal ? pageX : pageY
+        this._containerSize = horizontal ? width : height
+      })      
     }
   }
 
@@ -372,10 +369,8 @@ class SortableFlatList extends Component {
 
     return (
       <View
-        onLayout={e => {
-          // console.log('layout', e.nativeEvent)
-        }}
-        ref={this.measureContainer}
+        ref={ref => {this.containerView = ref}}
+        onLayout={this.measureContainer}
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
       >
