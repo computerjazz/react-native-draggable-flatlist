@@ -2,7 +2,7 @@
   "name": "react-native-draggable-flatlist",
   "version": "1.1.7",
   "description": "A drag-and-drop-enabled FlatList component for React Native",
-  "main": "index.js",
+  "main": "index.tsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
