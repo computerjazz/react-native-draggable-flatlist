@@ -75,6 +75,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   containerTapRef = React.createRef()
   containerPanRef = React.createRef()
 
+  containerOffset = new Value(0)
+
   touchAbsolute = new Value(0)
   touchCellOffset = new Value(0)
   panGestureState = new Value(0)
@@ -107,7 +109,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   activeRowSize = new Value(0)
 
   scrollOffset = new Value(0)
-  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset)
+  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, this.containerOffset)
   hoverMid = add(this.hoverAnim, divide(this.activeRowSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
 
@@ -152,7 +154,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const offset = new Value(0)
       const size = new Value(0)
-      const midpoint = add(offset, divide(size, 2))
+      const midpoint = sub(add(offset, divide(size, 2)), this.containerOffset)
       const isAfterActive = greaterThan(index, this.activeRowIndex)
 
       const hoverMid = cond(
@@ -215,7 +217,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           onChangeTranslate,
           onChange(this.spacerIndex, [
             cond(eq(this.spacerIndex, index), [
-              set(this.hoverAnimConfig.toValue, offset),
+              set(this.hoverAnimConfig.toValue, sub(offset, this.scrollOffset, this.containerOffset)),
             ]),
           ]),
           cond(this.hasMoved, [
@@ -286,6 +288,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (index === -1 || !(ref.current && ref.current._component)) {
       return
     }
+
     ref.current._component.measure((x, y, w, h, pageX, pageY) => {
       // console.log(`measure index ${index}: height ${h} pagey ${pageY}`)
       this.cellData[index].size.setValue(horizontal ? w : h)
@@ -382,6 +385,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (prevProps.extraData !== this.props.extraData) {
       this.setState({ extraData: this.props.extraData })
     }
+  }
+
+  onContainerLayout = () => {
+    const { horizontal } = this.props
+    this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
+      this.containerOffset.setValue(horizontal ? pageX : pageY)
+    })
   }
 
   onCellTap = event([{
@@ -481,10 +491,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           >
             <Animated.View
               ref={this.containerRef}
+              onLayout={this.onContainerLayout}
             >
               <AnimatedFlatList
                 {...this.props}
                 ref={this.flatlistRef}
+                onLayout={this.onListLayout}
                 scrollEnabled={!hoverComponent}
                 renderItem={this.renderItem}
                 extraData={this.state}
