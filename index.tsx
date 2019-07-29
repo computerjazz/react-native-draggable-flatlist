@@ -94,8 +94,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   hoverAnimConfig = {
     damping: 20,
-    mass: 0.3,
-    stiffness: 70,
+    mass: 0.2,
+    stiffness: 100,
     overshootClamping: false,
     toValue: new Value(0),
     restSpeedThreshold: 0.05,
@@ -118,6 +118,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   moveEndParams = [this.activeRowIndex, this.spacerIndex]
 
   setCellData = (data = []) => {
+    const { horizontal } = this.props
     data.forEach((_, index) => {
       if (!this.cellAnim[index]) {
         const clock = new Clock()
@@ -163,7 +164,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         midpoint,
       )
 
-      const translateY = cond(
+      const translate = cond(
         and(
           this.isHovering,
           neq(index, this.activeRowIndex),
@@ -175,36 +176,36 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         0,
       )
 
-      const onChangeTranslate = onChange(translateY,
+      const onChangeTranslate = onChange(translate,
         cond(this.isHovering, [
           or(
             cond(and(
               not(isAfterActive),
-              greaterThan(translateY, 0)
+              greaterThan(translate, 0)
             ),
               set(this.spacerIndex, index)
             ),
             cond(and(
               not(isAfterActive),
-              eq(translateY, 0),
+              eq(translate, 0),
             ),
               set(this.spacerIndex, index + 1)
             ),
             cond(and(
               isAfterActive,
-              eq(translateY, 0),
+              eq(translate, 0),
             ),
               set(this.spacerIndex, index),
             ),
             cond(and(
               isAfterActive,
-              greaterThan(translateY, 0),
+              greaterThan(translate, 0),
             ),
               set(this.spacerIndex, index - 1)
             )
           ),
 
-          set(config.toValue, translateY),
+          set(config.toValue, translate),
           startClock(clock),
         ]),
       )
@@ -213,18 +214,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ref: React.createRef(),
         offset,
         size,
-        translateY: block([
+        translate: block([
           onChangeTranslate,
           onChange(this.spacerIndex, [
             cond(eq(this.spacerIndex, index), [
-              set(this.hoverAnimConfig.toValue, sub(offset, this.scrollOffset, this.containerOffset)),
+              set(this.hoverAnimConfig.toValue, sub(offset, horizontal ? 0 : this.scrollOffset, this.containerOffset)),
             ]),
           ]),
           cond(this.hasMoved, [
             cond(this.isHovering, runClock, 0),
           ], [
-              set(state.position, translateY),
-              translateY,
+              set(state.position, translate),
+              translate,
             ])
         ]),
       }
@@ -300,12 +301,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { renderItem, horizontal } = this.props
     const { activeRowIndex } = this.state
     const cellData = this.cellData[index]
-    const { ref, translateY } = cellData
+    const { ref, translate } = cellData
+    console.log('render item', item)
+    const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     return (
       <Animated.View
         onLayout={() => this.measureCell([index])}
         style={{
-          transform: [{ translateY }],
+          transform,
+          flex: 1,
+          flexDirection: horizontal ? 'row' : 'column',
+
         }}
       >
         <TapGestureHandler
@@ -316,13 +322,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             ref={ref}
             style={{
               flex: 1,
-              opacity: 0.5,
-              flexDirection: horizontal ? 'row' : 'column',
+
             }}
           >
             {activeRowIndex !== index && (
               <RowItem
-                horizontal={horizontal}
                 index={index}
                 renderItem={renderItem}
                 item={item}
@@ -395,11 +399,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   onCellTap = event([{
-    nativeEvent: ({ state, y }) => block([
+    nativeEvent: ({ state, y, x }) => block([
       cond(
         neq(state, this.cellTapState), [
           cond(eq(state, GestureState.BEGAN), [
-            set(this.touchCellOffset, y),
+            set(this.touchCellOffset, this.props.horizontal ? x : y),
             debug(`touch cell offset`, this.touchCellOffset),
           ]),
           cond(eq(state, GestureState.END), [
@@ -465,17 +469,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onPanGestureEvent = event([
     {
-      nativeEvent: ({ absoluteY }) => block([
+      nativeEvent: ({ absoluteY, absoluteX }) => block([
         cond(eq(this.panGestureState, GestureState.ACTIVE), [
           cond(not(this.hasMoved), set(this.hasMoved, 1)),
-          set(this.touchAbsolute, absoluteY),
+          set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
         ])
       ]),
     },
   ])
 
   render() {
-    const { horizontal, keyExtractor, data } = this.props
+    const { keyExtractor } = this.props
     const { hoverComponent } = this.state
 
     return (
@@ -496,16 +500,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               <AnimatedFlatList
                 {...this.props}
                 ref={this.flatlistRef}
-                onLayout={this.onListLayout}
                 scrollEnabled={!hoverComponent}
                 renderItem={this.renderItem}
                 extraData={this.state}
                 keyExtractor={keyExtractor || this.keyExtractor}
                 onScroll={this.onScroll}
-                scrollEventThrottle={1}
+                scrollEventThrottle={16}
               />
               {this.renderHoverComponent()}
-
             </Animated.View>
           </PanGestureHandler>
         </Animated.View>
