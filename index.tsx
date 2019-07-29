@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { PanGestureHandler, TapGestureHandler, State as GestureState, FlatList } from "react-native-gesture-handler"
-import Animated from "react-native-reanimated"
+import Animated, { Easing } from "react-native-reanimated"
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
 
@@ -28,6 +28,11 @@ const {
   greaterOrEq,
   lessThan,
   not,
+  Clock,
+  clockRunning,
+  timing,
+  startClock,
+  stopClock,
 } = Animated
 
 import {
@@ -74,6 +79,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   panGestureState = new Value(0)
   tapGestureState = new Value(0)
   cellTapState = new Value(0)
+  hasMoved = new Value(0)
+
+  hoverClock = new Clock()
+  hoverConfig = {
+    position: new Value(0),
+
+  }
 
   activeRowIndex = new Value(-1)
   isHovering = greaterThan(this.activeRowIndex, -1)
@@ -88,14 +100,47 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
 
   cellData = []
+  cellAnim = []
   moveEndParams = [this.activeRowIndex, this.spacerIndex]
 
   setCellData = (data = []) => {
     data.forEach((d, index) => {
+      if (!this.cellAnim[index]) {
+        const clock = new Clock()
+        const config = {
+          toValue: new Value(0),
+          duration: 200,
+          easing: Easing.ease,
+        }
+
+        const state = {
+          position: new Value(0),
+          frameTime: new Value(0),
+          time: new Value(0),
+          finished: new Value(0),
+        }
+
+        this.cellAnim[index] = { clock, config, state }
+      }
+
+      const { clock, config, state } = this.cellAnim[index]
+
+      const runClock = block([
+        cond(clockRunning(clock), [
+          timing(clock, state, config),
+          cond(state.finished, [
+            stopClock(clock),
+            set(state.frameTime, 0),
+            set(state.time, 0),
+            set(state.finished, 0),
+          ]),
+        ]),
+        state.position,
+      ])
+
       const offset = new Value(0)
       const size = new Value(0)
       const midpoint = add(offset, divide(size, 2))
-
       const isAfterActive = greaterThan(index, this.activeRowIndex)
 
       const hoverMid = cond(
@@ -144,9 +189,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               set(this.spacerIndex, index - 1)
             )
           ),
-          debug('onCHange spacer inde', this.spacerIndex),
-        ]
-        ),
+          set(config.toValue, translateY),
+          startClock(clock),
+        ]),
       )
 
       const cellData = {
@@ -155,7 +200,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         size,
         translateY: block([
           onChangeTranslate,
-          translateY,
+          cond(this.hasMoved, [
+            cond(this.isHovering, runClock, 0),
+          ], [
+              set(state.position, translateY),
+              translateY,
+            ])
         ]),
         tapGestureState: new Value(GestureState.UNDETERMINED),
       }
@@ -226,26 +276,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     })
   }
 
-  onCellTap = event([{
-    nativeEvent: ({ state, y }) => block([
-      cond(
-        neq(state, this.cellTapState), [
-          cond(eq(state, GestureState.BEGAN), [
-            set(this.touchCellOffset, y),
-            debug(`touch cell offset`, this.touchCellOffset),
-          ]),
-          cond(eq(state, GestureState.END), [
-            debug('cell touch end', this.cellTapState),
-            call(this.moveEndParams, this.onMoveEnd),
-            set(this.activeRowIndex, -1),
-            set(this.spacerIndex, -1),
-          ]),
-          set(this.cellTapState, state),
-        ]
-      ),
-    ])
-  }])
-
   renderItem = ({ item, index }) => {
     const { renderItem, horizontal } = this.props
     const { activeRowIndex } = this.state
@@ -310,6 +340,27 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
   }
 
+  onCellTap = event([{
+    nativeEvent: ({ state, y }) => block([
+      cond(
+        neq(state, this.cellTapState), [
+          cond(eq(state, GestureState.BEGAN), [
+            set(this.touchCellOffset, y),
+            debug(`touch cell offset`, this.touchCellOffset),
+          ]),
+          cond(eq(state, GestureState.END), [
+            debug('cell touch end', this.cellTapState),
+            call(this.moveEndParams, this.onMoveEnd),
+            set(this.activeRowIndex, -1),
+            set(this.spacerIndex, -1),
+            set(this.hasMoved, 0),
+          ]),
+          set(this.cellTapState, state),
+        ]
+      ),
+    ])
+  }])
+
   onScroll = event([
     {
       nativeEvent: {
@@ -351,6 +402,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           neq(this.panGestureState, GestureState.END),
         ), [
             call(this.moveEndParams, this.onMoveEnd),
+            set(this.hasMoved, 0),
             set(this.activeRowIndex, -1),
             set(this.spacerIndex, -1),
           ]),
@@ -362,8 +414,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   onPanGestureEvent = event([
     {
       nativeEvent: ({ absoluteY }) => block([
-        set(this.touchAbs, absoluteY),
-        // debug('pan evt', this.touchAbs),
+        cond(eq(this.panGestureState, GestureState.ACTIVE), [
+          cond(not(this.hasMoved), set(this.hasMoved, 1)),
+          set(this.touchAbs, absoluteY),
+        ])
       ]),
     },
   ])
