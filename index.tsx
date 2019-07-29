@@ -285,13 +285,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   measureCell = ([index]: number[]) => {
     const { horizontal } = this.props
+    const { activeRowIndex } = this.state
     const { ref } = this.cellData[index]
-    if (index === -1 || !(ref.current && ref.current._component)) {
+    if (
+      // activeRowIndex === -1 || 
+      index === -1 ||
+      !(ref.current && ref.current._component)) {
       return
     }
 
     ref.current._component.measure((x, y, w, h, pageX, pageY) => {
-      // console.log(`measure index ${index}: height ${h} pagey ${pageY}`)
+      console.log(`measure index ${index}: wdith ${w} height ${h} pagex ${pageX} pagey ${pageY}`)
       this.cellData[index].size.setValue(horizontal ? w : h)
       this.cellData[index].offset.setValue(horizontal ? pageX : pageY)
     })
@@ -302,7 +306,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { activeRowIndex } = this.state
     const cellData = this.cellData[index]
     const { ref, translate } = cellData
-    console.log('render item', item)
     const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     return (
       <Animated.View
@@ -371,9 +374,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             [`translate${horizontal ? "X" : "Y"}`]: block([
               cond(clockRunning(this.hoverClock), [
                 runClock,
-              ], [
-                  this.hoverAnim
-                ])
+              ], this.hoverAnim)
             ])
           }]
         }]}
@@ -394,6 +395,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   onContainerLayout = () => {
     const { horizontal } = this.props
     this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
+      console.log('setContaineroOffset', horizontal ? pageX : pageY)
       this.containerOffset.setValue(horizontal ? pageX : pageY)
     })
   }
@@ -431,13 +433,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onTapStateChange = event([
     {
-      nativeEvent: ({ state, absoluteY }) => block([
+      nativeEvent: ({ state, absoluteY, absoluteX }) => block([
         cond(
           and(
             eq(state, GestureState.BEGAN),
             neq(this.tapGestureState, GestureState.BEGAN)
           ), [
-            set(this.touchAbsolute, absoluteY),
+            set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
             debug('container tap begin', this.touchAbsolute),
           ]),
         cond(
