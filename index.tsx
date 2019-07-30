@@ -155,6 +155,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const offset = new Value(0)
       const size = new Value(0)
+
       const midpoint = sub(add(offset, divide(size, 2)), this.containerOffset)
       const isAfterActive = greaterThan(index, this.activeRowIndex)
 
@@ -221,9 +222,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ref: React.createRef(),
         offset,
         size,
+        measurements: {
+          size: 0,
+          offset: 0,
+        },
         translate: block([
           onChangeTranslate,
           onChange(this.spacerIndex, [
+            debug('index change', this.spacerIndex),
             cond(eq(this.spacerIndex, index), [
               set(this.hoverAnimConfig.toValue, animateTo),
             ]),
@@ -295,7 +301,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { activeRowIndex } = this.state
     const { ref } = this.cellData[index]
     if (
-      // activeRowIndex === -1 || 
+      activeRowIndex !== -1 ||
       index === -1 ||
       !(ref.current && ref.current._component)) {
       return
@@ -305,47 +311,60 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       console.log(`measure index ${index}: wdith ${w} height ${h} pagex ${pageX} pagey ${pageY}`)
       this.cellData[index].size.setValue(horizontal ? w : h)
       this.cellData[index].offset.setValue(horizontal ? pageX : pageY)
+      this.cellData[index].measurements.size = h
     })
   }
 
   renderItem = ({ item, index }) => {
-    const { renderItem, horizontal } = this.props
+    const { renderItem, horizontal, data } = this.props
     const { activeRowIndex } = this.state
+    const isLast = index === data.length - 1
     const cellData = this.cellData[index]
     const { ref, translate } = cellData
     const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
+
+    console.log('rowsie1!!', activeRowIndex >= 0 && this.cellData[activeRowIndex].measurements.size)
+
     return (
-      <Animated.View
-        onLayout={() => this.measureCell([index])}
-        style={{
-          transform,
-          flex: 1,
-          flexDirection: horizontal ? 'row' : 'column',
+      <>
+        <Animated.View
+          onLayout={() => this.measureCell([index])}
+          style={{
+            transform,
+            flex: 1,
+            flexDirection: horizontal ? 'row' : 'column',
 
-        }}
-      >
-        <TapGestureHandler
-          simultaneousHandlers={this.containerTapRef}
-          onHandlerStateChange={this.onCellTap}
+          }}
         >
-          <Animated.View
-            ref={ref}
-            style={{
-              flex: 1,
-
-            }}
+          <TapGestureHandler
+            simultaneousHandlers={this.containerTapRef}
+            onHandlerStateChange={this.onCellTap}
           >
-            {activeRowIndex !== index && (
-              <RowItem
-                index={index}
-                renderItem={renderItem}
-                item={item}
-                move={this.move}
-              />
-            )}
-          </Animated.View>
-        </TapGestureHandler>
-      </Animated.View>
+            <Animated.View
+              ref={ref}
+              style={{
+                flex: 1,
+
+              }}
+            >
+              {activeRowIndex !== index && (
+                <RowItem
+                  index={index}
+                  renderItem={renderItem}
+                  item={item}
+                  move={this.move}
+                />
+              )}
+            </Animated.View>
+          </TapGestureHandler>
+        </Animated.View>
+        {activeRowIndex >= 0 && isLast && (
+          <Animated.View
+            style={{
+              height: this.cellData[activeRowIndex].measurements.size
+            }} />
+        )}
+      </>
     )
   }
 
