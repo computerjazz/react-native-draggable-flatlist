@@ -210,6 +210,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ]),
       )
 
+      const animateTo = cond(isAfterActive, [
+        sub(sub(add(offset, size), this.activeRowSize), this.scrollOffset, this.containerOffset)
+      ], [
+          sub(offset, this.scrollOffset, this.containerOffset)
+
+        ])
+
       const cellData = {
         ref: React.createRef(),
         offset,
@@ -218,7 +225,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           onChangeTranslate,
           onChange(this.spacerIndex, [
             cond(eq(this.spacerIndex, index), [
-              set(this.hoverAnimConfig.toValue, sub(offset, horizontal ? 0 : this.scrollOffset, this.containerOffset)),
+              set(this.hoverAnimConfig.toValue, animateTo),
             ]),
           ]),
           cond(this.hasMoved, [
