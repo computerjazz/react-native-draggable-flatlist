@@ -39,6 +39,7 @@ const {
 import {
   StyleSheet,
   VirtualizedListProps,
+  Text,
 } from 'react-native'
 
 interface Props<T> extends VirtualizedListProps<T> {
@@ -58,15 +59,14 @@ interface Props<T> extends VirtualizedListProps<T> {
 }
 
 type State = {
-  activeRowIndex: number,
+  activeRowKey: string,
   hoverComponent: null | React.ComponentType,
 }
 
 class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   state = {
-    activeRowIndex: -1,
-    toRowIndex: -1,
+    activeRowKey: null,
     hoverComponent: null,
   }
 
@@ -113,13 +113,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverMid = add(this.hoverAnim, divide(this.activeRowSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
 
-  cellData = []
+  cellData = {}
   cellAnim = []
+  refs = {}
   moveEndParams = [this.activeRowIndex, this.spacerIndex]
 
   setCellData = (data = []) => {
     const { horizontal } = this.props
-    data.forEach((_, index) => {
+    data.forEach((item, index) => {
       if (!this.cellAnim[index]) {
         const clock = new Clock()
         const config = {
@@ -215,11 +216,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         sub(sub(add(offset, size), this.activeRowSize), this.scrollOffset, this.containerOffset)
       ], [
           sub(offset, this.scrollOffset, this.containerOffset)
-
         ])
 
       const cellData = {
-        ref: React.createRef(),
         offset,
         size,
         measurements: {
@@ -242,8 +241,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             ])
         ]),
       }
-
-      this.cellData[index] = cellData
+      const key = this.keyExtractor(item, index)
+      this.cellData[key] = cellData
     })
   }
 
@@ -256,17 +255,22 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (prevProps.data !== this.props.data) {
       this.setCellData(this.props.data)
     }
+
+    if (prevProps.extraData !== this.props.extraData) {
+      this.setState({ extraData: this.props.extraData })
+    }
+
   }
 
-  move = (hoverComponent, index) => {
+  move = (hoverComponent, index, key) => {
     const { onMoveBegin } = this.props
     console.log('setting active row!!', index)
 
     this.activeRowIndex.setValue(index)
-    this.activeRowSize.setValue(this.cellData[index].size)
+    this.activeRowSize.setValue(this.cellData[key].size)
 
     this.setState({
-      activeRowIndex: index,
+      activeRowKey: key,
       hoverComponent,
     }, () => onMoveBegin && onMoveBegin(index)
     )
@@ -291,44 +295,59 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       })
     }
     this.setState({
-      activeRowIndex: -1,
+      activeRowKey: null,
       hoverComponent: null,
     })
   }
 
-  measureCell = ([index]: number[]) => {
+  measureCell = (ref, key) => {
     const { horizontal } = this.props
-    const { activeRowIndex } = this.state
-    const { ref } = this.cellData[index]
+    const { activeRowKey } = this.state
     if (
-      activeRowIndex !== -1 ||
-      index === -1 ||
+      activeRowKey !== null ||
       !(ref.current && ref.current._component)) {
       return
     }
 
     ref.current._component.measure((x, y, w, h, pageX, pageY) => {
-      console.log(`measure index ${index}: wdith ${w} height ${h} pagex ${pageX} pagey ${pageY}`)
-      this.cellData[index].size.setValue(horizontal ? w : h)
-      this.cellData[index].offset.setValue(horizontal ? pageX : pageY)
-      this.cellData[index].measurements.size = h
+      console.log(`measure key ${key}: wdith ${w} height ${h} pagex ${pageX} pagey ${pageY}`)
+      const cellData = this.cellData[key]
+      const size = horizontal ? w : h
+
+
+
+      this.setState({
+        [key]: size
+      })
+
+
+
+      const offset = horizontal ? pageX : pageY
+      cellData.size.setValue(size)
+      cellData.offset.setValue(offset)
+      cellData.measurements.size = size
+      cellData.measurements.offset = offset
     })
   }
 
   renderItem = ({ item, index }) => {
     const { renderItem, horizontal, data } = this.props
-    const { activeRowIndex } = this.state
+    const { activeRowKey } = this.state
+    const key = this.keyExtractor(item, index)
     const isLast = index === data.length - 1
-    const cellData = this.cellData[index]
-    const { ref, translate } = cellData
+    const cellData = this.cellData[key]
+    const { translate } = cellData
     const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
-
-    console.log('rowsie1!!', activeRowIndex >= 0 && this.cellData[activeRowIndex].measurements.size)
+    let ref = this.refs[key]
+    if (!ref) {
+      ref = React.createRef()
+      this.refs[key] = ref
+    }
 
     return (
       <>
         <Animated.View
-          onLayout={() => this.measureCell([index])}
+          onLayout={() => this.measureCell(ref, key)}
           style={{
             transform,
             flex: 1,
@@ -347,21 +366,33 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
               }}
             >
-              {activeRowIndex !== index && (
+              {activeRowKey !== key && (
                 <RowItem
+                  itemKey={key}
                   index={index}
                   renderItem={renderItem}
                   item={item}
                   move={this.move}
                 />
               )}
+
+
+              <Animated.View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+              }}>
+                <Text style={{ color: 'white' }}>{`index: ${index}`}</Text>
+                <Text style={{ color: 'white' }}>{`size: ${this.cellData[key].measurements.size}`}</Text>
+                <Text style={{ color: 'white' }}>{`offset: ${this.cellData[key].measurements.offset}`}</Text>
+              </Animated.View>
             </Animated.View>
           </TapGestureHandler>
         </Animated.View>
-        {activeRowIndex >= 0 && isLast && (
+        {activeRowKey && isLast && (
           <Animated.View
             style={{
-              height: this.cellData[activeRowIndex].measurements.size
+              height: this.cellData[activeRowKey].measurements.size
             }} />
         )}
       </>
@@ -410,12 +441,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     )
   }
 
-  keyExtractor = (item, index) => `draggable-flatlist-item-${index}`
-
-  componentDidUpdate = (prevProps: Props) => {
-    if (prevProps.extraData !== this.props.extraData) {
-      this.setState({ extraData: this.props.extraData })
-    }
+  keyExtractor = (item, index) => {
+    if (this.props.keyExtractor) return this.props.keyExtractor(item, index)
+    else return `draggable-flatlist-item-${index}`
   }
 
   onContainerLayout = () => {
@@ -507,7 +535,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ])
 
   render() {
-    const { keyExtractor } = this.props
     const { hoverComponent } = this.state
 
     return (
@@ -531,7 +558,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 scrollEnabled={!hoverComponent}
                 renderItem={this.renderItem}
                 extraData={this.state}
-                keyExtractor={keyExtractor || this.keyExtractor}
+                keyExtractor={this.keyExtractor}
                 onScroll={this.onScroll}
                 scrollEventThrottle={16}
               />
@@ -553,23 +580,28 @@ DraggableFlatList.defaultProps = {
 }
 
 type RowItemProps = {
-  move: (hoverComponent: React.ComponentType, index: number) => void,
+  move: (
+    hoverComponent: React.ComponentType,
+    index: number,
+    itemKey: string,
+  ) => void,
   index: number,
   item: any,
   renderItem: (item: any) => React.ComponentType
+  itemKey: string
 }
 
 class RowItem extends React.PureComponent<RowItemProps> {
 
   move = () => {
-    const { move, renderItem, item, index } = this.props
+    const { move, renderItem, item, index, itemKey } = this.props
     const hoverComponent = renderItem({
       isActive: true,
       item,
       index,
       move: () => console.log('## attempt to call move on hovering component'),
     })
-    move(hoverComponent, index)
+    move(hoverComponent, index, itemKey)
   }
 
   render() {
