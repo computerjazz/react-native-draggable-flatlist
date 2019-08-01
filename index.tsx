@@ -116,8 +116,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     restDisplacementThreshold: 0.05,
   }
 
-  activeRowIndex = new Value(-1)
-  isHovering = greaterThan(this.activeRowIndex, -1)
+  activeIndex = new Value(-1)
+  isHovering = greaterThan(this.activeIndex, -1)
 
   spacerIndex = new Value(-1)
   activeRowSize = new Value<number>(0)
@@ -137,7 +137,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   offsets = new Map<string, Animated.Node<number>>()
   sizes = new Map<string, Animated.Node<number>>()
 
-  moveEndParams = [this.activeRowIndex, this.spacerIndex]
+  moveEndParams = [this.activeIndex, this.spacerIndex]
 
   setCellData = (data = []) => {
     const { horizontal } = this.props
@@ -190,7 +190,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
 
       const midpoint = sub(add(offset, divide(size, 2)), this.containerOffset)
-      const isAfterActive = greaterThan(index, this.activeRowIndex)
+      const isAfterActive = greaterThan(index, this.activeIndex)
 
       const hoverMid = cond(
         isAfterActive,
@@ -201,7 +201,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const translate = cond(
         and(
           this.isHovering,
-          neq(index, this.activeRowIndex),
+          neq(index, this.activeIndex),
         ),
         cond(
           greaterOrEq(hoverMid, this.hoverOffset),
@@ -289,7 +289,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   componentDidUpdate(prevProps) {
     if (prevProps.data !== this.props.data) {
       this.setCellData(this.props.data)
-      this.activeRowIndex.setValue(-1)
+      this.activeIndex.setValue(-1)
       this.spacerIndex.setValue(-1)
       this.flushOnUpdateQueue()
     }
@@ -312,7 +312,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { onMoveBegin } = this.props
     console.log('setting active row!!', index)
 
-    this.activeRowIndex.setValue(index)
+    this.activeIndex.setValue(index)
     this.activeRowSize.setValue(this.sizes.get(activeRowKey))
 
     this.setState({
@@ -363,35 +363,36 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   measureCell = (key) => {
-    const { horizontal } = this.props
-    const { activeRowKey } = this.state
-    const ref = this.cellRefs.get(key)
+    return new Promise((resolve, reject) => {
+      const { horizontal } = this.props
+      const { activeRowKey } = this.state
+      const ref = this.cellRefs.get(key)
 
-    const isHovering = activeRowKey !== null
-    const noRef = !ref
-    const invalidRef = !noRef && !(ref.current && ref.current._component)
-    if (
-      isHovering ||
-      noRef ||
-      invalidRef) {
-      let reason = isHovering ? "is hovering" : noRef ? "no ref" : "invalid ref"
-      console.log(`## can't measure ${key} reason: ${reason}`)
-      return
-    }
+      const isHovering = activeRowKey !== null
+      const noRef = !ref
+      const invalidRef = !noRef && !(ref.current && ref.current._component)
+      if (
+        isHovering ||
+        noRef ||
+        invalidRef) {
+        let reason = isHovering ? "is hovering" : noRef ? "no ref" : "invalid ref"
+        console.log(`## can't measure ${key} reason: ${reason}`)
+        return reject()
+      }
 
-    ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
-      console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
-      const cellData = this.cellData.get(key)
-      const size = horizontal ? w : h
-      const offset = horizontal ? x : y
-      this.sizes.get(key).setValue(size)
-      this.offsets.get(key).setValue(offset)
-      cellData.measurements.size = size
-    });
+      ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
+        console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
+        const cellData = this.cellData.get(key)
+        const size = horizontal ? w : h
+        const offset = horizontal ? x : y
+        this.sizes.get(key).setValue(size)
+        this.offsets.get(key).setValue(offset)
+        cellData.measurements.size = size
+        resolve()
+      });
+    })
 
   }
-
-  testVal = new Value(0)
 
   renderItem = ({ item, index }) => {
     const { renderItem, horizontal, data } = this.props
@@ -485,10 +486,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       cond(eq(this.hoverAnimState.finished, 1), [
         resetSpring,
         stopClock(this.hoverClock),
-        debug('calling onMoveEnd for index', this.activeRowIndex),
+        debug('calling onMoveEnd for index', this.activeIndex),
         call(this.moveEndParams, this.onMoveEnd),
         set(this.hasMoved, 0),
-        // set(this.activeRowIndex, -1),
+        // set(this.activeIndex, -1),
         // set(this.spacerIndex, -1),
       ]),
       this.hoverAnimState.position
@@ -536,7 +537,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           cond(eq(state, GestureState.END), [
             debug('cell touch end', this.cellTapState),
             call(this.moveEndParams, this.onMoveEnd),
-            set(this.activeRowIndex, -1),
+            set(this.activeIndex, -1),
             set(this.spacerIndex, -1),
             set(this.hasMoved, 0),
           ]),
