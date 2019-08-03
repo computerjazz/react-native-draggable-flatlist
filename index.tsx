@@ -6,7 +6,7 @@ import {
   State as GestureState,
   FlatList
 } from "react-native-gesture-handler"
-import Animated, { Easing } from "react-native-reanimated"
+import Animated from "react-native-reanimated"
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
 
@@ -78,8 +78,11 @@ type CellData = {
   },
   translate: Animated.Node<number>,
   currentIndex: Animated.Node<number>,
+  onLayout: () => void,
 }
 
+// Run callback on next paint:
+// https://stackoverflow.com/questions/26556436/react-after-render-code
 function onNextFrame(callback) {
   setTimeout(function () {
     requestAnimationFrame(callback)
@@ -155,6 +158,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const cell = this.cellData.get(key)
 
       if (cell) {
+        // If key is already instantiated, all
+        // we need to do is update its index
         return cell.currentIndex.setValue(index)
       }
 
