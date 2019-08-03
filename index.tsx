@@ -154,7 +154,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       if (cell) {
         // If key is already instantiated, all
         // we need to do is update its index
-        return cell.currentIndex.setValue(index)
+        cell.currentIndex.setValue(index)
+        return
+
       }
 
       const currentIndex = new Value(index)
@@ -188,6 +190,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             set(state.finished, 0),
           ]),
         ]),
+        debug(`run clock ${key}`, state.position),
         state.position,
       ])
 
@@ -207,7 +210,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const translate = cond(and(
         this.isHovering,
         neq(currentIndex, this.activeIndex)
-      ), cond(isAfterHoverMid, this.activeRowSize, 0), 0)
+      ), [
+          cond(isAfterHoverMid, this.activeRowSize, 0),
+        ],
+        0)
 
       const onChangeTranslate = onChange(translate, [
         debug(`onChangeTranslate ${key}`, translate),
@@ -255,6 +261,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           debug('onChangeSpacerIndex', this.spacerIndex),
           set(this.hoverAnimConfig.toValue, animateTo),
         ]),
+        cond(eq(this.spacerIndex, -1), [
+          debug(`reset ${key}`, this.spacerIndex),
+          set(state.position, 0),
+        ]),
       ])
 
       const cellData = {
@@ -274,7 +284,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         translate: block([
           onChangeTranslate,
           onChangeSpacerIndex,
-          cond(this.hasMoved, cond(this.isHovering, runClock, 0), translate)
+          cond(
+            this.hasMoved,
+            cond(this.isHovering, runClock, 0),
+            translate
+          )
         ]),
       }
       this.cellData.set(key, cellData)
