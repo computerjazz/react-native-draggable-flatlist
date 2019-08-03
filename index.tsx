@@ -255,12 +255,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ])
 
       const onChangeSpacerIndex = onChange(this.spacerIndex, [
-        debug('spacerIndex change', this.spacerIndex),
         cond(eq(this.spacerIndex, currentIndex), [
           set(this.hoverAnimConfig.toValue, animateTo),
         ]),
         cond(eq(this.spacerIndex, -1), [
           // Hard reset to prevent stale state bugs
+          cond(clockRunning(clock), stopClock(clock)),
           set(state.position, 0),
           set(state.finished, 0),
           set(state.time, 0),
@@ -325,7 +325,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   move = (hoverComponent, index, activeKey) => {
     const { onMoveBegin } = this.props
-    console.log('setting active row!!', index)
+    console.log('setting active cell!!', activeKey)
 
     const setActiveItem = () => {
       this.spacerIndex.setValue(index)
@@ -410,7 +410,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
 
       ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
-        // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
+        console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
         const cellData = this.cellData.get(key)
         const size = horizontal ? w : h
         const offset = horizontal ? x : y
