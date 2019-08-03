@@ -442,10 +442,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const activeCellData = this.cellData.get(activeKey)
 
     return (
-      <>
         <Animated.View
           pointerEvents={activeKey ? "none" : "audo"}
-          onLayout={onLayout}
           style={{
             flex: 1,
             transform,
@@ -458,6 +456,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           >
             <Animated.View
               ref={ref}
+              onLayout={onLayout}
               style={{
                 flex: 1,
                 [horizontal ? "width" : "height"]: isActiveRow ? 0 : undefined,
@@ -483,16 +482,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               </Animated.View>
             </Animated.View>
           </TapGestureHandler>
+          {isLast && activeCellData ? (
+            <Animated.View
+              style={{
+                opacity: 0,
+                [horizontal ? "width" : "height"]: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
+              }}
+            />
+          ) : null}
         </Animated.View>
-        {isLast && activeCellData ? (
-          <Animated.View
-            style={{
-              opacity: 0,
-              height: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
-            }}
-          />
-        ) : null}
-      </>
     )
   }
 
