@@ -102,6 +102,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   containerTapRef = React.createRef()
 
   containerOffset = new Value(0)
+  containerBottom = new Value(0)
 
   touchAbsolute = new Value(0)
   touchCellOffset = new Value(0)
@@ -437,94 +438,94 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.cellRefs.set(key, ref)
     }
 
-    const isActiveRow = activeKey === key
+    const isActiveCell = activeKey === key
     const isLast = index === data.length - 1
     const activeCellData = this.cellData.get(activeKey)
 
     return (
-        <Animated.View
-          pointerEvents={activeKey ? "none" : "audo"}
-          style={{
-            flex: 1,
-            transform,
-            flexDirection: horizontal ? 'row' : 'column',
-          }}
+      <Animated.View
+        pointerEvents={activeKey ? "none" : "audo"}
+        style={{
+          flex: 1,
+          transform,
+          flexDirection: horizontal ? 'row' : 'column',
+        }}
+      >
+        <TapGestureHandler
+          simultaneousHandlers={this.containerTapRef}
+          onHandlerStateChange={this.onCellTap}
         >
-          <TapGestureHandler
-            simultaneousHandlers={this.containerTapRef}
-            onHandlerStateChange={this.onCellTap}
+          <Animated.View
+            ref={ref}
+            onLayout={onLayout}
+            style={{
+              flex: 1,
+              [horizontal ? "width" : "height"]: isActiveCell ? 0 : undefined,
+              opacity: isActiveCell ? 0 : 1
+            }}
           >
-            <Animated.View
-              ref={ref}
-              onLayout={onLayout}
-              style={{
-                flex: 1,
-                [horizontal ? "width" : "height"]: isActiveRow ? 0 : undefined,
-                opacity: isActiveRow ? 0 : 1
-              }}
-            >
-              <RowItem
-                itemKey={key}
-                index={index}
-                renderItem={renderItem}
-                item={item}
-                move={this.move}
-              />
-              <Animated.View style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-              }}>
-                <Text style={{ color: 'white' }}>{`index: ${index}`}</Text>
-                <Text style={{ color: 'white' }}>{`key: ${key}`}</Text>
-                <Text style={{ color: 'white' }}>{`size: ${measurements.size}`}</Text>
-                <Text style={{ color: 'white' }}>{`offset: ${measurements.offset}`}</Text>
-              </Animated.View>
-            </Animated.View>
-          </TapGestureHandler>
-          {isLast && activeCellData ? (
-            <Animated.View
-              style={{
-                opacity: 0,
-                [horizontal ? "width" : "height"]: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
-              }}
+            <RowItem
+              itemKey={key}
+              index={index}
+              renderItem={renderItem}
+              item={item}
+              move={this.move}
             />
-          ) : null}
-        </Animated.View>
+            <Animated.View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+            }}>
+              <Text style={{ color: 'white' }}>{`index: ${index}`}</Text>
+              <Text style={{ color: 'white' }}>{`key: ${key}`}</Text>
+              <Text style={{ color: 'white' }}>{`size: ${measurements.size}`}</Text>
+              <Text style={{ color: 'white' }}>{`offset: ${measurements.offset}`}</Text>
+            </Animated.View>
+          </Animated.View>
+        </TapGestureHandler>
+        {isLast && activeCellData ? (
+          <Animated.View
+            style={{
+              opacity: 0,
+              [horizontal ? "width" : "height"]: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
+            }}
+          />
+        ) : null}
+      </Animated.View>
     )
   }
+
+  resetHoverSpring = [
+    set(this.hoverAnimState.time, 0),
+    set(this.hoverAnimState.position, this.hoverAnimConfig.toValue),
+    set(this.hoverAnimState.finished, 0),
+    set(this.hoverAnimState.velocity, 0),
+  ]
+
+  runHoverClock = cond(clockRunning(this.hoverClock), [
+    spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
+    cond(eq(this.hoverAnimState.finished, 1), [
+      this.resetHoverSpring,
+      stopClock(this.hoverClock),
+      debug('calling onMoveEnd for index', this.activeIndex),
+      call(this.moveEndParams, this.onMoveEnd),
+      set(this.hasMoved, 0),
+    ]),
+    this.hoverAnimState.position
+  ])
 
   renderHoverComponent = () => {
     const { hoverComponent } = this.state
     const { horizontal } = this.props
 
-    const resetSpring = [
-      set(this.hoverAnimState.time, 0),
-      set(this.hoverAnimState.position, this.hoverAnimConfig.toValue),
-      set(this.hoverAnimState.finished, 0),
-      set(this.hoverAnimState.velocity, 0),
-    ]
-
-    const runClock = cond(clockRunning(this.hoverClock), [
-      spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
-      cond(eq(this.hoverAnimState.finished, 1), [
-        resetSpring,
-        stopClock(this.hoverClock),
-        debug('calling onMoveEnd for index', this.activeIndex),
-        call(this.moveEndParams, this.onMoveEnd),
-        set(this.hasMoved, 0),
-      ]),
-      this.hoverAnimState.position
-    ])
-
-    return !!hoverComponent && (
+    return (
       <Animated.View style={[
         styles[`hoverComponent${horizontal ? "Horizontal" : "Vertical"}`],
         {
           transform: [{
             [`translate${horizontal ? "X" : "Y"}`]: block([
               cond(clockRunning(this.hoverClock), [
-                runClock,
+                this.runHoverClock,
               ], this.hoverAnim)
             ])
           }]
@@ -654,7 +655,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 onScroll={this.onScroll}
                 scrollEventThrottle={16}
               />
-              {this.renderHoverComponent()}
+              {!!hoverComponent && this.renderHoverComponent()}
             </Animated.View>
           </PanGestureHandler>
         </Animated.View>
