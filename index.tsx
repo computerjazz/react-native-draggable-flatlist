@@ -216,7 +216,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const onChangeTranslate = onChange(translate, [
         cond(not(this.hasMoved), set(state.position, translate)),
-        cond(this.isHovering, [
+        cond(and(this.isHovering, this.hasMoved), [
           or(
             cond(and(
               not(isAfterActive),
@@ -255,6 +255,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ])
 
       const onChangeSpacerIndex = onChange(this.spacerIndex, [
+        debug('spacerIndex change', this.spacerIndex),
         cond(eq(this.spacerIndex, currentIndex), [
           set(this.hoverAnimConfig.toValue, animateTo),
         ]),
@@ -327,6 +328,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     console.log('setting active row!!', index)
 
     const setActiveItem = () => {
+      this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
       this.activeRowSize.setValue(this.cellData.get(activeKey).size)
 
