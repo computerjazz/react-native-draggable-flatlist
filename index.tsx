@@ -109,6 +109,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   tapGestureState = new Value(0)
   cellTapState = new Value(0)
   hasMoved = new Value(0)
+  disabled = new Value(0)
 
   hoverClock = new Clock()
   hoverAnimState = {
@@ -225,7 +226,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       ), cond(isAfterHoverMid, this.activeRowSize, 0), 0)
 
       const onChangeTranslate = onChange(translate, [
-        debug(`${key} is after hover?`, isAfterHoverMid),
         cond(not(this.hasMoved), set(state.position, translate)),
         cond(this.isHovering, [
           or(
@@ -306,16 +306,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   componentDidUpdate = async (prevProps) => {
     if (prevProps.data !== this.props.data) {
-      console.log('remeasure@@')
       // Remeasure on next paint  
       this.setCellData(this.props.data)
       onNextFrame(this.flushQueue)
+      this.disabled.setValue(0)
     }
   }
 
   queue: (() => Promise<void>[])[] = []
   flushQueue = async () => {
-    console.log('flush queu!')
     for (let fn of this.queue) {
       await Promise.all(fn())
     }
@@ -326,14 +325,25 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { onMoveBegin } = this.props
     console.log('setting active row!!', index)
 
-    this.activeIndex.setValue(index)
-    this.activeRowSize.setValue(this.sizes.get(activeKey))
+    const setActiveItem = () => {
+      this.activeIndex.setValue(index)
+      this.activeRowSize.setValue(this.sizes.get(activeKey))
 
-    this.setState({
-      activeKey,
-      hoverComponent,
-    }, () => onMoveBegin && onMoveBegin(index)
-    )
+      this.setState({
+        activeKey,
+        hoverComponent,
+      }, () => onMoveBegin && onMoveBegin(index)
+      )
+    }
+
+    if (this.state.hoverComponent) {
+      // We can't move more than one row at a time
+      // TODO: Put action on queue
+      console.log("## Can't set multiple active items")
+
+    } else setActiveItem()
+
+
   }
 
   onRelease = ([index]) => {
@@ -344,7 +354,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
 
   onMoveEnd = ([from, to]) => {
-    console.log("JS on move end!!", from, to)
+    console.log("OME Begin!!", from, to)
     const { onMoveEnd } = this.props
     if (onMoveEnd) {
       const { data } = this.props
@@ -364,7 +374,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const onUpdate = () => {
       const lo = Math.min(from, to) - 1
       const hi = Math.max(from, to) + 1
-      console.log(`lo ${lo} hi ${hi}`)
+      console.log(`OME measure: lo ${lo} hi ${hi}`)
       const promises: Promise<void>[] = []
       for (let i = lo; i < hi; i++) {
         const item = this.props.data[i]
@@ -401,7 +411,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
 
       ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
-        console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
+        // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
         const cellData = this.cellData.get(key)
         const size = horizontal ? w : h
         const offset = horizontal ? x : y
@@ -428,10 +438,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
 
     const isActiveRow = activeKey === key
+    const isLast = index === data.length - 1
+    const activeCellData = this.cellData.get(activeKey)
 
     return (
       <>
         <Animated.View
+          pointerEvents={activeKey ? "none" : "audo"}
           onLayout={onLayout}
           style={{
             flex: 1,
@@ -471,7 +484,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             </Animated.View>
           </TapGestureHandler>
         </Animated.View>
-        {index === data.length - 1 ? <Animated.View style={{ opacity: 0 }}>{this.state.hoverComponent}</Animated.View> : null}
+        {isLast && activeCellData ? (
+          <Animated.View
+            style={{
+              opacity: 0,
+              height: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
+            }}
+          />
+        ) : null}
       </>
     )
   }
@@ -540,6 +560,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           ]),
           cond(eq(state, GestureState.END), [
             debug('cell touch end', this.cellTapState),
+            set(this.disabled, 1),
             call([this.activeIndex], this.onRelease),
             call(this.moveEndParams, this.onMoveEnd),
             set(this.hasMoved, 0),
@@ -565,18 +586,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       nativeEvent: ({ state, absoluteY, absoluteX }) => block([
         cond(
           and(
+            not(this.disabled),
             eq(state, GestureState.BEGAN),
             neq(this.tapGestureState, GestureState.BEGAN)
           ), [
             set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
             debug('container tap begin', this.touchAbsolute),
-          ]),
-        cond(
-          and(
-            eq(state, GestureState.FAILED),
-            neq(this.tapGestureState, GestureState.FAILED)
-          ), [
-            debug('container tap fail', this.touchAbsolute),
           ]),
         set(this.tapGestureState, state),
       ])
@@ -590,6 +605,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           eq(state, GestureState.END),
           neq(this.panGestureState, GestureState.END),
         ), [
+            set(this.disabled, 1),
+            debug('disabling!!', this.disabled),
             set(this.hoverAnimState.position, this.hoverAnim),
             startClock(this.hoverClock),
             call([this.activeIndex], this.onRelease),
@@ -602,10 +619,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   onPanGestureEvent = event([
     {
       nativeEvent: ({ absoluteY, absoluteX }) => block([
-        cond(eq(this.panGestureState, GestureState.ACTIVE), [
-          cond(not(this.hasMoved), set(this.hasMoved, 1)),
-          set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
-        ])
+        cond(and(
+          eq(this.panGestureState, GestureState.ACTIVE),
+          not(this.disabled),
+        ), [
+            cond(not(this.hasMoved), set(this.hasMoved, 1)),
+            set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
+          ])
       ]),
     },
   ])
