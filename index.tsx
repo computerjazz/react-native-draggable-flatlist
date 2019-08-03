@@ -52,6 +52,7 @@ interface Props<T> extends VirtualizedListProps<T> {
   horizontal: boolean,
   data: T[],
   onMoveBegin?: (index: number) => void,
+  onRelease?: (index: number) => void,
   onMoveEnd?: (params: {
     data: T[],
     from: number,
@@ -330,6 +331,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     )
   }
 
+  onRelease = ([index]) => {
+    const { onRelease } = this.props
+    console.log('on release', index)
+    onRelease && onRelease(index)
+  }
+
 
   onMoveEnd = ([from, to]) => {
     console.log("JS on move end!!", from, to)
@@ -528,6 +535,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           ]),
           cond(eq(state, GestureState.END), [
             debug('cell touch end', this.cellTapState),
+            call([this.activeIndex], this.onRelease),
             call(this.moveEndParams, this.onMoveEnd),
             set(this.hasMoved, 0),
           ]),
@@ -579,6 +587,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ), [
             set(this.hoverAnimState.position, this.hoverAnim),
             startClock(this.hoverClock),
+            call([this.activeIndex], this.onRelease),
           ]),
         set(this.panGestureState, state),
       ])
