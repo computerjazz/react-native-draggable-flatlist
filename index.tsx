@@ -444,7 +444,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     return (
       <Animated.View
-        pointerEvents={activeKey ? "none" : "audo"}
+        pointerEvents={activeKey ? "none" : "auto"}
         style={{
           flex: 1,
           transform,
