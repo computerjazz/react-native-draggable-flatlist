@@ -40,6 +40,7 @@ const {
   startClock,
   stopClock,
   spring,
+  defined,
 } = Animated
 
 import {
@@ -606,8 +607,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ), [
             set(this.disabled, 1),
             debug('disabling!!', this.disabled),
-            set(this.hoverAnimState.position, this.hoverAnim),
-            startClock(this.hoverClock),
+            cond(defined(this.hoverClock), [
+              set(this.hoverAnimState.position, this.hoverAnim),
+              startClock(this.hoverClock),
+            ]),
             call([this.activeIndex], this.onRelease),
           ]),
         set(this.panGestureState, state),
