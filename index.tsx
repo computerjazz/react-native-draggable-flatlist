@@ -190,7 +190,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             set(state.finished, 0),
           ]),
         ]),
-        debug(`run clock ${key}`, state.position),
         state.position,
       ])
 
@@ -216,7 +215,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         0)
 
       const onChangeTranslate = onChange(translate, [
-        debug(`onChangeTranslate ${key}`, translate),
         cond(not(this.hasMoved), set(state.position, translate)),
         cond(this.isHovering, [
           or(
@@ -258,12 +256,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const onChangeSpacerIndex = onChange(this.spacerIndex, [
         cond(eq(this.spacerIndex, currentIndex), [
-          debug('onChangeSpacerIndex', this.spacerIndex),
           set(this.hoverAnimConfig.toValue, animateTo),
         ]),
         cond(eq(this.spacerIndex, -1), [
-          debug(`reset ${key}`, this.spacerIndex),
+          // Hard reset to prevent stale state bugs
           set(state.position, 0),
+          set(state.finished, 0),
+          set(state.time, 0),
+          set(config.toValue, 0),
         ]),
       ])
 
@@ -272,7 +272,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         size,
         offset,
         onLayout: async () => {
-          console.log('on layout', key)
           if (this.state.activeKey !== key) {
             this.measureCell(key)
           }
@@ -563,9 +562,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
   ])
 
+
   onPanStateChange = event([
     {
-      nativeEvent: ({ state, absoluteX, absoluteY }) => block([
+      nativeEvent: ({ state, absoluteX, absoluteY, translationX, translationY }) => block([
         cond(and(
           not(this.isHovering),
           neq(state, this.panGestureState),
@@ -576,7 +576,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           ]),
         cond(
           and(
-            this.isHovering,
             neq(state, this.panGestureState),
             or(
               eq(state, GestureState.END),
@@ -585,16 +584,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             )
           )
           , [
-            set(this.panGestureState, state),
-            set(this.disabled, 1),
             set(this.hasMoved, 0),
-            debug('onPanStateChange: end pan', this.panGestureState),
-            cond(defined(this.hoverClock), [
-              cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
-              set(this.hoverAnimState.position, this.hoverAnim),
-              startClock(this.hoverClock),
-            ], debug("## couldn't find hover clock", this.activeIndex)),
-            call([this.activeIndex], this.onRelease),
+            cond(this.isHovering, [
+              set(this.panGestureState, state),
+              debug('onPanStateChange: end pan', this.panGestureState),
+              set(this.disabled, 1),
+              cond(defined(this.hoverClock), [
+                cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
+                set(this.hoverAnimState.position, this.hoverAnim),
+                startClock(this.hoverClock),
+              ], debug("## couldn't find hover clock", this.activeIndex)),
+              call([this.activeIndex], this.onRelease),
+            ])
           ]),
         cond(neq(state, this.panGestureState), [
           set(this.panGestureState, state),
