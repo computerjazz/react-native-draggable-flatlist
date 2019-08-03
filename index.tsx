@@ -65,6 +65,8 @@ type State = {
 }
 
 type CellData = {
+  size: Animated.Node<number>,
+  offset: Animated.Node<number>,
   measurements: {
     size: number,
     offset: number,
@@ -81,7 +83,6 @@ function onNextFrame(callback) {
     requestAnimationFrame(callback)
   })
 }
-
 
 class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
@@ -141,8 +142,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }>()
   cellData = new Map<string, CellData>()
   cellRefs = new Map<string, React.RefObject<typeof Animated.View>>()
-  offsets = new Map<string, Animated.Node<number>>()
-  sizes = new Map<string, Animated.Node<number>>()
 
   moveEndParams = [this.activeIndex, this.spacerIndex]
 
@@ -192,17 +191,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         state.position,
       ])
 
-      let offset = this.offsets.get(key)
-      if (!offset) {
-        offset = new Value(0)
-        this.offsets.set(key, offset)
-      }
-
-      let size = this.sizes.get(key)
-      if (!size) {
-        size = new Value(0)
-        this.sizes.set(key, size)
-      }
+      const size = new Value(0)
+      const offset = new Value(0)
 
       const midpoint = add(offset, divide(size, 2))
       const isAfterActive = greaterThan(currentIndex, this.activeIndex)
@@ -220,6 +210,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       ), cond(isAfterHoverMid, this.activeRowSize, 0), 0)
 
       const onChangeTranslate = onChange(translate, [
+        debug(`onChangeTranslate ${key}`, translate),
         cond(not(this.hasMoved), set(state.position, translate)),
         cond(this.isHovering, [
           or(
@@ -268,6 +259,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const cellData = {
         currentIndex,
+        size,
+        offset,
         onLayout: async () => {
           console.log('on layout', key)
           if (this.state.activeKey !== key) {
@@ -322,7 +315,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const setActiveItem = () => {
       this.activeIndex.setValue(index)
-      this.activeRowSize.setValue(this.sizes.get(activeKey))
+      this.activeRowSize.setValue(this.cellData.get(activeKey).size)
 
       this.setState({
         activeKey,
@@ -333,12 +326,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     if (this.state.hoverComponent) {
       // We can't move more than one row at a time
-      // TODO: Put action on queue
+      // TODO: Put action on queue?
       console.log("## Can't set multiple active items")
-
     } else setActiveItem()
-
-
   }
 
   onRelease = ([index]) => {
@@ -346,7 +336,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     console.log('on release', index)
     onRelease && onRelease(index)
   }
-
 
   onMoveEnd = ([from, to]) => {
     console.log("OME Begin!!", from, to)
@@ -410,8 +399,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         const cellData = this.cellData.get(key)
         const size = horizontal ? w : h
         const offset = horizontal ? x : y
-        this.sizes.get(key).setValue(size)
-        this.offsets.get(key).setValue(offset)
+        cellData.size.setValue(size)
+        cellData.offset.setValue(offset)
         cellData.measurements.size = size
         cellData.measurements.offset = offset
         resolve()
@@ -522,14 +511,16 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   keyExtractor = (item, index) => {
     if (this.props.keyExtractor) return this.props.keyExtractor(item, index)
-    else return `draggable-flatlist-item-${index}`
+    else throw new Error('You must provide a keyExtractor to DraggableFlatList')
   }
 
   onContainerLayout = () => {
     const { horizontal } = this.props
     this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
-      console.log('setContaineroOffset', horizontal ? pageX : pageY)
       this.containerOffset.setValue(horizontal ? pageX : pageY)
+      this.containerBottom.setValue(add(this.containerOffset, horizontal ? w : h))
+      console.log('setContaineroOffset', horizontal ? pageX : pageY)
+      console.log('setContaineroBottm', horizontal ? pageX + w : pageY + h)
     })
   }
 
@@ -669,6 +660,7 @@ class RowItem extends React.PureComponent<RowItemProps> {
 
   move = () => {
     const { move, renderItem, item, index, itemKey } = this.props
+    console.log('calling move!!', itemKey)
     const hoverComponent = renderItem({
       isActive: true,
       item,
