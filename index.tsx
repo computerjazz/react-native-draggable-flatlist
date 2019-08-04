@@ -32,6 +32,7 @@ const {
   divide,
   greaterThan,
   greaterOrEq,
+  lessOrEq,
   not,
   Clock,
   clockRunning,
@@ -128,11 +129,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   isHovering = greaterThan(this.activeIndex, -1)
 
   spacerIndex = new Value<number>(-1)
-  activeRowSize = new Value<number>(0)
+  activeCellSize = new Value<number>(0)
 
   scrollOffset = new Value<number>(0)
   hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, this.containerOffset)
-  hoverMid = add(this.hoverAnim, divide(this.activeRowSize, 2))
+  hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
 
   cellAnim = new Map<string, {
@@ -191,7 +192,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
       console.log('setting active cell!!', activeKey)
-      this.activeRowSize.setValue(this.cellData.get(activeKey).size)
+      this.activeCellSize.setValue(this.cellData.get(activeKey).size)
 
       this.setState({
         activeKey,
@@ -305,7 +306,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const hoverMid = cond(
         isAfterActive,
-        sub(midpoint, this.activeRowSize),
+        sub(midpoint, this.activeCellSize),
         midpoint,
       )
       const isAfterHoverMid = greaterOrEq(hoverMid, this.hoverOffset)
@@ -314,12 +315,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         this.isHovering,
         neq(currentIndex, this.activeIndex)
       ), [
-          cond(isAfterHoverMid, this.activeRowSize, 0),
+          cond(isAfterHoverMid, this.activeCellSize, 0),
         ],
         0)
 
       const cellTop = cond(isAfterActive, [
-        sub(sub(add(offset, size), this.activeRowSize), this.scrollOffset)
+        sub(sub(add(offset, size), this.activeCellSize), this.scrollOffset)
       ], [
           sub(offset, this.scrollOffset)
         ])
@@ -443,6 +444,28 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     })
   }
 
+  distToTopEdge = this.hoverAnim
+  distToBottomEdge = sub(this.containerBottom, add(this.hoverAnim, this.activeCellSize))
+
+  isAtTopEdge = cond(
+    lessOrEq(
+      this.distToTopEdge,
+      this.props.autoscrollThreshold
+    ), [
+      debug('is at top edge', this.distToTopEdge),
+      1,
+    ], 0)
+
+  isAtBottomEdge = cond(
+    lessOrEq(
+      this.distToBottomEdge,
+      this.props.autoscrollThreshold
+    ),
+    [
+      debug("is at bottom edge", this.distToBottomEdge),
+      1
+    ], 0)
+
   onScroll = event([
     {
       nativeEvent: {
@@ -526,6 +549,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             not(this.disabled),
           ), [
             cond(not(this.hasMoved), set(this.hasMoved, 1)),
+            this.isAtTopEdge,
+            this.isAtBottomEdge,
             set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
           ])
       ]),
