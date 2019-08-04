@@ -145,10 +145,21 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   moveEndParams = [this.activeIndex, this.spacerIndex]
 
+  resetHoverSpring = [
+    set(this.hoverAnimState.time, 0),
+    set(this.hoverAnimState.position, this.hoverAnimConfig.toValue),
+    set(this.hoverAnimState.finished, 0),
+    set(this.hoverAnimState.velocity, 0),
+  ]
+
   static getDerivedStateFromProps(props) {
     return {
       extraData: props.extraData
     }
+  }
+
+  static defaultProps = {
+    autoscrollThreshold: 30,
   }
 
   constructor(props) {
@@ -163,6 +174,80 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onNextFrame(this.flushQueue)
       this.disabled.setValue(0)
     }
+  }
+
+  queue: (() => Promise<void>[])[] = []
+  flushQueue = async () => {
+    for (let fn of this.queue) {
+      await Promise.all(fn())
+    }
+    this.queue = []
+  }
+
+  move = (hoverComponent, index, activeKey) => {
+    const { onMoveBegin } = this.props
+
+    const setActiveItem = () => {
+      this.spacerIndex.setValue(index)
+      this.activeIndex.setValue(index)
+      console.log('setting active cell!!', activeKey)
+      this.activeRowSize.setValue(this.cellData.get(activeKey).size)
+
+      this.setState({
+        activeKey,
+        hoverComponent,
+      }, () => onMoveBegin && onMoveBegin(index)
+      )
+    }
+
+    if (this.state.hoverComponent) {
+      // We can't move more than one row at a time
+      // TODO: Put action on queue?
+      console.log("## Can't set multiple active items")
+    } else setActiveItem()
+  }
+
+  onRelease = ([index]) => {
+    const { onRelease } = this.props
+    onRelease && onRelease(index)
+  }
+
+  onMoveEnd = ([from, to]) => {
+    console.log(`move from ${from} to ${to}`)
+    const { onMoveEnd } = this.props
+    if (onMoveEnd) {
+      const { data } = this.props
+      let newData = [...data]
+      if (from !== to) {
+        newData.splice(from, 1)
+        newData.splice(to, 0, data[from])
+      }
+
+      onMoveEnd({ from, to, data: newData })
+    }
+
+    const onUpdate = () => {
+      const lo = Math.min(from, to) - 1
+      const hi = Math.max(from, to) + 1
+      console.log(`OME measure: lo ${lo} hi ${hi}`)
+      const promises: Promise<void>[] = []
+      for (let i = lo; i < hi; i++) {
+        const item = this.props.data[i]
+        if (!item) continue
+        const key = this.keyExtractor(item, i)
+        promises.push(this.measureCell(key))
+      }
+      return promises
+    }
+
+    this.setState({
+      activeKey: null,
+      hoverComponent: null,
+    })
+
+    this.queue.push(onUpdate)
+    this.spacerIndex.setValue(-1)
+    this.activeIndex.setValue(-1)
   }
 
   setCellData = (data: T[] = []) => {
@@ -314,84 +399,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     })
   }
 
-  queue: (() => Promise<void>[])[] = []
-  flushQueue = async () => {
-    for (let fn of this.queue) {
-      await Promise.all(fn())
-    }
-    this.queue = []
-  }
-
-  move = (hoverComponent, index, activeKey) => {
-    const { onMoveBegin } = this.props
-
-    const setActiveItem = () => {
-      this.spacerIndex.setValue(index)
-      this.activeIndex.setValue(index)
-      console.log('setting active cell!!', activeKey)
-      this.activeRowSize.setValue(this.cellData.get(activeKey).size)
-
-      this.setState({
-        activeKey,
-        hoverComponent,
-      }, () => onMoveBegin && onMoveBegin(index)
-      )
-    }
-
-    if (this.state.hoverComponent) {
-      // We can't move more than one row at a time
-      // TODO: Put action on queue?
-      console.log("## Can't set multiple active items")
-    } else setActiveItem()
-  }
-
-  onRelease = ([index]) => {
-    const { onRelease } = this.props
-    onRelease && onRelease(index)
-  }
-
-  onMoveEnd = ([from, to]) => {
-    console.log(`move from ${from} to ${to}`)
-    const { onMoveEnd } = this.props
-    if (onMoveEnd) {
-      const { data } = this.props
-      let newData = [...data]
-      if (from !== to) {
-        newData.splice(from, 1)
-        newData.splice(to, 0, data[from])
-      }
-
-      onMoveEnd({
-        from,
-        to,
-        data: newData,
-      })
-    }
-
-    const onUpdate = () => {
-      const lo = Math.min(from, to) - 1
-      const hi = Math.max(from, to) + 1
-      console.log(`OME measure: lo ${lo} hi ${hi}`)
-      const promises: Promise<void>[] = []
-      for (let i = lo; i < hi; i++) {
-        const item = this.props.data[i]
-        if (!item) continue
-        const key = this.keyExtractor(item, i)
-        promises.push(this.measureCell(key))
-      }
-      return promises
-    }
-
-    this.setState({
-      activeKey: null,
-      hoverComponent: null,
-    })
-
-    this.queue.push(onUpdate)
-    this.spacerIndex.setValue(-1)
-    this.activeIndex.setValue(-1)
-  }
-
   measureCell = (key: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const { horizontal } = this.props
@@ -421,106 +428,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     })
   }
 
-  renderItem = ({ item, index }) => {
-    const { renderItem, horizontal, data } = this.props
-    const { activeKey } = this.state
-    const key = this.keyExtractor(item, index)
-
-    const { translate, onLayout } = this.cellData.get(key)
-    const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
-    let ref = this.cellRefs.get(key)
-    if (!ref) {
-      ref = React.createRef()
-      this.cellRefs.set(key, ref)
-    }
-
-    const isActiveCell = activeKey === key
-    const isLast = index === data.length - 1
-    const activeCellData = this.cellData.get(activeKey)
-
-    return (
-      <Animated.View
-        pointerEvents={activeKey ? "none" : "auto"}
-        style={{
-          flex: 1,
-          transform,
-          flexDirection: horizontal ? 'row' : 'column',
-        }}
-      >
-        <TapGestureHandler
-          simultaneousHandlers={this.panGestureHandlerRef}
-          onHandlerStateChange={this.onCellTap}
-        >
-          <Animated.View
-            ref={ref}
-            onLayout={onLayout}
-            style={{
-              flex: 1,
-              [horizontal ? "width" : "height"]: isActiveCell ? 0 : undefined,
-              opacity: isActiveCell ? 0 : 1
-            }}
-          >
-            <RowItem
-              itemKey={key}
-              index={index}
-              renderItem={renderItem}
-              item={item}
-              move={this.move}
-            />
-          </Animated.View>
-        </TapGestureHandler>
-        {isLast && activeCellData ? (
-          <Animated.View
-            style={{
-              opacity: 0,
-              [horizontal ? "width" : "height"]: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
-            }}
-          />
-        ) : null}
-      </Animated.View>
-    )
-  }
-
-  resetHoverSpring = [
-    set(this.hoverAnimState.time, 0),
-    set(this.hoverAnimState.position, this.hoverAnimConfig.toValue),
-    set(this.hoverAnimState.finished, 0),
-    set(this.hoverAnimState.velocity, 0),
-  ]
-
-  runHoverClock = cond(clockRunning(this.hoverClock), [
-    spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
-    cond(eq(this.hoverAnimState.finished, 1), [
-      this.resetHoverSpring,
-      stopClock(this.hoverClock),
-      call(this.moveEndParams, this.onMoveEnd),
-      set(this.hasMoved, 0),
-    ]),
-    this.hoverAnimState.position
-  ])
-
-  renderHoverComponent = () => {
-    const { hoverComponent } = this.state
-    const { horizontal } = this.props
-
-    return (
-      <Animated.View style={[
-        styles[`hoverComponent${horizontal ? "Horizontal" : "Vertical"}`],
-        {
-          transform: [{
-            [`translate${horizontal ? "X" : "Y"}`]: block([
-              cond(clockRunning(this.hoverClock), [
-                this.runHoverClock,
-              ], this.hoverAnim)
-            ])
-          }]
-        }]}
-      >
-        {hoverComponent}
-      </Animated.View>
-    )
-  }
-
   keyExtractor = (item, index) => {
     if (this.props.keyExtractor) return this.props.keyExtractor(item, index)
     else throw new Error('You must provide a keyExtractor to DraggableFlatList')
@@ -536,8 +443,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     })
   }
 
-
-
   onScroll = event([
     {
       nativeEvent: {
@@ -549,9 +454,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ])
 
   onGestureRelease = [
+    debug('onGestureRelease:', this.spacerIndex),
     set(this.hasMoved, 0),
-    debug('onPanStateChange: end pan', this.spacerIndex),
-    debug('is hovering', this.isHovering),
     cond(this.isHovering, [
       set(this.disabled, 1),
       cond(defined(this.hoverClock), [
@@ -628,6 +532,99 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     },
   ])
 
+  runHoverClock = cond(clockRunning(this.hoverClock), [
+    spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
+    cond(eq(this.hoverAnimState.finished, 1), [
+      this.resetHoverSpring,
+      stopClock(this.hoverClock),
+      call(this.moveEndParams, this.onMoveEnd),
+      set(this.hasMoved, 0),
+    ]),
+    this.hoverAnimState.position
+  ])
+
+  renderHoverComponent = () => {
+    const { hoverComponent } = this.state
+    const { horizontal } = this.props
+
+    return (
+      <Animated.View style={[
+        styles[`hoverComponent${horizontal ? "Horizontal" : "Vertical"}`],
+        {
+          transform: [{
+            [`translate${horizontal ? "X" : "Y"}`]: block([
+              cond(clockRunning(this.hoverClock), [
+                this.runHoverClock,
+              ], this.hoverAnim)
+            ])
+          }]
+        }]}
+      >
+        {hoverComponent}
+      </Animated.View>
+    )
+  }
+
+  renderItem = ({ item, index }) => {
+    const { renderItem, horizontal, data } = this.props
+    const { activeKey } = this.state
+    const key = this.keyExtractor(item, index)
+
+    const { translate, onLayout } = this.cellData.get(key)
+    const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
+    let ref = this.cellRefs.get(key)
+    if (!ref) {
+      ref = React.createRef()
+      this.cellRefs.set(key, ref)
+    }
+
+    const isActiveCell = activeKey === key
+    const isLast = index === data.length - 1
+    const activeCellData = this.cellData.get(activeKey)
+
+    return (
+      <Animated.View
+        pointerEvents={activeKey ? "none" : "auto"}
+        style={{
+          flex: 1,
+          transform,
+          flexDirection: horizontal ? 'row' : 'column',
+        }}
+      >
+        <TapGestureHandler
+          simultaneousHandlers={this.panGestureHandlerRef}
+          onHandlerStateChange={this.onCellTap}
+        >
+          <Animated.View
+            ref={ref}
+            onLayout={onLayout}
+            style={{
+              flex: 1,
+              [horizontal ? "width" : "height"]: isActiveCell ? 0 : undefined,
+              opacity: isActiveCell ? 0 : 1
+            }}
+          >
+            <RowItem
+              itemKey={key}
+              index={index}
+              renderItem={renderItem}
+              item={item}
+              move={this.move}
+            />
+          </Animated.View>
+        </TapGestureHandler>
+        {isLast && activeCellData ? (
+          <Animated.View
+            style={{
+              opacity: 0,
+              [horizontal ? "width" : "height"]: activeCellData.measurements.size  // We removed the active cell from the list height when it became active, so we need to add its height to the end of the list 
+            }}
+          />
+        ) : null}
+      </Animated.View>
+    )
+  }
+
   render() {
     const { hoverComponent } = this.state
     return (
@@ -652,7 +649,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 extraData={this.state}
                 keyExtractor={this.keyExtractor}
                 onScroll={this.onScroll}
-                scrollEventThrottle={16}
+                scrollEventThrottle={1}
               />
               {!!hoverComponent && this.renderHoverComponent()}
             </Animated.View>
@@ -664,12 +661,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 }
 
 export default DraggableFlatList
-
-DraggableFlatList.defaultProps = {
-  scrollPercent: 5,
-  scrollSpeed: 5,
-  contentContainerStyle: {},
-}
 
 type RowItemProps = {
   move: (
