@@ -239,43 +239,46 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           sub(offset, this.scrollOffset)
         ])
 
+      const isShiftedDown = greaterThan(translate, 0)
+
       const onChangeTranslate = onChange(translate, [
         debug(`start translate ${key} offset`, offset),
-        set(this.hoverAnimConfig.toValue, cellTop),
+        set(this.hoverAnimConfig.toValue,
+          cond(isAfterActive, cond(isShiftedDown, [sub(cellTop, size)], [cellTop]), [
+            cond(isShiftedDown, [cellTop], [add(cellTop, size)])
+          ])
+        ),
         cond(not(this.hasMoved), set(state.position, translate)),
-        cond(this.hasMoved, [
-          or(
-            cond(and(
-              not(isAfterActive),
-              greaterThan(translate, 0)
-            ),
-              set(this.spacerIndex, currentIndex)
-            ),
-            cond(and(
-              not(isAfterActive),
-              eq(translate, 0),
-            ),
-              set(this.spacerIndex, add(currentIndex, 1))
-            ),
-            cond(and(
-              isAfterActive,
-              eq(translate, 0),
-            ),
-              set(this.spacerIndex, currentIndex),
-            ),
-            cond(and(
-              isAfterActive,
-              greaterThan(translate, 0),
-            ),
-              set(this.spacerIndex, sub(currentIndex, 1))
-            )
-          ),
-          set(config.toValue, translate),
-          startClock(clock),
-        ]),
+        cond(and(
+          not(isAfterActive),
+          greaterThan(translate, 0)
+        ),
+          set(this.spacerIndex, currentIndex)
+        ),
+        cond(and(
+          not(isAfterActive),
+          eq(translate, 0),
+        ),
+          set(this.spacerIndex, add(currentIndex, 1))
+        ),
+        cond(and(
+          isAfterActive,
+          eq(translate, 0),
+        ),
+          set(this.spacerIndex, currentIndex),
+        ),
+        cond(and(
+          isAfterActive,
+          greaterThan(translate, 0),
+        ),
+          set(this.spacerIndex, sub(currentIndex, 1))
+        ),
+        set(config.toValue, translate),
+        cond(this.hasMoved, startClock(clock)),
       ])
 
       const onChangeSpacerIndex = onChange(this.spacerIndex, [
+        debug('change spacer', this.spacerIndex),
         cond(eq(this.spacerIndex, -1), [
           // Hard reset to prevent stale state bugs
           cond(clockRunning(clock), stopClock(clock)),
