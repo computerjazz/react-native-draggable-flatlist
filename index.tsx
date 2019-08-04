@@ -145,6 +145,26 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   moveEndParams = [this.activeIndex, this.spacerIndex]
 
+  static getDerivedStateFromProps(props) {
+    return {
+      extraData: props.extraData
+    }
+  }
+
+  constructor(props) {
+    super(props)
+    this.setCellData(props.data)
+  }
+
+  componentDidUpdate = async (prevProps) => {
+    if (prevProps.data !== this.props.data) {
+      // Remeasure on next paint  
+      this.setCellData(this.props.data)
+      onNextFrame(this.flushQueue)
+      this.disabled.setValue(0)
+    }
+  }
+
   setCellData = (data: T[] = []) => {
     console.log('set cell data!!')
     data.forEach((item, index) => {
@@ -213,15 +233,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ],
         0)
 
-      const animateTo = cond(isAfterActive, [
+      const cellTop = cond(isAfterActive, [
         sub(sub(add(offset, size), this.activeRowSize), this.scrollOffset)
       ], [
           sub(offset, this.scrollOffset)
         ])
 
       const onChangeTranslate = onChange(translate, [
+        debug(`start translate ${key} offset`, offset),
+        set(this.hoverAnimConfig.toValue, cellTop),
         cond(not(this.hasMoved), set(state.position, translate)),
-        cond(and(this.isHovering, this.hasMoved), [
+        cond(this.hasMoved, [
           or(
             cond(and(
               not(isAfterActive),
@@ -253,13 +275,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ]),
       ])
 
-
-
       const onChangeSpacerIndex = onChange(this.spacerIndex, [
-        debug('change spacerIndex', this.spacerIndex),
-        cond(eq(this.spacerIndex, currentIndex), [
-          set(this.hoverAnimConfig.toValue, animateTo),
-        ]),
         cond(eq(this.spacerIndex, -1), [
           // Hard reset to prevent stale state bugs
           cond(clockRunning(clock), stopClock(clock)),
@@ -295,26 +311,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
       this.cellData.set(key, cellData)
     })
-  }
-
-  static getDerivedStateFromProps(props) {
-    return {
-      extraData: props.extraData
-    }
-  }
-
-  constructor(props) {
-    super(props)
-    this.setCellData(props.data)
-  }
-
-  componentDidUpdate = async (prevProps) => {
-    if (prevProps.data !== this.props.data) {
-      // Remeasure on next paint  
-      this.setCellData(this.props.data)
-      onNextFrame(this.flushQueue)
-      this.disabled.setValue(0)
-    }
   }
 
   queue: (() => Promise<void>[])[] = []
@@ -579,36 +575,30 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onPanStateChange = event([
     {
-      nativeEvent: ({ state, absoluteX, absoluteY }) => block([
-
+      nativeEvent: ({ state }) => block([
         cond(
-          and(
-            neq(state, this.panGestureState),
-            or(
+          neq(state, this.panGestureState), [
+            set(this.panGestureState, state),
+            cond(or(
               eq(state, GestureState.END),
               eq(state, GestureState.CANCELLED),
               eq(state, GestureState.FAILED),
-            )
-          )
-          , [
-            set(this.hasMoved, 0),
-            debug('onPanStateChange: end pan', this.panGestureState),
-            debug('is hovering', this.isHovering),
-            cond(this.isHovering, [
-              set(this.disabled, 1),
-              cond(defined(this.hoverClock), [
-                cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
-                set(this.hoverAnimState.position, this.hoverAnim),
-                startClock(this.hoverClock),
-              ], debug("## couldn't find hover clock", this.activeIndex)),
-              call([this.activeIndex], this.onRelease),
-            ])
-          ]),
-        cond(neq(state, this.panGestureState), [
-          set(this.panGestureState, state),
-          debug('onPanStateChange: set pan state', this.panGestureState),
-        ]),
-        debug('pan stat echange!!', this.panGestureState),
+            ), [
+                set(this.hasMoved, 0),
+                debug('onPanStateChange: end pan', this.spacerIndex),
+                debug('is hovering', this.isHovering),
+                cond(this.isHovering, [
+                  set(this.disabled, 1),
+                  cond(defined(this.hoverClock), [
+                    cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
+                    set(this.hoverAnimState.position, this.hoverAnim),
+                    startClock(this.hoverClock),
+                  ], debug("## couldn't find hover clock", this.activeIndex)),
+                  call([this.activeIndex], this.onRelease),
+                ])
+              ]),
+          ]
+        )
       ])
     }
   ])
