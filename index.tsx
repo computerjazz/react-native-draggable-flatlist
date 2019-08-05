@@ -41,6 +41,7 @@ const {
   stopClock,
   spring,
   defined,
+  max,
 } = Animated
 
 // Fire onScrollComplete when within this many
@@ -48,6 +49,7 @@ const {
 const onScrollCompleteThreshold = 2
 
 interface Props<T> extends VirtualizedListProps<T> {
+  autoscrollThreshold: number,
   horizontal: boolean,
   data: T[],
   onMoveBegin?: (index: number) => void,
@@ -113,23 +115,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hasMoved = new Value(0)
   disabled = new Value(0)
 
-  hoverClock = new Clock()
-  hoverAnimState = {
-    finished: new Value(0),
-    velocity: new Value(0),
-    position: new Value(0),
-    time: new Value(0),
-  }
 
-  hoverAnimConfig = {
-    damping: 20,
-    mass: 0.2,
-    stiffness: 100,
-    overshootClamping: false,
-    toValue: new Value(0),
-    restSpeedThreshold: 0.2,
-    restDisplacementThreshold: 0.2,
-  }
 
   activeIndex = new Value<number>(-1)
   isHovering = greaterThan(this.activeIndex, -1)
@@ -144,9 +130,30 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, this.containerOffset)
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
+  hoverScrollSnapshot = new Value(0)
+  hoverScrollDiff = new Value(0)
 
-  distToTopEdge = this.hoverAnim
-  distToBottomEdge = sub(this.containerEnd, add(this.hoverAnim, this.activeCellSize))
+  hoverTo = new Value(0)
+  hoverClock = new Clock()
+  hoverAnimState = {
+    finished: new Value(0),
+    velocity: new Value(0),
+    position: new Value(0),
+    time: new Value(0),
+  }
+
+  hoverAnimConfig = {
+    damping: 20,
+    mass: 0.2,
+    stiffness: 100,
+    overshootClamping: false,
+    toValue: sub(this.hoverTo, sub(this.scrollOffset, this.hoverScrollSnapshot)),
+    restSpeedThreshold: 0.2,
+    restDisplacementThreshold: 0.2,
+  }
+
+  distToTopEdge = max(0, this.hoverAnim)
+  distToBottomEdge = max(0, sub(this.containerEnd, add(this.hoverAnim, this.activeCellSize)))
 
   cellAnim = new Map<string, {
     config: Animated.SpringConfig,
@@ -340,7 +347,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const isShiftedDown = greaterThan(translate, 0)
 
       const onChangeTranslate = onChange(translate, [
-        set(this.hoverAnimConfig.toValue,
+        set(this.hoverScrollSnapshot, this.scrollOffset),
+        set(this.hoverTo,
           cond(isAfterActive, cond(isShiftedDown, [sub(cellTop, size)], [cellTop]), [
             cond(isShiftedDown, [cellTop], [add(cellTop, size)])
           ])
@@ -470,7 +478,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   resolveAutoscroll: () => void
 
   onAutoscrollComplete = ([offset]) => {
-    console.log('autoscroll complete!!', offset)
+    console.log('JS: autoscroll complete!!', offset)
     this.isAutoscrolling.native.setValue(0)
     this.isAutoscrolling.js = false
     if (this.resolveAutoscroll) this.resolveAutoscroll()
@@ -487,18 +495,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   autoscroll = async ([distFromTop, distFromBottom, scrollOffset]) => {
     if (this.isAutoscrolling.js) return
 
-    const autoscrollMaxAmt = 50
+    const autoscrollMaxAmt = 30
 
-    console.log(`autoscroll fromTop: ${distFromTop}, fromBottom: ${distFromBottom}, scrollOffset: ${scrollOffset}`)
     const { autoscrollThreshold } = this.props
     const scrollUp = distFromTop < autoscrollThreshold
     const scrollDown = distFromBottom < autoscrollThreshold
     if (!(scrollUp || scrollDown)) return
 
     const distFromEdge = scrollUp ? distFromTop : distFromBottom
-    const speedPct = distFromEdge / autoscrollThreshold
+    const speedPct = 1 - (distFromEdge / autoscrollThreshold)
     const offset = speedPct * autoscrollMaxAmt
     const targetOffset = scrollUp ? scrollOffset - offset : scrollOffset + offset
+    console.log(`autoscroll to offset: ${targetOffset}`)
     await this.scrollToAsync(targetOffset)
   }
 
@@ -524,13 +532,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           and(
             this.isAutoscrolling.native,
             or(
-              lessOrEq(abs(sub(this.targetScrollOffset, this.scrollOffset)), onScrollCompleteThreshold),
+              lessOrEq(
+                abs(sub(this.targetScrollOffset, this.scrollOffset)),
+                onScrollCompleteThreshold
+              ),
               this.isScrolledUp,
               this.isScrolledDown,
             )
           ), [
-            debug('autoscroll compltet', this.scrollOffset),
-            call([this.scrollOffset], this.onAutoscrollComplete)
+            debug('NATIFE: autoscroll compltet', this.scrollOffset),
+            set(this.isAutoscrolling.native, 0),
+            call([this.scrollOffset], this.onAutoscrollComplete),
           ]),
       ])
     }
@@ -545,7 +557,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
         set(this.hoverAnimState.position, this.hoverAnim),
         startClock(this.hoverClock),
-      ], debug("## couldn't find hover clock", this.activeIndex)),
+      ], debug("## couldn 't find hover clock", this.activeIndex)),
       call([this.activeIndex], this.onRelease),
     ])
   ]
@@ -609,9 +621,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             not(this.disabled),
           ), [
             cond(not(this.hasMoved), set(this.hasMoved, 1)),
-            cond(this.isAtTopEdge, debug('is at top edge', this.distToTopEdge)),
-            cond(this.isAtBottomEdge, debug('is at bottom edge', this.distToBottomEdge)),
-            cond(this.isAtEdge, call([this.distToTopEdge, this.distToBottomEdge, this.scrollOffset], this.autoscroll)),
+            cond(
+              and(
+                this.isAtEdge,
+                not(and(this.isAtTopEdge, this.isScrolledUp)),
+                not(and(this.isAtBottomEdge, this.isScrolledDown)),
+              ), call([this.distToTopEdge, this.distToBottomEdge, this.scrollOffset], this.autoscroll)),
             set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
           ])
       ]),
