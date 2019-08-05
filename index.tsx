@@ -16,6 +16,7 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
 
 const {
   Value,
+  abs,
   set,
   cond,
   add,
@@ -41,6 +42,10 @@ const {
   spring,
   defined,
 } = Animated
+
+// Fire onScrollComplete when within this many
+// px of target offset
+const onScrollCompleteThreshold = 2
 
 interface Props<T> extends VirtualizedListProps<T> {
   horizontal: boolean,
@@ -97,7 +102,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   panGestureHandlerRef = React.createRef()
 
   containerOffset = new Value(0)
-  containerBottom = new Value(0)
+  containerEnd = new Value(0)
+  containerSize = sub(this.containerEnd, this.containerOffset)
 
   touchAbsolute = new Value(0)
   touchCellOffset = new Value(0)
@@ -132,9 +138,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   activeCellSize = new Value<number>(0)
 
   scrollOffset = new Value<number>(0)
+  scrollViewSize = new Value<number>(0)
+  isScrolledUp = lessOrEq(this.scrollOffset, 0)
+  isScrolledDown = greaterOrEq(add(this.scrollOffset, this.containerSize), this.scrollViewSize)
   hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, this.containerOffset)
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
+
+  distToTopEdge = this.hoverAnim
+  distToBottomEdge = sub(this.containerEnd, add(this.hoverAnim, this.activeCellSize))
 
   cellAnim = new Map<string, {
     config: Animated.SpringConfig,
@@ -438,41 +450,89 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { horizontal } = this.props
     this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
       this.containerOffset.setValue(horizontal ? pageX : pageY)
-      this.containerBottom.setValue(add(this.containerOffset, horizontal ? w : h))
+      this.containerEnd.setValue(add(this.containerOffset, horizontal ? w : h))
       console.log('setContaineroOffset', horizontal ? pageX : pageY)
       console.log('setContaineroBottm', horizontal ? pageX + w : pageY + h)
     })
   }
 
-  distToTopEdge = this.hoverAnim
-  distToBottomEdge = sub(this.containerBottom, add(this.hoverAnim, this.activeCellSize))
+  onListContentSizeChange = (w: number, h: number) => {
+    console.log(`on layout`, w, h)
+    this.scrollViewSize.setValue(this.props.horizontal ? w : h)
+  }
+
+  isAutoscrolling = {
+    native: new Value<number>(0),
+    js: false,
+  }
+
+  targetScrollOffset = new Value<number>(0)
+  resolveAutoscroll: () => void
+
+  onAutoscrollComplete = ([offset]) => {
+    console.log('autoscroll complete!!', offset)
+    this.isAutoscrolling.native.setValue(0)
+    this.isAutoscrolling.js = false
+    if (this.resolveAutoscroll) this.resolveAutoscroll()
+  }
+
+  scrollToAsync = (offset: number) => new Promise((resolve, reject) => {
+    this.resolveAutoscroll = resolve
+    this.targetScrollOffset.setValue(offset)
+    this.isAutoscrolling.native.setValue(1)
+    this.isAutoscrolling.js = true
+    this.flatlistRef.current._component.scrollToOffset({ offset })
+  })
+
+  autoscroll = async ([distFromTop, distFromBottom, scrollOffset]) => {
+    if (this.isAutoscrolling.js) return
+
+    const autoscrollMaxAmt = 50
+
+    console.log(`autoscroll fromTop: ${distFromTop}, fromBottom: ${distFromBottom}, scrollOffset: ${scrollOffset}`)
+    const { autoscrollThreshold } = this.props
+    const scrollUp = distFromTop < autoscrollThreshold
+    const scrollDown = distFromBottom < autoscrollThreshold
+    if (!(scrollUp || scrollDown)) return
+
+    const distFromEdge = scrollUp ? distFromTop : distFromBottom
+    const speedPct = distFromEdge / autoscrollThreshold
+    const offset = speedPct * autoscrollMaxAmt
+    const targetOffset = scrollUp ? scrollOffset - offset : scrollOffset + offset
+    await this.scrollToAsync(targetOffset)
+  }
 
   isAtTopEdge = cond(
     lessOrEq(
       this.distToTopEdge,
       this.props.autoscrollThreshold
-    ), [
-      debug('is at top edge', this.distToTopEdge),
-      1,
-    ], 0)
+    ), this.distToTopEdge, 0)
 
   isAtBottomEdge = cond(
     lessOrEq(
       this.distToBottomEdge,
       this.props.autoscrollThreshold
-    ),
-    [
-      debug("is at bottom edge", this.distToBottomEdge),
-      1
-    ], 0)
+    ), this.distToBottomEdge, 0)
+
+  isAtEdge = or(this.isAtBottomEdge, this.isAtTopEdge)
 
   onScroll = event([
     {
-      nativeEvent: {
-        contentOffset: {
-          [this.props.horizontal ? "x" : "y"]: this.scrollOffset,
-        }
-      }
+      nativeEvent: ({ contentOffset }) => block([
+        set(this.scrollOffset, this.props.horizontal ? contentOffset.x : contentOffset.y),
+        cond(
+          and(
+            this.isAutoscrolling.native,
+            or(
+              lessOrEq(abs(sub(this.targetScrollOffset, this.scrollOffset)), onScrollCompleteThreshold),
+              this.isScrolledUp,
+              this.isScrolledDown,
+            )
+          ), [
+            debug('autoscroll compltet', this.scrollOffset),
+            call([this.scrollOffset], this.onAutoscrollComplete)
+          ]),
+      ])
     }
   ])
 
@@ -549,8 +609,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             not(this.disabled),
           ), [
             cond(not(this.hasMoved), set(this.hasMoved, 1)),
-            this.isAtTopEdge,
-            this.isAtBottomEdge,
+            cond(this.isAtTopEdge, debug('is at top edge', this.distToTopEdge)),
+            cond(this.isAtBottomEdge, debug('is at bottom edge', this.distToBottomEdge)),
+            cond(this.isAtEdge, call([this.distToTopEdge, this.distToBottomEdge, this.scrollOffset], this.autoscroll)),
             set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
           ])
       ]),
@@ -669,6 +730,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               <AnimatedFlatList
                 {...this.props}
                 ref={this.flatlistRef}
+                onContentSizeChange={this.onListContentSizeChange}
                 scrollEnabled={!hoverComponent}
                 renderItem={this.renderItem}
                 extraData={this.state}
