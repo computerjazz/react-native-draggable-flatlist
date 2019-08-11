@@ -349,7 +349,7 @@ class SortableFlatList extends Component {
   }
 
   render() {
-    const { horizontal, keyExtractor, FlatListComponent } = this.props
+    const { horizontal, keyExtractor, FlatListComponent, flatListRef } = this.props
     const List = FlatListComponent || FlatList;
     return (
       <View
@@ -360,7 +360,10 @@ class SortableFlatList extends Component {
         <List
           {...this.props}
           scrollEnabled={this.state.activeRow === -1}
-          ref={ref => this._flatList = ref}
+          ref={ref => {
+            flatListRef(ref)
+            this._flatList = ref
+          }}
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
