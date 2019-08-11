@@ -1,5 +1,7 @@
 import * as React from 'react'
 import {
+  Platform,
+  StatusBar,
   StyleSheet,
   VirtualizedListProps,
   findNodeHandle,
@@ -74,8 +76,8 @@ interface Props<T> extends VirtualizedListProps<T> {
 }
 
 type State = {
-  activeKey: string,
-  hoverComponent: null | React.ComponentType,
+  activeKey: string | null,
+  hoverComponent: React.ComponentType | null,
 }
 
 type CellData = {
@@ -111,6 +113,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   tapGestureHandlerRef = React.createRef()
 
   containerOffset = new Value(0)
+  androidStatusBarSize = new Value(0)
   containerEnd = new Value(0)
   containerSize = sub(this.containerEnd, this.containerOffset)
 
@@ -132,7 +135,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   scrollViewSize = new Value<number>(0)
   isScrolledUp = lessOrEq(this.scrollOffset, 0)
   isScrolledDown = greaterOrEq(add(this.scrollOffset, this.containerSize), this.scrollViewSize)
-  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, this.containerOffset)
+  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, add(this.containerOffset, this.androidStatusBarSize))
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
   hoverScrollSnapshot = new Value(0)
@@ -188,12 +191,25 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     autoScrollSpeed: 100
   }
 
-  constructor(props) {
+  constructor(props: Props<T>) {
     super(props)
     this.setCellData(props.data)
   }
 
-  componentDidUpdate = async (prevProps) => {
+  componentDidMount() {
+    if (Platform.OS === "android" && !this.props.horizontal) {
+      // Android measurements do not account for StatusBar, 
+      // so we must do so manually.
+      const { hidden, translucent } = StatusBar._propsStack.reduce((acc, cur) => {
+        if (cur.translucent !== undefined) acc.translucent = cur.translucent
+        if (cur.hidden !== null) acc.hidden = cur.hidden.value
+        return acc
+      }, { hidden: false, translucent: false })
+      if (!(hidden || translucent)) this.androidStatusBarSize.setValue(StatusBar.currentHeight)
+    }
+  }
+
+  componentDidUpdate = async (prevProps: Props<T>) => {
     if (prevProps.data !== this.props.data) {
       // Remeasure on next paint  
       this.setCellData(this.props.data)
@@ -233,12 +249,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     } else setActiveItem()
   }
 
-  onRelease = ([index]) => {
+  onRelease = ([index]: number[]) => {
     const { onRelease } = this.props
     onRelease && onRelease(index)
   }
 
-  onMoveEnd = ([from, to]) => {
+  onMoveEnd = ([from, to]: number[]) => {
     console.log(`move from ${from} to ${to}`)
     const { onMoveEnd } = this.props
     if (onMoveEnd) {
@@ -398,27 +414,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ]),
       ])
 
-      const onCellTap = event([{
-        nativeEvent: ({ state, y, x }) => block([
-          cond(and(
-            neq(state, this.cellTapState),
-            not(this.disabled),
-          )
-            , [
-              set(this.cellTapState, state),
-              cond(eq(state, GestureState.BEGAN), [
-                set(this.touchCellOffset, this.props.horizontal ? x : y),
-              ]),
-              cond(eq(state, GestureState.END), [
-                this.onGestureRelease
-              ])
-            ]
-          ),
-        ])
-      }])
 
       const cellData = {
-        onCellTap,
         currentIndex,
         size,
         offset,
@@ -459,7 +456,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
 
       ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
-        console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
+        // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
         const cellData = this.cellData.get(key)
         const size = horizontal ? w : h
         const offset = horizontal ? x : y
@@ -574,6 +571,25 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
   ])
 
+  onCellTap = event([{
+    nativeEvent: ({ state, y, x }) => block([
+      cond(and(
+        neq(state, this.cellTapState),
+        not(this.disabled),
+      )
+        , [
+          set(this.cellTapState, state),
+          cond(eq(state, GestureState.BEGAN), [
+            set(this.touchCellOffset, this.props.horizontal ? x : y),
+          ]),
+          cond(eq(state, GestureState.END), [
+            this.onGestureRelease
+          ])
+        ]
+      )
+    ])
+  }])
+
   onGestureRelease = [
     set(this.hasMoved, 0),
     cond(this.isHovering, [
@@ -599,7 +615,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
             ]),
           ]),
-        call([this.cellTapState], ([state]) => debugGestureState(state, 'onContainerTap')),
+        call([this.tapGestureState], ([state]) => debugGestureState(state, "container tap"))
       ])
     }
   ])
@@ -682,7 +698,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
 
-    const { translate, onLayout, onCellTap } = this.cellData.get(key)
+    const { translate, onLayout } = this.cellData.get(key)
     const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     let ref = this.cellRefs.get(key)
     if (!ref) {
@@ -693,22 +709,19 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const isActiveCell = activeKey === key
     const isLast = index === data.length - 1
     const activeCellData = this.cellData.get(activeKey)
-    console.log('render ', key)
 
     return (
       <Animated.View
         pointerEvents={activeKey ? "none" : "auto"}
         style={{
-          flex: 1,
           transform,
           flexDirection: horizontal ? 'row' : 'column',
         }}
       >
         <TapGestureHandler
-          onHandlerStateChange={onCellTap}
+          onHandlerStateChange={this.onCellTap}
         >
           <Animated.View
-            pointerEvents="box-none"
             ref={ref}
             onLayout={onLayout}
             style={isActiveCell ? this.activeCellStyle : undefined}
