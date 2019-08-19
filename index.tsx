@@ -238,6 +238,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       // TODO: Put action on queue?
       console.log("## Can't set multiple active items")
     } else {
+      this.isPressedIn.js = true
       this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
       console.log('setting active cell!!', activeKey)
@@ -256,6 +257,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onRelease = ([index]: readonly number[]) => {
     const { onRelease } = this.props
+    this.isPressedIn.js = false
     onRelease && onRelease(index)
   }
 
@@ -493,6 +495,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     js: false,
   }
 
+  isPressedIn = {
+    native: new Value<number>(0),
+    js: false,
+  }
+
   targetScrollOffset = new Value<number>(0)
   resolveAutoscroll?: (scrollParams: readonly number[]) => void
 
@@ -542,7 +549,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       !!isScrolledUp,
       !!isScrolledDown,
     )
-    if (targetOffset >= 0) {
+    if (targetOffset >= 0 && this.isPressedIn.js) {
       const nextScrollParams = await this.scrollToAsync(targetOffset)
       this.autoscroll(nextScrollParams)
     }
