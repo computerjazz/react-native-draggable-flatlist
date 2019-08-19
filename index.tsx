@@ -227,9 +227,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   move = (hoverComponent, index, activeKey) => {
-    const { onMoveBegin } = this.props
 
-    const setActiveItem = () => {
+    if (this.state.hoverComponent) {
+      // We can't move more than one row at a time
+      // TODO: Put action on queue?
+      console.log("## Can't set multiple active items")
+    } else {
       this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
       console.log('setting active cell!!', activeKey)
@@ -238,15 +241,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.setState({
         activeKey,
         hoverComponent,
-      }, () => onMoveBegin && onMoveBegin(index)
+      }, () => {
+        const { onMoveBegin } = this.props
+        onMoveBegin && onMoveBegin(index)
+      }
       )
     }
-
-    if (this.state.hoverComponent) {
-      // We can't move more than one row at a time
-      // TODO: Put action on queue?
-      console.log("## Can't set multiple active items")
-    } else setActiveItem()
   }
 
   onRelease = ([index]: number[]) => {
@@ -306,7 +306,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       const currentIndex = new Value(index)
 
-      if (!this.cellAnim.get(key)) {
         const clock = new Clock()
         const config = {
           ...this.hoverAnimConfig,
@@ -321,9 +320,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         }
 
         this.cellAnim.set(key, { clock, config, state })
-      }
-
-      const { clock, config, state } = this.cellAnim.get(key)
 
       const runClock = block([
         cond(clockRunning(clock), [
@@ -493,15 +489,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   targetScrollOffset = new Value<number>(0)
-  resolveAutoscroll: () => void
+  resolveAutoscroll: (scrollParams: number[]) => void
 
-  onAutoscrollComplete = ([offset]) => {
-    this.isAutoscrolling.native.setValue(0)
+  onAutoscrollComplete = (params: number[]) => {
+    console.log('Autoscrollcomplete!!')
     this.isAutoscrolling.js = false
-    if (this.resolveAutoscroll) this.resolveAutoscroll()
+    if (this.resolveAutoscroll) this.resolveAutoscroll(params)
   }
 
-  scrollToAsync = (offset: number) => new Promise((resolve, reject) => {
+  scrollToAsync = (offset: number): Promise<number[]> => new Promise((resolve, reject) => {
     this.resolveAutoscroll = resolve
     this.targetScrollOffset.setValue(offset)
     this.isAutoscrolling.native.setValue(1)
@@ -509,18 +505,25 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.flatlistRef.current._component.scrollToOffset({ offset })
   })
 
-  autoscroll = async ([distFromTop, distFromBottom, scrollOffset]) => {
-    if (this.isAutoscrolling.js) return
+  getScrollTargetOffset = (distFromTop, distFromBottom, scrollOffset) => {
+    if (this.isAutoscrolling.js) return -1
     const { autoscrollThreshold } = this.props
     const scrollUp = distFromTop < autoscrollThreshold
     const scrollDown = distFromBottom < autoscrollThreshold
-    if (!(scrollUp || scrollDown)) return
-
+    if (!(scrollUp || scrollDown)) return -1
     const distFromEdge = scrollUp ? distFromTop : distFromBottom
     const speedPct = 1 - (distFromEdge / autoscrollThreshold)
     const offset = speedPct * this.props.autoScrollSpeed
     const targetOffset = scrollUp ? scrollOffset - offset : scrollOffset + offset
-    await this.scrollToAsync(targetOffset)
+    return targetOffset
+  }
+
+  autoscroll = async ([distFromTop, distFromBottom, scrollOffset]: readonly number[]) => {
+    const targetOffset = this.getScrollTargetOffset(distFromTop, distFromBottom, scrollOffset)
+    if (targetOffset >= 0) {
+      const nextScrollParams = await this.scrollToAsync(targetOffset)
+      this.autoscroll(nextScrollParams)
+    }
   }
 
   isAtTopEdge = cond(
@@ -543,6 +546,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       not(and(this.isAtTopEdge, this.isScrolledUp)),
       not(and(this.isAtBottomEdge, this.isScrolledDown)),
       eq(this.panGestureState, GestureState.ACTIVE),
+      not(this.isAutoscrolling.native),
     ), [
       call([this.distToTopEdge, this.distToBottomEdge, this.scrollOffset], this.autoscroll),
     ])
@@ -564,8 +568,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             )
           ), [
             set(this.isAutoscrolling.native, 0),
-            call([this.scrollOffset], this.onAutoscrollComplete),
-            this.checkAutoscroll
+            this.checkAutoscroll,
+            call([this.distToTopEdge, this.distToBottomEdge, this.scrollOffset], this.onAutoscrollComplete),
           ]),
       ])
     }
