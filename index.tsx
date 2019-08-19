@@ -138,6 +138,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, add(this.containerOffset, this.androidStatusBarSize))
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
+
+  // Stash a snapshot of scroll position at the time that 
+  // translation occurs
   hoverScrollSnapshot = new Value(0)
   hoverScrollDiff = new Value(0)
 
@@ -176,11 +179,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   resetHoverSpring = [
     set(this.hoverAnimState.time, 0),
     set(this.hoverAnimState.position, this.hoverAnimConfig.toValue),
+    set(this.touchAbsolute, this.hoverAnimConfig.toValue),
+    set(this.touchCellOffset, 0),
     set(this.hoverAnimState.finished, 0),
     set(this.hoverAnimState.velocity, 0),
   ]
 
-  static getDerivedStateFromProps(props) {
+  static getDerivedStateFromProps(props: Props<any>) {
     return {
       extraData: props.extraData
     }
@@ -226,7 +231,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.queue = []
   }
 
-  move = (hoverComponent, index, activeKey) => {
+  move = (hoverComponent: React.ComponentType, index: number, activeKey: string) => {
 
     if (this.state.hoverComponent) {
       // We can't move more than one row at a time
@@ -249,12 +254,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
   }
 
-  onRelease = ([index]: number[]) => {
+  onRelease = ([index]: readonly number[]) => {
     const { onRelease } = this.props
     onRelease && onRelease(index)
   }
 
-  onMoveEnd = ([from, to]: number[]) => {
+  onMoveEnd = ([from, to]: readonly number[]) => {
     console.log(`move from ${from} to ${to}`)
     const { onMoveEnd } = this.props
     if (onMoveEnd) {
@@ -489,7 +494,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   targetScrollOffset = new Value<number>(0)
-  resolveAutoscroll: (scrollParams: readonly number[]) => void
+  resolveAutoscroll?: (scrollParams: readonly number[]) => void
 
   onAutoscrollComplete = (params: readonly number[]) => {
     this.isAutoscrolling.js = false
@@ -691,8 +696,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   runHoverClock = cond(clockRunning(this.hoverClock), [
     spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
     cond(eq(this.hoverAnimState.finished, 1), [
-      this.resetHoverSpring,
       stopClock(this.hoverClock),
+      this.resetHoverSpring,
       call(this.moveEndParams, this.onMoveEnd),
       set(this.hasMoved, 0),
     ]),
