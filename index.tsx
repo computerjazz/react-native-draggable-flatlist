@@ -90,11 +90,12 @@ type CellData = {
   translate: Animated.Node<number>,
   currentIndex: Animated.Node<number>,
   onLayout: () => void,
+  onCellTap: typeof event,
 }
 
 // Run callback on next paint:
 // https://stackoverflow.com/questions/26556436/react-after-render-code
-function onNextFrame(callback) {
+function onNextFrame(callback: () => void) {
   setTimeout(function () {
     requestAnimationFrame(callback)
   })
@@ -425,6 +426,24 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         onLayout: async () => {
           if (this.state.activeKey !== key) this.measureCell(key)
         },
+        onCellTap: event([{
+          nativeEvent: ({ state, y, x }) => block([
+            cond(and(
+              neq(state, this.cellTapState),
+              not(this.disabled),
+            )
+              , [
+                set(this.cellTapState, state),
+                cond(eq(state, GestureState.BEGAN), [
+                  set(this.touchCellOffset, this.props.horizontal ? x : y),
+                ]),
+                cond(eq(state, GestureState.END), [
+                  this.onGestureRelease
+                ])
+              ]
+            )
+          ])
+        }]),
         measurements: {
           size: 0,
           offset: 0,
@@ -616,25 +635,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
   ])
 
-  onCellTap = event([{
-    nativeEvent: ({ state, y, x }) => block([
-      cond(and(
-        neq(state, this.cellTapState),
-        not(this.disabled),
-      )
-        , [
-          set(this.cellTapState, state),
-          cond(eq(state, GestureState.BEGAN), [
-            set(this.touchCellOffset, this.props.horizontal ? x : y),
-          ]),
-          cond(eq(state, GestureState.END), [
-            this.onGestureRelease
-          ])
-        ]
-      )
-    ])
-  }])
-
   onGestureRelease = [
     set(this.hasMoved, 0),
     cond(this.isHovering, [
@@ -743,7 +743,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
 
-    const { translate, onLayout } = this.cellData.get(key)
+    const { translate, onLayout, onCellTap } = this.cellData.get(key)
     const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     let ref = this.cellRefs.get(key)
     if (!ref) {
@@ -764,7 +764,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         }}
       >
         <TapGestureHandler
-          onHandlerStateChange={this.onCellTap}
+          onHandlerStateChange={onCellTap}
         >
           <Animated.View
             ref={ref}
