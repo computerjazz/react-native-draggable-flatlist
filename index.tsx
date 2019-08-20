@@ -220,15 +220,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.setCellData(this.props.data)
       onNextFrame(this.flushQueue)
       this.disabled.setValue(0)
-      console.log('new data!!', this.props.data)
     }
   }
 
-  queue: (() => Promise<void>[])[] = []
+  queue: (() => Promise<void>)[] = []
   flushQueue = async () => {
-    for (let fn of this.queue) {
-      await Promise.all(fn())
-    }
+    this.queue.forEach(fn => fn())
     this.queue = []
   }
 
@@ -277,18 +274,16 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onMoveEnd({ from, to, data: newData })
     }
 
-    const onUpdate = () => {
-      const lo = Math.min(from, to) - 1
-      const hi = Math.max(from, to) + 1
-      console.log(`OME measure: lo ${lo} hi ${hi}`)
-      const promises: Promise<void>[] = []
-      for (let i = lo; i < hi; i++) {
+    const lo = Math.min(from, to) - 1
+    const hi = Math.max(from, to) + 1
+    console.log(`OME measure: lo ${lo} hi ${hi}`)
+    for (let i = lo; i < hi; i++) {
+      this.queue.push(() => {
         const item = this.props.data[i]
-        if (!item) continue
+        if (!item) return
         const key = this.keyExtractor(item, i)
-        promises.push(this.measureCell(key))
-      }
-      return promises
+        return this.measureCell(key)
+      })
     }
 
     this.setState({
@@ -296,7 +291,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       hoverComponent: null,
     })
 
-    this.queue.push(onUpdate)
     this.spacerIndex.setValue(-1)
     this.activeIndex.setValue(-1)
   }
@@ -380,30 +374,32 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           ])
         ),
         cond(not(this.hasMoved), set(state.position, translate)),
-        cond(and(
-          not(isAfterActive),
-          greaterThan(translate, 0)
-        ),
-          set(this.spacerIndex, currentIndex)
-        ),
-        cond(and(
-          not(isAfterActive),
-          eq(translate, 0),
-        ),
-          set(this.spacerIndex, add(currentIndex, 1))
-        ),
-        cond(and(
-          isAfterActive,
-          eq(translate, 0),
-        ),
-          set(this.spacerIndex, currentIndex),
-        ),
-        cond(and(
-          isAfterActive,
-          greaterThan(translate, 0),
-        ),
-          set(this.spacerIndex, sub(currentIndex, 1))
-        ),
+        cond(this.hasMoved, [
+          cond(and(
+            not(isAfterActive),
+            greaterThan(translate, 0)
+          ),
+            set(this.spacerIndex, currentIndex)
+          ),
+          cond(and(
+            not(isAfterActive),
+            eq(translate, 0),
+          ),
+            set(this.spacerIndex, add(currentIndex, 1))
+          ),
+          cond(and(
+            isAfterActive,
+            eq(translate, 0),
+          ),
+            set(this.spacerIndex, currentIndex),
+          ),
+          cond(and(
+            isAfterActive,
+            greaterThan(translate, 0),
+          ),
+            set(this.spacerIndex, sub(currentIndex, 1))
+          ),
+        ]),
         set(config.toValue, translate),
         cond(this.hasMoved, startClock(clock)),
       ])
@@ -479,6 +475,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       if (isHovering || noRef || invalidRef) {
         let reason = isHovering ? "is hovering" : noRef ? "no ref" : "invalid ref"
         console.log(`## can't measure ${key} reason: ${reason}`)
+        this.queue.push(() => this.measureCell(key))
         return resolve()
       }
 
