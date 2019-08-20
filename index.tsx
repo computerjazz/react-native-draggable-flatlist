@@ -122,7 +122,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   touchCellOffset = new Value(0)
   panGestureState = new Value(-1)
   tapGestureState = new Value(0)
-  cellTapState = new Value(0)
   hasMoved = new Value(0)
   disabled = new Value(0)
 
@@ -221,6 +220,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.setCellData(this.props.data)
       onNextFrame(this.flushQueue)
       this.disabled.setValue(0)
+      console.log('new data!!', this.props.data)
     }
   }
 
@@ -258,6 +258,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onRelease = ([index]: readonly number[]) => {
     const { onRelease } = this.props
+    console.log('ON RELEASE', index)
     this.isPressedIn.js = false
     onRelease && onRelease(index)
   }
@@ -418,6 +419,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ]),
       ])
 
+      const tapState = new Value<number>(0)
+
 
       const cellData = {
         currentIndex,
@@ -429,15 +432,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         onCellTap: event([{
           nativeEvent: ({ state, y, x }) => block([
             cond(and(
-              neq(state, this.cellTapState),
+              neq(state, tapState),
               not(this.disabled),
             )
               , [
-                set(this.cellTapState, state),
+                set(tapState, state),
+                call([tapState], ([st]) => debugGestureState(st, 'TAP')),
                 cond(eq(state, GestureState.BEGAN), [
                   set(this.touchCellOffset, this.props.horizontal ? x : y),
                 ]),
                 cond(eq(state, GestureState.END), [
+                  call([tapState], ([st]) => debugGestureState(st, "END TAP")),
                   this.onGestureRelease
                 ])
               ]
@@ -660,7 +665,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
             ]),
           ]),
-        call([this.tapGestureState], ([state]) => debugGestureState(state, "container tap"))
       ])
     }
   ])
