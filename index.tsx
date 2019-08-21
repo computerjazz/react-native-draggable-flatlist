@@ -680,7 +680,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               eq(state, GestureState.FAILED),
             ), this.onGestureRelease),
           ]
-        )
+        ),
       ])
     }
   ])
@@ -696,7 +696,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             cond(not(this.hasMoved), set(this.hasMoved, 1)),
             set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
             onChange(this.touchAbsolute, this.checkAutoscroll),
-          ])
+          ]),
       ]),
     },
   ])
@@ -705,8 +705,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
     cond(eq(this.hoverAnimState.finished, 1), [
       stopClock(this.hoverClock),
-      this.resetHoverSpring,
       call(this.moveEndParams, this.onMoveEnd),
+      this.resetHoverSpring,
       set(this.hasMoved, 0),
     ]),
     this.hoverAnimState.position
@@ -740,12 +740,25 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   renderItem = ({ item, index }) => {
-    const { renderItem, horizontal, data } = this.props
+    const key = this.keyExtractor(item, index)
+    const { renderItem } = this.props
+    return (
+      <RowItem
+        itemKey={key}
+        index={index}
+        renderItem={renderItem}
+        item={item}
+        move={this.move}
+      />
+    )
+  }
+
+  CellRendererComponent = ({ item, index, style, children }) => {
+    console.log('cell render11!', style)
+    const { data } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
-
     const { translate, onLayout, onCellTap } = this.cellData.get(key)
-    const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     let ref = this.cellRefs.get(key)
     if (!ref) {
       ref = React.createRef()
@@ -755,43 +768,42 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const isActiveCell = activeKey === key
     const isLast = index === data.length - 1
     const activeCellData = this.cellData.get(activeKey)
-
+    const { horizontal } = this.props
+    const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     return (
       <Animated.View
-        pointerEvents={activeKey ? "none" : "auto"}
-        style={{
-          transform,
-          flexDirection: horizontal ? 'row' : 'column',
-        }}
+        style={[style, {
+          transform
+        }]}
       >
-        <TapGestureHandler
-          onHandlerStateChange={onCellTap}
+        <Animated.View
+          pointerEvents={activeKey ? "none" : "auto"}
+          style={{
+            flexDirection: horizontal ? 'row' : 'column',
+          }}
         >
-          <Animated.View
-            ref={ref}
-            onLayout={onLayout}
-            style={isActiveCell ? this.activeCellStyle : undefined}
+          <TapGestureHandler
+            onHandlerStateChange={onCellTap}
           >
-
-            <RowItem
-              itemKey={key}
-              index={index}
-              renderItem={renderItem}
-              item={item}
-              move={this.move}
+            <Animated.View
+              ref={ref}
+              onLayout={onLayout}
+              style={isActiveCell ? this.activeCellStyle : undefined}
+            >
+              {children}
+            </Animated.View>
+          </TapGestureHandler>
+          {isLast && activeCellData ? (
+            <Animated.View
+              style={{
+                opacity: 0,
+                // The active cell is removed from the list, so we need to add its height to the end 
+                // for our list to remain a consistent height
+                [horizontal ? "width" : "height"]: activeCellData.measurements.size
+              }}
             />
-          </Animated.View>
-        </TapGestureHandler>
-        {isLast && activeCellData ? (
-          <Animated.View
-            style={{
-              opacity: 0,
-              // The active cell is removed from the list, so we need to add its height to the end 
-              // for our list to remain a consistent height
-              [horizontal ? "width" : "height"]: activeCellData.measurements.size
-            }}
-          />
-        ) : null}
+          ) : null}
+        </Animated.View>
       </Animated.View>
     )
   }
@@ -803,7 +815,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ref={this.tapGestureHandlerRef}
         onHandlerStateChange={this.onContainerTapStateChange}
       >
-        <Animated.View style={styles.flex}>
+        <Animated.View style={[
+          styles.flex,
+
+        ]}>
           <PanGestureHandler
             ref={this.panGestureHandlerRef}
             onGestureEvent={this.onPanGestureEvent}
@@ -815,6 +830,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             >
               <AnimatedFlatList
                 {...this.props}
+                CellRendererComponent={this.CellRendererComponent}
                 ref={this.flatlistRef}
                 onContentSizeChange={this.onListContentSizeChange}
                 scrollEnabled={!hoverComponent}
