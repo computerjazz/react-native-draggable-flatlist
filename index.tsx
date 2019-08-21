@@ -185,6 +185,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     set(this.hoverAnimState.velocity, 0),
   ]
 
+  keyToIndex = new Map<string, number>()
+
   static getDerivedStateFromProps(props: Props<any>) {
     return {
       extraData: props.extraData
@@ -198,7 +200,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   constructor(props: Props<T>) {
     super(props)
-    this.setCellData(props.data)
+    props.data.forEach((item, index) => {
+      const key = this.keyExtractor(item, index)
+      this.keyToIndex.set(key, index)
+    })
   }
 
   componentDidMount() {
@@ -216,8 +221,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   componentDidUpdate = async (prevProps: Props<T>) => {
     if (prevProps.data !== this.props.data) {
+      this.props.data.forEach((item, index) => {
+        const key = this.keyExtractor(item, index)
+        this.keyToIndex.set(key, index)
+      })
       // Remeasure on next paint  
-      this.setCellData(this.props.data)
+      this.updateCellData(this.props.data)
       onNextFrame(this.flushQueue)
       this.disabled.setValue(0)
     }
@@ -295,185 +304,178 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.activeIndex.setValue(-1)
   }
 
-  setCellData = (data: T[] = []) => {
-    data.forEach((item, index) => {
-      const key = this.keyExtractor(item, index)
-      const cell = this.cellData.get(key)
+  updateCellData = (data: T[] = []) => data.forEach((item: T, index: number) => {
+    const key = this.keyExtractor(item, index)
+    const cell = this.cellData.get(key)
+    if (cell) cell.currentIndex.setValue(index)
+  })
 
-      if (cell) {
-        // If key is already instantiated, all
-        // we need to do is update its index
-        cell.currentIndex.setValue(index)
-        return
-      }
+  setCellData = (key: string, index: number) => {
+    const currentIndex = new Value(index)
 
-      const currentIndex = new Value(index)
+    const clock = new Clock()
+    const config = {
+      ...this.hoverAnimConfig,
+      toValue: new Value(0),
+    }
 
-      const clock = new Clock()
-      const config = {
-        ...this.hoverAnimConfig,
-        toValue: new Value(0),
-      }
+    const state = {
+      position: new Value(0),
+      velocity: new Value(0),
+      time: new Value(0),
+      finished: new Value(0),
+    }
 
-      const state = {
-        position: new Value(0),
-        velocity: new Value(0),
-        time: new Value(0),
-        finished: new Value(0),
-      }
+    this.cellAnim.set(key, { clock, config, state })
 
-      this.cellAnim.set(key, { clock, config, state })
-
-      const runClock = block([
-        cond(clockRunning(clock), [
-          spring(clock, state, config),
-          cond(state.finished, [
-            stopClock(clock),
-            set(state.time, 0),
-            set(state.finished, 0),
-          ]),
-        ]),
-        state.position,
-      ])
-
-      const size = new Value(0)
-      const offset = new Value(0)
-
-      const midpoint = add(offset, divide(size, 2))
-      const isAfterActive = greaterThan(currentIndex, this.activeIndex)
-
-      const hoverMid = cond(
-        isAfterActive,
-        sub(midpoint, this.activeCellSize),
-        midpoint,
-      )
-      const isAfterHoverMid = greaterOrEq(hoverMid, this.hoverOffset)
-
-      const translate = cond(and(
-        this.isHovering,
-        neq(currentIndex, this.activeIndex)
-      ), [
-          cond(isAfterHoverMid, this.activeCellSize, 0),
-        ],
-        0)
-
-      const cellStart = cond(isAfterActive, [
-        sub(
-          sub(add(offset, size), this.activeCellSize), this.scrollOffset)
-      ], [
-          sub(offset, this.scrollOffset)
-        ])
-
-      const isShifted = greaterThan(translate, 0)
-
-      const onChangeTranslate = onChange(translate, [
-        set(this.hoverScrollSnapshot, this.scrollOffset),
-        set(this.hoverTo,
-          cond(isAfterActive, cond(isShifted, [sub(cellStart, size)], [cellStart]), [
-            cond(isShifted, [cellStart], [add(cellStart, size)])
-          ])
-        ),
-        cond(not(this.hasMoved), set(state.position, translate)),
-        cond(this.hasMoved, [
-          cond(and(
-            not(isAfterActive),
-            greaterThan(translate, 0)
-          ),
-            set(this.spacerIndex, currentIndex)
-          ),
-          cond(and(
-            not(isAfterActive),
-            eq(translate, 0),
-          ),
-            set(this.spacerIndex, add(currentIndex, 1))
-          ),
-          cond(and(
-            isAfterActive,
-            eq(translate, 0),
-          ),
-            set(this.spacerIndex, currentIndex),
-          ),
-          cond(and(
-            isAfterActive,
-            greaterThan(translate, 0),
-          ),
-            set(this.spacerIndex, sub(currentIndex, 1))
-          ),
-        ]),
-        set(config.toValue, translate),
-        cond(this.hasMoved, startClock(clock)),
-      ])
-
-      const onChangeSpacerIndex = onChange(this.spacerIndex, [
-        cond(eq(this.spacerIndex, -1), [
-          // Hard reset to prevent stale state bugs
-          cond(clockRunning(clock), stopClock(clock)),
-          set(state.position, 0),
-          set(state.finished, 0),
+    const runClock = block([
+      cond(clockRunning(clock), [
+        spring(clock, state, config),
+        cond(state.finished, [
+          stopClock(clock),
           set(state.time, 0),
-          set(config.toValue, 0),
+          set(state.finished, 0),
         ]),
+      ]),
+      state.position,
+    ])
+
+    const size = new Value(0)
+    const offset = new Value(0)
+
+    const midpoint = add(offset, divide(size, 2))
+    const isAfterActive = greaterThan(currentIndex, this.activeIndex)
+
+    const hoverMid = cond(
+      isAfterActive,
+      sub(midpoint, this.activeCellSize),
+      midpoint,
+    )
+    const isAfterHoverMid = greaterOrEq(hoverMid, this.hoverOffset)
+
+    const translate = cond(and(
+      this.isHovering,
+      neq(currentIndex, this.activeIndex)
+    ), [
+        cond(isAfterHoverMid, this.activeCellSize, 0),
+      ],
+      0)
+
+    const cellStart = cond(isAfterActive, [
+      sub(
+        sub(add(offset, size), this.activeCellSize), this.scrollOffset)
+    ], [
+        sub(offset, this.scrollOffset)
       ])
 
-      const tapState = new Value<number>(0)
+    const isShifted = greaterThan(translate, 0)
+
+    const onChangeTranslate = onChange(translate, [
+      set(this.hoverScrollSnapshot, this.scrollOffset),
+      set(this.hoverTo,
+        cond(isAfterActive, cond(isShifted, [sub(cellStart, size)], [cellStart]), [
+          cond(isShifted, [cellStart], [add(cellStart, size)])
+        ])
+      ),
+      cond(not(this.hasMoved), set(state.position, translate)),
+      cond(this.hasMoved, [
+        cond(and(
+          not(isAfterActive),
+          greaterThan(translate, 0)
+        ),
+          set(this.spacerIndex, currentIndex)
+        ),
+        cond(and(
+          not(isAfterActive),
+          eq(translate, 0),
+        ),
+          set(this.spacerIndex, add(currentIndex, 1))
+        ),
+        cond(and(
+          isAfterActive,
+          eq(translate, 0),
+        ),
+          set(this.spacerIndex, currentIndex),
+        ),
+        cond(and(
+          isAfterActive,
+          greaterThan(translate, 0),
+        ),
+          set(this.spacerIndex, sub(currentIndex, 1))
+        ),
+      ]),
+      set(config.toValue, translate),
+      cond(this.hasMoved, startClock(clock)),
+    ])
+
+    const onChangeSpacerIndex = onChange(this.spacerIndex, [
+      cond(eq(this.spacerIndex, -1), [
+        // Hard reset to prevent stale state bugs
+        cond(clockRunning(clock), stopClock(clock)),
+        set(state.position, 0),
+        set(state.finished, 0),
+        set(state.time, 0),
+        set(config.toValue, 0),
+      ]),
+    ])
+
+    const tapState = new Value<number>(0)
 
 
-      const cellData = {
-        currentIndex,
-        size,
-        offset,
-        onLayout: async () => {
-          if (this.state.activeKey !== key) this.measureCell(key)
-        },
-        onCellTap: event([{
-          nativeEvent: ({ state, y, x }) => block([
-            cond(and(
-              neq(state, tapState),
-              not(this.disabled),
-            )
-              , [
-                set(tapState, state),
-                call([tapState], ([st]) => debugGestureState(st, 'TAP')),
-                cond(eq(state, GestureState.BEGAN), [
-                  set(this.touchCellOffset, this.props.horizontal ? x : y),
-                ]),
-                cond(eq(state, GestureState.END), [
-                  call([tapState], ([st]) => debugGestureState(st, "END TAP")),
-                  this.onGestureRelease
-                ])
-              ]
-            )
-          ])
-        }]),
-        measurements: {
-          size: 0,
-          offset: 0,
-        },
-        translate: block([
-          onChangeTranslate,
-          onChangeSpacerIndex,
-          cond(
-            this.hasMoved,
-            cond(this.isHovering, runClock, 0),
-            translate
+    const cellData = {
+      currentIndex,
+      size,
+      offset,
+      onLayout: async () => {
+        if (this.state.activeKey !== key) this.measureCell(key)
+      },
+      onCellTap: event([{
+        nativeEvent: ({ state, y, x }) => block([
+          cond(and(
+            neq(state, tapState),
+            not(this.disabled),
           )
-        ]),
-      }
-      this.cellData.set(key, cellData)
-    })
+            , [
+              set(tapState, state),
+              call([tapState], ([st]) => debugGestureState(st, 'TAP')),
+              cond(eq(state, GestureState.BEGAN), [
+                set(this.touchCellOffset, this.props.horizontal ? x : y),
+              ]),
+              cond(eq(state, GestureState.END), [
+                call([tapState], ([st]) => debugGestureState(st, "END TAP")),
+                this.onGestureRelease
+              ])
+            ]
+          )
+        ])
+      }]),
+      measurements: {
+        size: 0,
+        offset: 0,
+      },
+      translate: block([
+        onChangeTranslate,
+        onChangeSpacerIndex,
+        cond(
+          this.hasMoved,
+          cond(this.isHovering, runClock, 0),
+          translate
+        )
+      ]),
+    }
+    this.cellData.set(key, cellData)
   }
 
   measureCell = (key: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const { horizontal } = this.props
-      const { activeKey } = this.state
+
       const ref = this.cellRefs.get(key)
 
-      const isHovering = activeKey !== null
       const noRef = !ref
       const invalidRef = !noRef && !(ref.current && ref.current._component)
-      if (isHovering || noRef || invalidRef) {
-        let reason = isHovering ? "is hovering" : noRef ? "no ref" : "invalid ref"
+      if (noRef || invalidRef) {
+        let reason = noRef ? "no ref" : "invalid ref"
         console.log(`## can't measure ${key} reason: ${reason}`)
         this.queue.push(() => this.measureCell(key))
         return resolve()
@@ -481,13 +483,20 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
       ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
         // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
+        const { activeKey } = this.state
+        const isHovering = activeKey !== null
         const cellData = this.cellData.get(key)
+        const isAfterActive = this.keyToIndex.get(key) > this.keyToIndex.get(activeKey)
+        const extraOffset = isHovering && isAfterActive ? this.cellData.get(activeKey).measurements.size : 0
         const size = horizontal ? w : h
-        const offset = horizontal ? x : y
+        const offset = extraOffset + (horizontal ? x : y)
         cellData.size.setValue(size)
         cellData.offset.setValue(offset)
         cellData.measurements.size = size
         cellData.measurements.offset = offset
+
+        // remeasure on next layout if hovering
+        if (isHovering) this.queue.push(() => this.measureCell(key))
         resolve()
       });
     })
@@ -754,10 +763,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   CellRendererComponent = ({ item, index, style, children }) => {
-    console.log('cell render11!', style)
     const { data } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
+    if (!this.cellData.get(key)) this.setCellData(key, index)
     const { translate, onLayout, onCellTap } = this.cellData.get(key)
     let ref = this.cellRefs.get(key)
     if (!ref) {
