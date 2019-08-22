@@ -64,7 +64,7 @@ const debugGestureState = (state, context) => {
 }
 
 interface Props<T> extends VirtualizedListProps<T> {
-  autoScrollSpeed: number,
+  autoscrollSpeed: number,
   autoscrollThreshold: number,
   horizontal: boolean,
   data: T[],
@@ -202,8 +202,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   static defaultProps = {
     autoscrollThreshold: 30,
-    autoScrollSpeed: 100,
+    autoscrollSpeed: 100,
     animationConfig: {},
+    scrollEnabled: true,
   }
 
   constructor(props: Props<T>) {
@@ -520,6 +521,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onListContentSizeChange = (w: number, h: number) => {
     this.scrollViewSize.setValue(this.props.horizontal ? w : h)
+    if (this.props.onContentSizeChange) this.props.onContentSizeChange(w, h)
   }
 
   isAutoscrolling = {
@@ -556,14 +558,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     isScrolledDown: boolean,
   ) => {
     if (this.isAutoscrolling.js) return -1
-    const { autoscrollThreshold, autoScrollSpeed } = this.props
+    const { autoscrollThreshold, autoscrollSpeed } = this.props
     const scrollUp = distFromTop < autoscrollThreshold
     const scrollDown = distFromBottom < autoscrollThreshold
     if (!(scrollUp || scrollDown) || scrollUp && isScrolledUp || scrollDown && isScrolledDown) return -1
     const distFromEdge = scrollUp ? distFromTop : distFromBottom
     const speedPct = 1 - (distFromEdge / autoscrollThreshold)
     // Android scroll speed seems much faster than ios
-    const speed = Platform.OS === "ios" ? autoScrollSpeed : autoScrollSpeed / 10
+    const speed = Platform.OS === "ios" ? autoscrollSpeed : autoscrollSpeed / 10
     const offset = speedPct * speed
     const targetOffset = scrollUp ? Math.max(0, scrollOffset - offset) : scrollOffset + offset
     return targetOffset
@@ -821,6 +823,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   render() {
+    const { scrollEnabled } = this.props
     const { hoverComponent } = this.state
     return (
       <TapGestureHandler
@@ -845,7 +848,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 CellRendererComponent={this.CellRendererComponent}
                 ref={this.flatlistRef}
                 onContentSizeChange={this.onListContentSizeChange}
-                scrollEnabled={!hoverComponent}
+                scrollEnabled={!hoverComponent && scrollEnabled}
                 renderItem={this.renderItem}
                 extraData={this.state}
                 keyExtractor={this.keyExtractor}
