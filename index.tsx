@@ -10,7 +10,7 @@ import {
   PanGestureHandler,
   TapGestureHandler,
   State as GestureState,
-  FlatList
+  FlatList,
 } from "react-native-gesture-handler"
 import Animated from "react-native-reanimated"
 
@@ -249,8 +249,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.queue = []
   }
 
-  drag = (hoverComponent: React.ComponentType, index: number, activeKey: string) => {
-
+  drag = (hoverComponent: React.ComponentType, activeKey: string) => {
+    const index = this.keyToIndex.get(activeKey)
     if (this.state.hoverComponent) {
       // We can't drag more than one row at a time
       // TODO: Put action on queue?
@@ -662,7 +662,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
         set(this.hoverAnimState.position, this.hoverAnim),
         startClock(this.hoverClock),
-      ], debug("## couldn 't find hover clock", this.activeIndex)),
+      ]),
       call([this.activeIndex], this.onRelease),
     ])
   ]
@@ -762,7 +762,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     return (
       <RowItem
         itemKey={key}
-        index={index}
+        keyToIndex={this.keyToIndex}
         renderItem={renderItem}
         item={item}
         drag={this.drag}
@@ -770,12 +770,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     )
   }
 
-  CellRendererComponent = ({ item, index, style, children }) => {
+  CellRendererComponent = ({ item, index, style, children, onLayout }) => {
     const { data } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
     if (!this.cellData.get(key)) this.setCellData(key, index)
-    const { translate, onLayout, onCellTap } = this.cellData.get(key)
+    const { translate, onLayout: onCellLayout, onCellTap } = this.cellData.get(key)
     let ref = this.cellRefs.get(key)
     if (!ref) {
       ref = React.createRef()
@@ -789,6 +789,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     return (
       <Animated.View
+        onLayout={onLayout}
         style={[style, {
           transform
         }]}
@@ -804,7 +805,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           >
             <Animated.View
               ref={ref}
-              onLayout={onLayout}
+              onLayout={onCellLayout}
               style={isActiveCell ? this.activeCellStyle : undefined}
             >
               {children}
@@ -814,8 +815,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             <Animated.View
               style={{
                 opacity: 0,
-                // The active cell is removed from the list, so we need to add its height to the end 
-                // for our list to remain a consistent height
+                // The active cell is removed from the list, so we need to add its size to the end 
+                // for our list to remain a consistent size
                 [horizontal ? "width" : "height"]: activeCellData.measurements.size
               }}
             />
@@ -833,10 +834,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ref={this.tapGestureHandlerRef}
         onHandlerStateChange={this.onContainerTapStateChange}
       >
-        <Animated.View style={[
-          styles.flex,
-
-        ]}>
+        <Animated.View style={styles.flex}>
           <PanGestureHandler
             ref={this.panGestureHandlerRef}
             onGestureEvent={this.onPanGestureEvent}
@@ -872,10 +870,9 @@ export default DraggableFlatList
 type RowItemProps = {
   drag: (
     hoverComponent: React.ComponentType,
-    index: number,
     itemKey: string,
   ) => void,
-  index: number,
+  keyToIndex: Map<string, number>,
   item: any,
   renderItem: (item: any) => React.ComponentType
   itemKey: string
@@ -884,22 +881,22 @@ type RowItemProps = {
 class RowItem extends React.PureComponent<RowItemProps> {
 
   drag = () => {
-    const { drag, renderItem, item, index, itemKey } = this.props
+    const { drag, renderItem, item, keyToIndex, itemKey } = this.props
     const hoverComponent = renderItem({
       isActive: true,
       item,
-      index,
+      index: keyToIndex.get(itemKey),
       drag: () => console.log('## attempt to call drag() on hovering component'),
     })
-    drag(hoverComponent, index, itemKey)
+    drag(hoverComponent, itemKey)
   }
 
   render() {
-    const { renderItem, item, index } = this.props
+    const { renderItem, item, keyToIndex, itemKey } = this.props
     return renderItem({
       isActive: false,
       item,
-      index,
+      index: keyToIndex.get(itemKey),
       drag: this.drag,
     })
   }
