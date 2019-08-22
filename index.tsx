@@ -60,9 +60,9 @@ interface Props<T> extends VirtualizedListProps<T> {
   autoscrollThreshold: number,
   horizontal: boolean,
   data: T[],
-  onMoveBegin?: (index: number) => void,
+  onDragBegin?: (index: number) => void,
   onRelease?: (index: number) => void,
-  onMoveEnd?: (params: {
+  onDragEnd?: (params: {
     data: T[],
     from: number,
     to: number,
@@ -70,9 +70,10 @@ interface Props<T> extends VirtualizedListProps<T> {
   renderItem: (params: {
     item: T,
     index: number,
-    move: (index: number) => void,
+    drag: (index: number) => void,
     isActive: boolean,
   }) => React.ComponentType
+  animationConfig: Partial<Animated.SpringConfig>,
 }
 
 type State = {
@@ -154,13 +155,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   hoverAnimConfig = {
-    damping: 20,
-    mass: 0.2,
-    stiffness: 100,
-    overshootClamping: false,
+    ...this.props.animationConfig,
     toValue: sub(this.hoverTo, sub(this.scrollOffset, this.hoverScrollSnapshot)),
-    restSpeedThreshold: 0.2,
-    restDisplacementThreshold: 0.2,
   }
 
   distToTopEdge = max(0, this.hoverAnim)
@@ -196,7 +192,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   static defaultProps = {
     autoscrollThreshold: 30,
-    autoScrollSpeed: 100
+    autoScrollSpeed: 100,
+    animationConfig: {
+      damping: 20,
+      mass: 0.2,
+      stiffness: 100,
+      overshootClamping: false,
+      restSpeedThreshold: 0.2,
+      restDisplacementThreshold: 0.2,
+    },
   }
 
   constructor(props: Props<T>) {
@@ -239,10 +243,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.queue = []
   }
 
-  move = (hoverComponent: React.ComponentType, index: number, activeKey: string) => {
+  drag = (hoverComponent: React.ComponentType, index: number, activeKey: string) => {
 
     if (this.state.hoverComponent) {
-      // We can't move more than one row at a time
+      // We can't drag more than one row at a time
       // TODO: Put action on queue?
       console.log("## Can't set multiple active items")
     } else {
@@ -255,8 +259,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         activeKey,
         hoverComponent,
       }, () => {
-        const { onMoveBegin } = this.props
-        onMoveBegin && onMoveBegin(index)
+        const { onDragBegin } = this.props
+        onDragBegin && onDragBegin(index)
       }
       )
     }
@@ -268,9 +272,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     onRelease && onRelease(index)
   }
 
-  onMoveEnd = ([from, to]: readonly number[]) => {
-    const { onMoveEnd } = this.props
-    if (onMoveEnd) {
+  onDragEnd = ([from, to]: readonly number[]) => {
+    const { onDragEnd } = this.props
+    if (onDragEnd) {
       const { data } = this.props
       let newData = [...data]
       if (from !== to) {
@@ -278,7 +282,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         newData.splice(to, 0, data[from])
       }
 
-      onMoveEnd({ from, to, data: newData })
+      onDragEnd({ from, to, data: newData })
     }
 
     const lo = Math.min(from, to) - 1
@@ -708,7 +712,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
     cond(eq(this.hoverAnimState.finished, 1), [
       stopClock(this.hoverClock),
-      call(this.moveEndParams, this.onMoveEnd),
+      call(this.moveEndParams, this.onDragEnd),
       this.resetHoverSpring,
       set(this.hasMoved, 0),
     ]),
@@ -751,7 +755,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         index={index}
         renderItem={renderItem}
         item={item}
-        move={this.move}
+        drag={this.drag}
       />
     )
   }
@@ -855,7 +859,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 export default DraggableFlatList
 
 type RowItemProps = {
-  move: (
+  drag: (
     hoverComponent: React.ComponentType,
     index: number,
     itemKey: string,
@@ -868,15 +872,15 @@ type RowItemProps = {
 
 class RowItem extends React.PureComponent<RowItemProps> {
 
-  move = () => {
-    const { move, renderItem, item, index, itemKey } = this.props
+  drag = () => {
+    const { drag, renderItem, item, index, itemKey } = this.props
     const hoverComponent = renderItem({
       isActive: true,
       item,
       index,
-      move: () => console.log('## attempt to call move on hovering component'),
+      drag: () => console.log('## attempt to call drag() on hovering component'),
     })
-    move(hoverComponent, index, itemKey)
+    drag(hoverComponent, index, itemKey)
   }
 
   render() {
@@ -885,7 +889,7 @@ class RowItem extends React.PureComponent<RowItemProps> {
       isActive: false,
       item,
       index,
-      move: this.move,
+      drag: this.drag,
     })
   }
 }
