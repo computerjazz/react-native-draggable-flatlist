@@ -1,11 +1,14 @@
 # React Native Draggable FlatList
 
+A drag-and-drop-enabled FlatList component for React Native.
+Fully native interactions powered by [Reanimated](https://github.com/kmagiera/react-native-reanimated) and [React Native Gesture Handler](https://github.com/kmagiera/react-native-gesture-handler)
+
 ![Draggable FlatList demo](https://i.imgur.com/XmUcN4Z.gif)
 
 ## Install
-0. install [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
-1. `npm install react-native-draggable-flatlist` or `yarn add react-native-draggable-flatlist`
-2. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
+1. Install [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
+2. `npm install react-native-draggable-flatlist` or `yarn add react-native-draggable-flatlist`
+3. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
 
 ## Api
 
@@ -19,7 +22,7 @@ Name | Type | Description
 `renderItem` | function | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => React.ComponentType`. Call `drag` when the row should become active (in an `onLongPress`).
 `keyExtractor` | function | `(item: T, index: number) => string` Unique key for each item
 `onDragBegin` | function | `(index: number) => void` Called when row becomes active.
-`onRelease` | function | ``
+`onRelease` | function | `(index: number) => void` Called when active row touch ends.
 `onDragEnd` | function | `(params: { data: T[], from: number, to: number }) => void` Called after animation has completed. Returns updated ordering of `data` 
 `autoscrollThreshold` | number | Distance from edge of container where list begins to autoscroll when dragging.
 `autoscrollSpeed` | number | Determines how fast the list autoscrolls.
