@@ -21,9 +21,13 @@
     "list"
   ],
   "author": "Daniel Merrill",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/computerjazz/react-native-draggable-flatlist/issues"
   },
-  "homepage": "https://github.com/computerjazz/react-native-draggable-flatlist#readme"
+  "homepage": "https://github.com/computerjazz/react-native-draggable-flatlist#readme",
+  "peerDependencies": {
+    "react-native-reanimated": "^1.0.0",
+    "react-native-gesture-handler": "^1.0.0"
+  }
 }
