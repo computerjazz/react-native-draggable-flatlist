@@ -913,6 +913,4 @@ const styles = StyleSheet.create({
     bottom: 0,
     top: 0,
   },
-  wrapper: { flex: 1, opacity: 1 },
-  fullOpacity: { opacity: 1 }
 })
