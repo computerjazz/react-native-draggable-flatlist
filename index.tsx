@@ -183,6 +183,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     set(this.touchCellOffset, 0),
     set(this.hoverAnimState.finished, 0),
     set(this.hoverAnimState.velocity, 0),
+    set(this.hasMoved, 0),
   ]
 
   keyToIndex = new Map<string, number>()
@@ -248,7 +249,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.isPressedIn.js = true
       this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
-      console.log('setting active cell!!', activeKey)
       this.activeCellSize.setValue(this.cellData.get(activeKey).size)
 
       this.setState({
@@ -264,13 +264,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onRelease = ([index]: readonly number[]) => {
     const { onRelease } = this.props
-    console.log('ON RELEASE', index)
     this.isPressedIn.js = false
     onRelease && onRelease(index)
   }
 
   onMoveEnd = ([from, to]: readonly number[]) => {
-    console.log(`move from ${from} to ${to}`)
     const { onMoveEnd } = this.props
     if (onMoveEnd) {
       const { data } = this.props
@@ -285,7 +283,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const lo = Math.min(from, to) - 1
     const hi = Math.max(from, to) + 1
-    console.log(`OME measure: lo ${lo} hi ${hi}`)
     for (let i = lo; i < hi; i++) {
       this.queue.push(() => {
         const item = this.props.data[i]
@@ -372,13 +369,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const onChangeTranslate = onChange(translate, [
       set(this.hoverScrollSnapshot, this.scrollOffset),
-      set(this.hoverTo,
-        cond(isAfterActive, cond(isShifted, [sub(cellStart, size)], [cellStart]), [
-          cond(isShifted, [cellStart], [add(cellStart, size)])
-        ])
-      ),
       cond(not(this.hasMoved), set(state.position, translate)),
       cond(this.hasMoved, [
+        set(this.hoverTo,
+          cond(isAfterActive, cond(isShifted, [sub(cellStart, size)], [cellStart]), [
+            cond(isShifted, [cellStart], [add(cellStart, size)])
+          ])
+        ),
         cond(and(
           not(isAfterActive),
           greaterThan(translate, 0)
@@ -434,17 +431,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           cond(and(
             neq(state, tapState),
             not(this.disabled),
-          )
-            , [
+          ), [
               set(tapState, state),
-              call([tapState], ([st]) => debugGestureState(st, 'TAP')),
               cond(eq(state, GestureState.BEGAN), [
+                set(this.hoverTo, sub(offset, this.scrollOffset)),
                 set(this.touchCellOffset, this.props.horizontal ? x : y),
               ]),
-              cond(eq(state, GestureState.END), [
-                call([tapState], ([st]) => debugGestureState(st, "END TAP")),
-                this.onGestureRelease
-              ])
+              cond(eq(state, GestureState.END), this.onGestureRelease)
             ]
           )
         ])
@@ -510,7 +503,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   onContainerLayout = () => {
     const { horizontal } = this.props
     this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
-      console.log(`container layout x ${x} y ${y} w ${w} h ${h} pageX ${pageX} pageY ${pageY}`)
+      // console.log(`container layout x ${x} y ${y} w ${w} h ${h} pageX ${pageX} pageY ${pageY}`)
       this.containerOffset.setValue(horizontal ? pageX : pageY)
       this.containerEnd.setValue(add(this.containerOffset, horizontal ? w : h))
     })
@@ -554,13 +547,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     isScrolledDown: boolean,
   ) => {
     if (this.isAutoscrolling.js) return -1
-    const { autoscrollThreshold } = this.props
+    const { autoscrollThreshold, autoScrollSpeed } = this.props
     const scrollUp = distFromTop < autoscrollThreshold
     const scrollDown = distFromBottom < autoscrollThreshold
     if (!(scrollUp || scrollDown) || scrollUp && isScrolledUp || scrollDown && isScrolledDown) return -1
     const distFromEdge = scrollUp ? distFromTop : distFromBottom
     const speedPct = 1 - (distFromEdge / autoscrollThreshold)
-    const offset = speedPct * this.props.autoScrollSpeed
+    // Android scroll speed seems much faster than ios
+    const speed = Platform.OS === "ios" ? autoScrollSpeed : autoScrollSpeed / 10
+    const offset = speedPct * speed
     const targetOffset = scrollUp ? Math.max(0, scrollOffset - offset) : scrollOffset + offset
     return targetOffset
   }
@@ -647,7 +642,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ])
 
   onGestureRelease = [
-    set(this.hasMoved, 0),
     cond(this.isHovering, [
       set(this.disabled, 1),
       cond(defined(this.hoverClock), [
