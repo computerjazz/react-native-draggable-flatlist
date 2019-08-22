@@ -100,6 +100,7 @@ type CellData = {
   translate: Animated.Node<number>,
   currentIndex: Animated.Node<number>,
   onLayout: () => void,
+  onUnmount: () => void
   onCellTap: typeof event,
 }
 
@@ -376,11 +377,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       ])
 
     const isShifted = greaterThan(translate, 0)
+    const initialized = new Value<number>(0)
 
     const onChangeTranslate = onChange(translate, [
       set(this.hoverScrollSnapshot, this.scrollOffset),
       cond(not(this.hasMoved), set(state.position, translate)),
-      cond(this.hasMoved, [
+      cond(and(initialized, this.hasMoved), [
         set(this.hoverTo,
           cond(isAfterActive, cond(isShifted, [sub(cellStart, size)], [cellStart]), [
             cond(isShifted, [cellStart], [add(cellStart, size)])
@@ -413,6 +415,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       ]),
       set(config.toValue, translate),
       cond(this.hasMoved, startClock(clock)),
+      cond(not(initialized), set(initialized, 1)),
     ])
 
     const onChangeSpacerIndex = onChange(this.spacerIndex, [
@@ -428,14 +431,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const tapState = new Value<number>(0)
 
-
     const cellData = {
+      initialized,
       currentIndex,
       size,
       offset,
-      onLayout: async () => {
+      onLayout: async ({ nativeEvent }) => {
         if (this.state.activeKey !== key) this.measureCell(key)
       },
+      onUnmount: () => initialized.setValue(0),
       onCellTap: event([{
         nativeEvent: ({ state, y, x }) => block([
           cond(and(
@@ -759,6 +763,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   renderItem = ({ item, index }) => {
     const key = this.keyExtractor(item, index)
     const { renderItem } = this.props
+    if (!this.cellData.get(key)) this.setCellData(key, index)
+    const { onUnmount } = this.cellData.get(key)
     return (
       <RowItem
         itemKey={key}
@@ -766,11 +772,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         renderItem={renderItem}
         item={item}
         drag={this.drag}
+        onUnmount={onUnmount}
       />
     )
   }
 
-  CellRendererComponent = ({ item, index, style, children, onLayout }) => {
+  CellRendererComponent = (cellProps) => {
+    const { item, index, style, children, onLayout, onUnmount } = cellProps
     const { data } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
@@ -876,6 +884,7 @@ type RowItemProps = {
   item: any,
   renderItem: (item: any) => React.ComponentType
   itemKey: string
+  onUnmount: () => void
 }
 
 class RowItem extends React.PureComponent<RowItemProps> {
@@ -889,6 +898,10 @@ class RowItem extends React.PureComponent<RowItemProps> {
       drag: () => console.log('## attempt to call drag() on hovering component'),
     })
     drag(hoverComponent, itemKey)
+  }
+
+  componentWillUnmount() {
+    this.props.onUnmount()
   }
 
   render() {
