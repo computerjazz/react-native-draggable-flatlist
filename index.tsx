@@ -49,6 +49,14 @@ const {
 // Fire onScrollComplete when within this many
 // px of target offset
 const onScrollCompleteThreshold = 2
+const defaultAnimationConfig = {
+  damping: 20,
+  mass: 0.2,
+  stiffness: 100,
+  overshootClamping: false,
+  restSpeedThreshold: 0.2,
+  restDisplacementThreshold: 0.2,
+}
 
 const debugGestureState = (state, context) => {
   const stateStr = Object.entries(GestureState).find(([k, v]) => v === state)
@@ -155,6 +163,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   hoverAnimConfig = {
+    ...defaultAnimationConfig,
     ...this.props.animationConfig,
     toValue: sub(this.hoverTo, sub(this.scrollOffset, this.hoverScrollSnapshot)),
   }
@@ -193,14 +202,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   static defaultProps = {
     autoscrollThreshold: 30,
     autoScrollSpeed: 100,
-    animationConfig: {
-      damping: 20,
-      mass: 0.2,
-      stiffness: 100,
-      overshootClamping: false,
-      restSpeedThreshold: 0.2,
-      restDisplacementThreshold: 0.2,
-    },
+    animationConfig: {},
   }
 
   constructor(props: Props<T>) {
