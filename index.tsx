@@ -68,6 +68,7 @@ interface Props<T> extends VirtualizedListProps<T> {
   autoscrollThreshold: number,
   horizontal: boolean,
   data: T[],
+  onRef: (ref: React.RefObject<DraggableFlatList<T>>) => void,
   onDragBegin?: (index: number) => void,
   onRelease?: (index: number) => void,
   onDragEnd?: (params: {
@@ -118,7 +119,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   containerRef = React.createRef()
-  flatlistRef = React.createRef()
+  flatlistRef = React.createRef<DraggableFlatList<T>>()
   panGestureHandlerRef = React.createRef()
   tapGestureHandlerRef = React.createRef()
 
@@ -207,10 +208,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   constructor(props: Props<T>) {
     super(props)
-    props.data.forEach((item, index) => {
+    const { data, onRef } = props
+    data.forEach((item, index) => {
       const key = this.keyExtractor(item, index)
       this.keyToIndex.set(key, index)
     })
+    onRef && onRef(this.flatlistRef)
   }
 
   componentDidMount() {
