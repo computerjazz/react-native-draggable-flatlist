@@ -380,12 +380,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const initialized = new Value<number>(0)
 
     const onChangeTranslate = onChange(translate, [
-      set(this.hoverScrollSnapshot, this.scrollOffset),
       cond(not(this.hasMoved), set(state.position, translate)),
+      cond(initialized, set(this.hoverScrollSnapshot, this.scrollOffset)),
       cond(and(initialized, this.hasMoved), [
         set(this.hoverTo,
-          cond(isAfterActive, cond(isShifted, [sub(cellStart, size)], [cellStart]), [
-            cond(isShifted, [cellStart], [add(cellStart, size)])
+          cond(isAfterActive, cond(isShifted, sub(cellStart, size), cellStart), [
+            cond(isShifted, cellStart, add(cellStart, size))
           ])
         ),
         cond(and(
@@ -492,7 +492,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
 
       ref.current._component.measureLayout(findNodeHandle(this.flatlistRef.current), (x, y, w, h) => {
-        // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y}`)
         const { activeKey } = this.state
         const isHovering = activeKey !== null
         const cellData = this.cellData.get(key)
@@ -500,6 +499,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         const extraOffset = isHovering && isAfterActive ? this.cellData.get(activeKey).measurements.size : 0
         const size = horizontal ? w : h
         const offset = extraOffset + (horizontal ? x : y)
+        // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y} size ${size} offset ${offset}`)
         cellData.size.setValue(size)
         cellData.offset.setValue(offset)
         cellData.measurements.size = size
