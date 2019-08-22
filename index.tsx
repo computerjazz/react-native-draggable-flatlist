@@ -459,6 +459,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       translate: block([
         onChangeTranslate,
         onChangeSpacerIndex,
+        onChange(this.hoverTo, [
+          // noop fixes bug where this.hoverTo doesn't correctly update
+        ]),
         cond(
           this.hasMoved,
           cond(this.isHovering, runClock, 0),
