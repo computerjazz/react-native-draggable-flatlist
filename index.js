@@ -376,7 +376,7 @@ class SortableFlatList extends Component {
       >
         <FlatList
           {...this.props}
-          scrollEnabled={this.state.activeRow === -1}
+          scrollEnabled={this.state.activeRow === -1 && this.props.scrollEnabled}
           ref={ref => this._flatList = ref}
           renderItem={this.renderItem}
           extraData={this.state}
