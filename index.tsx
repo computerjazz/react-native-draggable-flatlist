@@ -48,7 +48,7 @@ const {
 
 // Fire onScrollComplete when within this many
 // px of target offset
-const onScrollCompleteThreshold = 2
+const scrollPositionTolerance = 2
 const defaultAnimationConfig = {
   damping: 20,
   mass: 0.2,
@@ -144,8 +144,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   scrollOffset = new Value<number>(0)
   scrollViewSize = new Value<number>(0)
-  isScrolledUp = lessOrEq(this.scrollOffset, 0)
-  isScrolledDown = greaterOrEq(add(this.scrollOffset, this.containerSize), this.scrollViewSize)
+  isScrolledUp = lessOrEq(sub(this.scrollOffset, scrollPositionTolerance), 0)
+  isScrolledDown = greaterOrEq(add(this.scrollOffset, this.containerSize, scrollPositionTolerance), this.scrollViewSize)
   hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, add(this.containerOffset, this.androidStatusBarSize))
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
@@ -640,7 +640,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             or(
               lessOrEq(
                 abs(sub(this.targetScrollOffset, this.scrollOffset)),
-                onScrollCompleteThreshold
+                scrollPositionTolerance
               ),
               this.isScrolledUp,
               this.isScrolledDown,
