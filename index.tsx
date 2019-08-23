@@ -5,6 +5,7 @@ import {
   StyleSheet,
   VirtualizedListProps,
   findNodeHandle,
+  ViewStyle,
 } from 'react-native'
 import {
   PanGestureHandler,
@@ -97,7 +98,7 @@ type CellData = {
     size: number,
     offset: number,
   },
-  translate: Animated.Node<number>,
+  style: ViewStyle,
   currentIndex: Animated.Node<number>,
   onLayout: () => void,
   onUnmount: () => void
@@ -431,11 +432,27 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const tapState = new Value<number>(0)
 
+    const transform = [{
+      [`translate${this.props.horizontal ? 'X' : 'Y'}`]: block([
+        onChangeTranslate,
+        onChangeSpacerIndex,
+        onChange(this.hoverTo, [
+          // noop fixes bug where this.hoverTo doesn't correctly update
+        ]),
+        cond(
+          this.hasMoved,
+          cond(this.isHovering, runClock, 0),
+          translate
+        )
+      ])
+    }]
+
     const cellData = {
       initialized,
       currentIndex,
       size,
       offset,
+      style: { transform },
       onLayout: async ({ nativeEvent }) => {
         if (this.state.activeKey !== key) this.measureCell(key)
       },
@@ -461,18 +478,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         size: 0,
         offset: 0,
       },
-      translate: block([
-        onChangeTranslate,
-        onChangeSpacerIndex,
-        onChange(this.hoverTo, [
-          // noop fixes bug where this.hoverTo doesn't correctly update
-        ]),
-        cond(
-          this.hasMoved,
-          cond(this.isHovering, runClock, 0),
-          translate
-        )
-      ]),
     }
     this.cellData.set(key, cellData)
   }
@@ -779,12 +784,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   CellRendererComponent = (cellProps) => {
-    const { item, index, style, children, onLayout, onUnmount } = cellProps
+    const { item, index, children, onLayout } = cellProps
     const { data } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
     if (!this.cellData.get(key)) this.setCellData(key, index)
-    const { translate, onLayout: onCellLayout, onCellTap } = this.cellData.get(key)
+    const { style, onLayout: onCellLayout, onCellTap } = this.cellData.get(key)
     let ref = this.cellRefs.get(key)
     if (!ref) {
       ref = React.createRef()
@@ -795,13 +800,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const isLast = index === data.length - 1
     const activeCellData = this.cellData.get(activeKey)
     const { horizontal } = this.props
-    const transform = [{ [`translate${horizontal ? 'X' : 'Y'}`]: translate }]
     return (
       <Animated.View
         onLayout={onLayout}
-        style={[style, {
-          transform
-        }]}
+        style={style}
       >
         <Animated.View
           pointerEvents={activeKey ? "none" : "auto"}
