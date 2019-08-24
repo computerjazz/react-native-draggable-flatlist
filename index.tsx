@@ -14,6 +14,16 @@ import {
   FlatList,
 } from "react-native-gesture-handler"
 import Animated from "react-native-reanimated"
+import {
+  getTranslate,
+  getCellStart,
+  getOnChangeTranslate,
+  getMidpoint,
+  getIsAfterActive,
+  getHoverMid,
+  getIsAfterHoverMid,
+  getIsShifted,
+} from './procs'
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
 
@@ -321,8 +331,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   setCellData = (key: string, index: number) => {
     const currentIndex = new Value(index)
-
+    const size = new Value(0)
+    const offset = new Value(0)
     const clock = new Clock()
+    const initialized = new Value<number>(0)
+
     const config = {
       ...this.hoverAnimConfig,
       toValue: new Value(0),
@@ -335,7 +348,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       finished: new Value(0),
     }
 
-    this.cellAnim.set(key, { clock, config, state })
+    this.cellAnim.set(key, { clock, state, config })
 
     const runClock = block([
       cond(clockRunning(clock), [
@@ -349,74 +362,33 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       state.position,
     ])
 
-    const size = new Value(0)
-    const offset = new Value(0)
+    const midpoint = getMidpoint(size, offset)
+    const isAfterActive = getIsAfterActive(currentIndex, this.activeIndex)
+    const hoverMid = getHoverMid(isAfterActive, midpoint, this.activeCellSize)
+    const isAfterHoverMid = getIsAfterHoverMid(hoverMid, this.hoverOffset)
 
-    const midpoint = add(offset, divide(size, 2))
-    const isAfterActive = greaterThan(currentIndex, this.activeIndex)
-
-    const hoverMid = cond(
-      isAfterActive,
-      sub(midpoint, this.activeCellSize),
-      midpoint,
-    )
-    const isAfterHoverMid = greaterOrEq(hoverMid, this.hoverOffset)
-
-    const translate = cond(and(
-      this.isHovering,
-      neq(currentIndex, this.activeIndex)
-    ), [
-        cond(isAfterHoverMid, this.activeCellSize, 0),
-      ],
-      0)
-
-    const cellStart = cond(isAfterActive, [
-      sub(
-        sub(add(offset, size), this.activeCellSize), this.scrollOffset)
-    ], [
-        sub(offset, this.scrollOffset)
-      ])
-
-    const isShifted = greaterThan(translate, 0)
-    const initialized = new Value<number>(0)
+    const translate = getTranslate(this.isHovering, currentIndex, this.activeIndex, isAfterHoverMid, this.activeCellSize)
+    const cellStart = getCellStart(isAfterActive, size, offset, this.activeCellSize, this.scrollOffset)
+    const isShifted = getIsShifted(translate)
 
     const onChangeTranslate = onChange(translate, [
-      cond(not(this.hasMoved), set(state.position, translate)),
-      cond(initialized, set(this.hoverScrollSnapshot, this.scrollOffset)),
-      cond(and(initialized, this.hasMoved), [
-        set(this.hoverTo,
-          cond(isAfterActive, cond(isShifted, sub(cellStart, size), cellStart), [
-            cond(isShifted, cellStart, add(cellStart, size))
-          ])
-        ),
-        cond(and(
-          not(isAfterActive),
-          greaterThan(translate, 0)
-        ),
-          set(this.spacerIndex, currentIndex)
-        ),
-        cond(and(
-          not(isAfterActive),
-          eq(translate, 0),
-        ),
-          set(this.spacerIndex, add(currentIndex, 1))
-        ),
-        cond(and(
-          isAfterActive,
-          eq(translate, 0),
-        ),
-          set(this.spacerIndex, currentIndex),
-        ),
-        cond(and(
-          isAfterActive,
-          greaterThan(translate, 0),
-        ),
-          set(this.spacerIndex, sub(currentIndex, 1))
-        ),
-      ]),
-      set(config.toValue, translate),
-      cond(this.hasMoved, startClock(clock)),
-      cond(not(initialized), set(initialized, 1)),
+      getOnChangeTranslate(
+        translate,
+        this.hasMoved,
+        isAfterActive,
+        isShifted,
+        cellStart,
+        size,
+        initialized,
+        currentIndex,
+        this.hoverScrollSnapshot,
+        this.scrollOffset,
+        this.hoverTo,
+        this.spacerIndex,
+        state.position,
+        config.toValue,
+      ),
+      cond(this.hasMoved, startClock(clock))
     ])
 
     const onChangeSpacerIndex = onChange(this.spacerIndex, [
@@ -478,6 +450,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         size: 0,
         offset: 0,
       },
+      translate: block([
+        onChangeTranslate,
+        onChangeSpacerIndex,
+        onChange(this.hoverTo, [
+          // noop fixes bug where this.hoverTo doesn't correctly update
+        ]),
+        cond(
+          this.hasMoved,
+          cond(this.isHovering, runClock, 0),
+          translate
+        )
+      ]),
     }
     this.cellData.set(key, cellData)
   }
