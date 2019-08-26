@@ -23,6 +23,7 @@ import {
   getHoverMid,
   getIsAfterHoverMid,
   getIsShifted,
+  getOnCellTap,
 } from './procs'
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
@@ -350,17 +351,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     this.cellAnim.set(key, { clock, state, config })
 
-    const runClock = block([
-      cond(clockRunning(clock), [
-        spring(clock, state, config),
-        cond(state.finished, [
-          stopClock(clock),
-          set(state.time, 0),
-          set(state.finished, 0),
-        ]),
+    const runClock = [
+      spring(clock, state, config),
+      cond(state.finished, [
+        stopClock(clock),
+        set(state.time, 0),
+        set(state.finished, 0),
       ]),
       state.position,
-    ])
+    ]
 
     const midpoint = getMidpoint(size, offset)
     const isAfterActive = getIsAfterActive(currentIndex, this.activeIndex)
@@ -412,8 +411,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           // noop fixes bug where this.hoverTo doesn't correctly update
         ]),
         cond(
-          this.hasMoved,
-          cond(this.isHovering, runClock, 0),
+          clockRunning(clock),
+          runClock,
           translate
         )
       ])
@@ -430,21 +429,20 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       },
       onUnmount: () => initialized.setValue(0),
       onCellTap: event([{
-        nativeEvent: ({ state, y, x }) => block([
-          cond(and(
-            neq(state, tapState),
-            not(this.disabled),
-          ), [
-              set(tapState, state),
-              cond(eq(state, GestureState.BEGAN), [
-                set(this.hasMoved, 0),
-                set(this.hoverTo, sub(offset, this.scrollOffset)),
-                set(this.touchCellOffset, this.props.horizontal ? x : y),
-              ]),
-              cond(eq(state, GestureState.END), this.onGestureRelease)
-            ]
-          )
-        ])
+        nativeEvent: ({ state, y, x }) => getOnCellTap(
+          state,
+          tapState,
+          this.disabled,
+          offset,
+          this.scrollOffset,
+          this.hasMoved,
+          this.hoverTo,
+          this.touchCellOffset,
+          this.onGestureRelease,
+          this.props.horizontal,
+          x,
+          y,
+        )
       }]),
       measurements: {
         size: 0,
@@ -769,7 +767,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   CellRendererComponent = (cellProps) => {
     const { item, index, children, onLayout } = cellProps
-    const { data } = this.props
+    const { data, horizontal } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
     if (!this.cellData.get(key)) this.setCellData(key, index)
@@ -783,7 +781,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const isActiveCell = activeKey === key
     const isLast = index === data.length - 1
     const activeCellData = this.cellData.get(activeKey)
-    const { horizontal } = this.props
     return (
       <Animated.View
         onLayout={onLayout}

@@ -1,4 +1,5 @@
 import Animated from "react-native-reanimated"
+import { State as GestureState } from "react-native-gesture-handler"
 
 let {
   set,
@@ -14,6 +15,9 @@ let {
   greaterOrEq,
   not,
   proc,
+  onChange,
+  debug,
+  call,
 } = Animated
 
 if (!proc) {
@@ -105,4 +109,34 @@ export const getOnChangeTranslate = proc((
   ]),
   set(toValue, translate),
   cond(not(initialized), set(initialized, 1)),
+]))
+
+
+export const getOnCellTap = proc((
+  state,
+  tapState,
+  disabled,
+  offset,
+  scrollOffset,
+  hasMoved,
+  hoverTo,
+  touchCellOffset,
+  onGestureRelease,
+  horizontal,
+  x,
+  y,
+) => block([
+  cond(and(
+    neq(state, tapState),
+    not(disabled),
+  ), [
+      set(tapState, state),
+      cond(eq(state, GestureState.BEGAN), [
+        set(hasMoved, 0),
+        set(hoverTo, sub(offset, scrollOffset)),
+        set(touchCellOffset, horizontal ? x : y),
+      ]),
+      cond(eq(state, GestureState.END), onGestureRelease)
+    ]
+  )
 ]))
