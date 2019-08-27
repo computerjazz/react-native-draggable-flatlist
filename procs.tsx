@@ -58,6 +58,13 @@ export const getCellStart = proc((isAfterActive, size, offset, activeCellSize, s
     sub(offset, scrollOffset)
   ]))
 
+const setIfAfterOrShifted = proc((val, isAfterActive, isShifted, afterAndShifted, afterNotShifted, notAfterShifted, notAfterNotShifted) => set(val,
+  cond(isAfterActive,
+    cond(isShifted, afterAndShifted, afterNotShifted), [
+      cond(isShifted, notAfterShifted, notAfterNotShifted)
+    ])
+))
+
 export const getOnChangeTranslate = proc((
   translate,
   hasMoved,
@@ -74,41 +81,14 @@ export const getOnChangeTranslate = proc((
   position,
   toValue,
 ) => block([
-  cond(not(hasMoved), set(position, translate)),
-  cond(initialized, set(hoverScrollSnapshot, scrollOffset)),
-  cond(and(initialized, hasMoved), [
-    set(hoverTo,
-      cond(isAfterActive, cond(isShifted, sub(cellStart, size), cellStart), [
-        cond(isShifted, cellStart, add(cellStart, size))
-      ])
-    ),
-    cond(and(
-      not(isAfterActive),
-      greaterThan(translate, 0)
-    ),
-      set(spacerIndex, currentIndex)
-    ),
-    cond(and(
-      not(isAfterActive),
-      eq(translate, 0),
-    ),
-      set(spacerIndex, add(currentIndex, 1))
-    ),
-    cond(and(
-      isAfterActive,
-      eq(translate, 0),
-    ),
-      set(spacerIndex, currentIndex),
-    ),
-    cond(and(
-      isAfterActive,
-      greaterThan(translate, 0),
-    ),
-      set(spacerIndex, sub(currentIndex, 1))
-    ),
-  ]),
+  cond(initialized, [
+    set(hoverScrollSnapshot, scrollOffset),
+    cond(hasMoved, [
+      setIfAfterOrShifted(hoverTo, isAfterActive, isShifted, sub(cellStart, size), cellStart, cellStart, add(cellStart, size)),
+      setIfAfterOrShifted(spacerIndex, isAfterActive, isShifted, sub(currentIndex, 1), currentIndex, currentIndex, add(currentIndex, 1))
+    ], set(position, translate))
+  ], set(initialized, 1)),
   set(toValue, translate),
-  cond(not(initialized), set(initialized, 1)),
 ]))
 
 
