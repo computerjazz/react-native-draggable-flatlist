@@ -448,18 +448,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         size: 0,
         offset: 0,
       },
-      translate: block([
-        onChangeTranslate,
-        onChangeSpacerIndex,
-        onChange(this.hoverTo, [
-          // noop fixes bug where this.hoverTo doesn't correctly update
-        ]),
-        cond(
-          this.hasMoved,
-          cond(this.isHovering, runClock, 0),
-          translate
-        )
-      ]),
     }
     this.cellData.set(key, cellData)
   }
@@ -600,6 +588,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   isAtEdge = or(this.isAtBottomEdge, this.isAtTopEdge)
 
+  autoscrollParams = [
+    this.distToTopEdge,
+    this.distToBottomEdge,
+    this.scrollOffset,
+    this.isScrolledUp,
+    this.isScrolledDown,
+  ]
+
   checkAutoscroll = cond(
     and(
       this.isAtEdge,
@@ -608,13 +604,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       eq(this.panGestureState, GestureState.ACTIVE),
       not(this.isAutoscrolling.native),
     ), [
-      call([
-        this.distToTopEdge,
-        this.distToBottomEdge,
-        this.scrollOffset,
-        this.isScrolledUp,
-        this.isScrolledDown,
-      ], this.autoscroll),
+      call(this.autoscrollParams, this.autoscroll),
     ])
 
   onScroll = event([
@@ -635,13 +625,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           ), [
             set(this.isAutoscrolling.native, 0),
             this.checkAutoscroll,
-            call([
-              this.distToTopEdge,
-              this.distToBottomEdge,
-              this.scrollOffset,
-              this.isScrolledUp,
-              this.isScrolledDown,
-            ], this.onAutoscrollComplete),
+            call(this.autoscrollParams, this.onAutoscrollComplete),
           ]),
       ])
     }
