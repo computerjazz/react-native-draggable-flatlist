@@ -2,6 +2,7 @@ import Animated from "react-native-reanimated"
 import { State as GestureState } from "react-native-gesture-handler"
 
 let {
+  or,
   set,
   cond,
   add,
@@ -15,9 +16,7 @@ let {
   greaterOrEq,
   not,
   proc,
-  onChange,
   debug,
-  call,
 } = Animated
 
 if (!proc) {
@@ -53,7 +52,7 @@ export const getCellStart = proc((isAfterActive, size, offset, activeCellSize, s
 )
 
 
-const setIfAfterOrShifted = proc((
+const setMultiCond = proc((
   val,
   firstCond,
   secondCond,
@@ -84,11 +83,11 @@ export const getOnChangeTranslate = proc((
   position,
   toValue,
 ) => block([
-  cond(initialized, [
+  cond(or(not(isAfterActive), initialized), [
     set(hoverScrollSnapshot, scrollOffset),
     cond(hasMoved, [
-      setIfAfterOrShifted(hoverTo, isAfterActive, isShifted, sub(cellStart, size), cellStart, cellStart, add(cellStart, size)),
-      setIfAfterOrShifted(spacerIndex, isAfterActive, isShifted, sub(currentIndex, 1), currentIndex, currentIndex, add(currentIndex, 1))
+      setMultiCond(hoverTo, isAfterActive, isShifted, sub(cellStart, size), cellStart, cellStart, add(cellStart, size)),
+      setMultiCond(spacerIndex, isAfterActive, isShifted, sub(currentIndex, 1), currentIndex, currentIndex, add(currentIndex, 1)),
     ], set(position, translate))
   ], set(initialized, 1)),
   set(toValue, translate),
