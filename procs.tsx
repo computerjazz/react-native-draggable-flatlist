@@ -53,10 +53,18 @@ export const getCellStart = proc((isAfterActive, size, offset, activeCellSize, s
 )
 
 
-const setIfAfterOrShifted = proc((val, isAfterActive, isShifted, afterAndShifted, afterNotShifted, notAfterShifted, notAfterNotShifted) => set(val,
-  cond(isAfterActive,
-    cond(isShifted, afterAndShifted, afterNotShifted),
-    cond(isShifted, notAfterShifted, notAfterNotShifted)
+const setIfAfterOrShifted = proc((
+  val,
+  firstCond,
+  secondCond,
+  firstAndSecond,
+  firstOnly,
+  secondOnly,
+  none
+) => set(val,
+  cond(firstCond,
+    cond(secondCond, firstAndSecond, firstOnly),
+    cond(secondCond, secondOnly, none)
   )
 ))
 
