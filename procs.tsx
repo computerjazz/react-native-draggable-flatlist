@@ -46,23 +46,18 @@ export const getIsAfterHoverMid = proc((hoverMid, hoverOffset) => greaterOrEq(ho
 export const getTranslate = proc((isHovering, currentIndex, activeIndex, isAfterHoverMid, activeCellSize) => cond(and(
   isHovering,
   neq(currentIndex, activeIndex)
-), [
-    cond(isAfterHoverMid, activeCellSize, 0),
-  ],
-  0))
+), cond(isAfterHoverMid, activeCellSize, 0), 0))
 
-export const getCellStart = proc((isAfterActive, size, offset, activeCellSize, scrollOffset) => cond(isAfterActive, [
-  sub(
-    sub(add(offset, size), activeCellSize), scrollOffset)
-], [
-    sub(offset, scrollOffset)
-  ]))
+export const getCellStart = proc((isAfterActive, size, offset, activeCellSize, scrollOffset) => sub(
+  cond(isAfterActive, sub(add(offset, size), activeCellSize), offset), scrollOffset)
+)
+
 
 const setIfAfterOrShifted = proc((val, isAfterActive, isShifted, afterAndShifted, afterNotShifted, notAfterShifted, notAfterNotShifted) => set(val,
   cond(isAfterActive,
-    cond(isShifted, afterAndShifted, afterNotShifted), [
-      cond(isShifted, notAfterShifted, notAfterNotShifted)
-    ])
+    cond(isShifted, afterAndShifted, afterNotShifted),
+    cond(isShifted, notAfterShifted, notAfterNotShifted)
+  )
 ))
 
 export const getOnChangeTranslate = proc((
