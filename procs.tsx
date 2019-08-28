@@ -106,9 +106,7 @@ export const getOnCellTap = proc((
   hoverTo,
   touchCellOffset,
   onGestureRelease,
-  horizontal,
-  x,
-  y,
+  touchOffset,
 ) => block([
   cond(and(
     neq(state, tapState),
@@ -118,7 +116,7 @@ export const getOnCellTap = proc((
       cond(eq(state, GestureState.BEGAN), [
         set(hasMoved, 0),
         set(hoverTo, sub(offset, scrollOffset)),
-        set(touchCellOffset, horizontal ? x : y),
+        set(touchCellOffset, touchOffset),
       ]),
       cond(eq(state, GestureState.END), onGestureRelease)
     ]
