@@ -24,6 +24,7 @@ import {
   getIsAfterHoverMid,
   getIsShifted,
   getOnCellTap,
+  springFill,
 } from './procs'
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
@@ -239,7 +240,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         if (cur.hidden !== null) acc.hidden = cur.hidden.value
         return acc
       }, { hidden: false, translucent: false })
-      if (!(hidden || translucent)) this.androidStatusBarSize.setValue(StatusBar.currentHeight)
+      if (!(hidden || translucent)) {
+        this.androidStatusBarSize.setValue(StatusBar.currentHeight)
+      }
     }
   }
 
@@ -352,7 +355,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.cellAnim.set(key, { clock, state, config })
 
     const runClock = [
-      spring(clock, state, config),
+      springFill(clock, state, config),
       cond(state.finished, [
         stopClock(clock),
         set(state.time, 0),
@@ -387,7 +390,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         state.position,
         config.toValue,
       ),
-      cond(this.hasMoved, startClock(clock))
+      cond(this.hasMoved, startClock(clock), set(state.position, translate))
     ])
 
     const onChangeSpacerIndex = onChange(this.spacerIndex, [
@@ -405,16 +408,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const transform = [{
       [`translate${this.props.horizontal ? 'X' : 'Y'}`]: block([
-        onChangeTranslate,
         onChangeSpacerIndex,
+        onChangeTranslate,
         onChange(this.hoverTo, [
           // noop fixes bug where this.hoverTo doesn't correctly update
         ]),
-        cond(
-          clockRunning(clock),
-          runClock,
-          translate
-        )
+        runClock,
       ])
     }]
 
@@ -439,9 +438,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           this.hoverTo,
           this.touchCellOffset,
           this.onGestureRelease,
-          this.props.horizontal,
-          x,
-          y,
+          this.props.horizontal ? x : y,
         )
       }]),
       measurements: {
@@ -715,6 +712,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         {
           transform: [{
             [`translate${horizontal ? "X" : "Y"}`]: block([
+              onChange(this.androidStatusBarSize, []),
               cond(clockRunning(this.hoverClock), [
                 this.runHoverClock,
               ], this.hoverAnim)

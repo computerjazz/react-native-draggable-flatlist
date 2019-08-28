@@ -17,6 +17,8 @@ let {
   not,
   proc,
   debug,
+  Value,
+  spring,
 } = Animated
 
 if (!proc) {
@@ -88,7 +90,7 @@ export const getOnChangeTranslate = proc((
     cond(hasMoved, [
       setMultiCond(hoverTo, isAfterActive, isShifted, sub(cellStart, size), cellStart, cellStart, add(cellStart, size)),
       setMultiCond(spacerIndex, isAfterActive, isShifted, sub(currentIndex, 1), currentIndex, currentIndex, add(currentIndex, 1)),
-    ], set(position, translate))
+    ])
   ], set(initialized, 1)),
   set(toValue, translate),
 ]))
@@ -122,3 +124,58 @@ export const getOnCellTap = proc((
     ]
   )
 ]))
+
+const betterSpring = proc(
+  (
+    finished,
+    velocity,
+    position,
+    time,
+    prevPosition,
+    toValue,
+    damping,
+    mass,
+    stiffness,
+    overshootClamping,
+    restSpeedThreshold,
+    restDisplacementThreshold,
+    clock
+  ) =>
+    spring(
+      clock,
+      {
+        finished,
+        velocity,
+        position,
+        time,
+        prevPosition,
+      },
+      {
+        toValue,
+        damping,
+        mass,
+        stiffness,
+        overshootClamping,
+        restDisplacementThreshold,
+        restSpeedThreshold,
+      }
+    )
+);
+
+export function springFill(clock, state, config) {
+  return betterSpring(
+    state.finished,
+    state.velocity,
+    state.position,
+    state.time,
+    new Value(0),
+    config.toValue,
+    config.damping,
+    config.mass,
+    config.stiffness,
+    config.overshootClamping,
+    config.restSpeedThreshold,
+    config.restDisplacementThreshold,
+    clock
+  );
+}
