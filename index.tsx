@@ -15,16 +15,9 @@ import {
 } from "react-native-gesture-handler"
 import Animated from "react-native-reanimated"
 import {
-  getTranslate,
-  getCellStart,
-  getOnChangeTranslate,
-  getMidpoint,
-  getIsAfterActive,
-  getHoverMid,
-  getIsAfterHoverMid,
-  getIsShifted,
   getOnCellTap,
   springFill,
+  setupCell,
 } from './procs'
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList)
@@ -333,12 +326,21 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (cell) cell.currentIndex.setValue(index)
   })
 
+  sharedAnimVals = [
+    this.activeIndex,
+    this.activeCellSize,
+    this.hoverOffset,
+    this.scrollOffset,
+    this.isHovering,
+    this.hoverTo,
+    this.hoverScrollSnapshot,
+    this.hasMoved,
+    this.spacerIndex,
+  ]
+
   setCellData = (key: string, index: number) => {
-    const currentIndex = new Value(index)
-    const size = new Value(0)
-    const offset = new Value(0)
     const clock = new Clock()
-    const initialized = new Value<number>(0)
+    const currentIndex = new Value(index)
 
     const config = {
       ...this.hoverAnimConfig,
@@ -354,67 +356,51 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     this.cellAnim.set(key, { clock, state, config })
 
-    const runClock = [
-      springFill(clock, state, config),
-      cond(state.finished, [
-        stopClock(clock),
-        set(state.time, 0),
-        set(state.finished, 0),
-      ]),
+    const initialized = new Value(0)
+    const midpoint = new Value(0)
+    const size = new Value(0)
+    const offset = new Value(0)
+    const isAfterActive = new Value(0)
+    const hoverMid = new Value(0)
+    const isAfterHoverMid = new Value(0)
+    const cellStart = new Value(0)
+    const translate = new Value(0)
+    const isShifted = new Value(0)
+
+    const runSrping = cond(clockRunning(clock), springFill(clock, state, config))
+    const onHasMoved = startClock(clock)
+    const onChangeSpacerIndex = cond(clockRunning(clock), stopClock(clock))
+    const onFinished = stopClock(clock)
+
+    const anim = setupCell(
+      currentIndex,
+      initialized,
+      size,
+      offset,
+      cellStart,
+      midpoint,
+      isAfterActive,
+      hoverMid,
+      isAfterHoverMid,
+      translate,
+      new Value(0),
+      new Value(-1),
+      isShifted,
+      ...this.sharedAnimVals,
+      config.toValue,
       state.position,
-    ]
-
-    const midpoint = getMidpoint(size, offset)
-    const isAfterActive = getIsAfterActive(currentIndex, this.activeIndex)
-    const hoverMid = getHoverMid(isAfterActive, midpoint, this.activeCellSize)
-    const isAfterHoverMid = getIsAfterHoverMid(hoverMid, this.hoverOffset)
-
-    const translate = getTranslate(this.isHovering, currentIndex, this.activeIndex, isAfterHoverMid, this.activeCellSize)
-    const cellStart = getCellStart(isAfterActive, size, offset, this.activeCellSize, this.scrollOffset)
-    const isShifted = getIsShifted(translate)
-
-    const onChangeTranslate = onChange(translate, [
-      getOnChangeTranslate(
-        translate,
-        this.hasMoved,
-        isAfterActive,
-        isShifted,
-        cellStart,
-        size,
-        initialized,
-        currentIndex,
-        this.hoverScrollSnapshot,
-        this.scrollOffset,
-        this.hoverTo,
-        this.spacerIndex,
-        state.position,
-        config.toValue,
-      ),
-      cond(this.hasMoved, startClock(clock), set(state.position, translate))
-    ])
-
-    const onChangeSpacerIndex = onChange(this.spacerIndex, [
-      cond(eq(this.spacerIndex, -1), [
-        // Hard reset to prevent stale state bugs
-        cond(clockRunning(clock), stopClock(clock)),
-        set(state.position, 0),
-        set(state.finished, 0),
-        set(state.time, 0),
-        set(config.toValue, 0),
-      ]),
-    ])
+      state.time,
+      state.finished,
+      runSrping,
+      onHasMoved,
+      onChangeSpacerIndex,
+      onFinished,
+    )
 
     const tapState = new Value<number>(0)
 
     const transform = [{
-      [`translate${this.props.horizontal ? 'X' : 'Y'}`]: block([
-        onChangeSpacerIndex,
-        onChangeTranslate,
-        onChange(this.hoverTo, [
-          // noop fixes bug where this.hoverTo doesn't correctly update
-        ]),
-        runClock,
-      ])
+      [`translate${this.props.horizontal ? 'X' : 'Y'}`]: anim,
     }]
 
     const cellData = {

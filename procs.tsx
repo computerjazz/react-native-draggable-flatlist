@@ -123,6 +123,89 @@ export const getOnCellTap = proc((
   )
 ]))
 
+export const hardReset = proc((position, finished, time, toValue) => block([
+  set(position, 0),
+  set(finished, 0),
+  set(time, 0),
+  set(toValue, 0),
+]))
+
+export const setupCell = proc((
+  currentIndex,
+  initialized,
+  size,
+  offset,
+  cellStart,
+  midpoint,
+  isAfterActive,
+  hoverMid,
+  isAfterHoverMid,
+  translate,
+  prevTrans,
+  prevSpacerIndex,
+  isShifted,
+  activeIndex,
+  activeCellSize,
+  hoverOffset,
+  scrollOffset,
+  isHovering,
+  hoverTo,
+  hoverScrollSnapshot,
+  hasMoved,
+  spacerIndex,
+  toValue,
+  position,
+  time,
+  finished,
+  runSpring,
+  onHasMoved,
+  onChangeSpacerIndex,
+  onFinished,
+) => block([
+  set(midpoint, getMidpoint(size, offset)),
+  set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
+  set(hoverMid, getHoverMid(isAfterActive, midpoint, activeCellSize)),
+  set(isAfterHoverMid, getIsAfterHoverMid(hoverMid, hoverOffset)),
+  set(cellStart, getCellStart(isAfterActive, size, offset, activeCellSize, scrollOffset)),
+  set(translate, getTranslate(isHovering, currentIndex, activeIndex, isAfterHoverMid, activeCellSize)),
+  set(isShifted, getIsShifted(translate)),
+  cond(neq(translate, prevTrans), [
+    set(prevTrans, translate),
+    getOnChangeTranslate(
+      translate,
+      hasMoved,
+      isAfterActive,
+      isShifted,
+      cellStart,
+      size,
+      initialized,
+      currentIndex,
+      hoverScrollSnapshot,
+      scrollOffset,
+      hoverTo,
+      spacerIndex,
+      position,
+      toValue,
+    ),
+    cond(hasMoved, onHasMoved, set(position, translate)),
+  ]),
+  cond(neq(prevSpacerIndex, spacerIndex), [
+    set(prevSpacerIndex, spacerIndex),
+    cond(eq(spacerIndex, -1), [
+      // Hard reset to prevent stale state bugs
+      onChangeSpacerIndex,
+      hardReset(position, finished, time, toValue)
+    ]),
+  ]),
+  runSpring,
+  cond(finished, [
+    onFinished,
+    set(time, 0),
+    set(finished, 0),
+  ]),
+  position,
+]))
+
 const betterSpring = proc(
   (
     finished,
