@@ -112,14 +112,14 @@ export const getOnCellTap = proc((
     neq(state, tapState),
     not(disabled),
   ), [
-      set(tapState, state),
-      cond(eq(state, GestureState.BEGAN), [
-        set(hasMoved, 0),
-        set(hoverTo, sub(offset, scrollOffset)),
-        set(touchCellOffset, touchOffset),
-      ]),
-      cond(eq(state, GestureState.END), onGestureRelease)
-    ]
+    set(tapState, state),
+    cond(eq(state, GestureState.BEGAN), [
+      set(hasMoved, 0),
+      set(hoverTo, sub(offset, scrollOffset)),
+      set(touchCellOffset, touchOffset),
+    ]),
+    cond(eq(state, GestureState.END), onGestureRelease)
+  ]
   )
 ]))
 
@@ -143,6 +143,7 @@ export const setupCell = proc((
   translate,
   prevTrans,
   prevSpacerIndex,
+  prevHoverTo,
   isShifted,
   activeIndex,
   activeCellSize,
@@ -197,6 +198,9 @@ export const setupCell = proc((
       hardReset(position, finished, time, toValue)
     ]),
   ]),
+  // Continually evaluation hoverTo fixes bug where 
+  // hover component always snaps to top if not moved
+  cond(neq(prevHoverTo, hoverTo), set(prevHoverTo, hoverTo)),
   runSpring,
   cond(finished, [
     onFinished,

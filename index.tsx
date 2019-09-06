@@ -385,6 +385,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       translate,
       new Value(0),
       new Value(-1),
+      new Value(0),
       isShifted,
       ...this.sharedAnimVals,
       config.toValue,
@@ -587,8 +588,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       eq(this.panGestureState, GestureState.ACTIVE),
       not(this.isAutoscrolling.native),
     ), [
-      call(this.autoscrollParams, this.autoscroll),
-    ])
+    call(this.autoscrollParams, this.autoscroll),
+  ])
 
   onScroll = event([
     {
@@ -606,10 +607,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               this.isScrolledDown,
             )
           ), [
-            set(this.isAutoscrolling.native, 0),
-            this.checkAutoscroll,
-            call(this.autoscrollParams, this.onAutoscrollComplete),
-          ]),
+          set(this.isAutoscrolling.native, 0),
+          this.checkAutoscroll,
+          call(this.autoscrollParams, this.onAutoscrollComplete),
+        ]),
       ])
     }
   ])
@@ -633,11 +634,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           neq(state, this.tapGestureState),
           not(this.disabled),
         ), [
-            set(this.tapGestureState, state),
-            cond(eq(state, GestureState.BEGAN), [
-              set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
-            ]),
+          set(this.tapGestureState, state),
+          cond(eq(state, GestureState.BEGAN), [
+            set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
           ]),
+        ]),
       ])
     }
   ])
@@ -649,13 +650,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           neq(state, this.panGestureState),
           not(this.disabled),
         ), [
-            set(this.panGestureState, state),
-            cond(or(
-              eq(state, GestureState.END),
-              eq(state, GestureState.CANCELLED),
-              eq(state, GestureState.FAILED),
-            ), this.onGestureRelease),
-          ]
+          set(this.panGestureState, state),
+          cond(or(
+            eq(state, GestureState.END),
+            eq(state, GestureState.CANCELLED),
+            eq(state, GestureState.FAILED),
+          ), this.onGestureRelease),
+        ]
         ),
       ])
     }
@@ -669,10 +670,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             eq(this.panGestureState, GestureState.ACTIVE),
             not(this.disabled),
           ), [
-            cond(not(this.hasMoved), set(this.hasMoved, 1)),
-            set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
-            onChange(this.touchAbsolute, this.checkAutoscroll),
-          ]),
+          cond(not(this.hasMoved), set(this.hasMoved, 1)),
+          set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
+          onChange(this.touchAbsolute, this.checkAutoscroll),
+        ]),
       ]),
     },
   ])
