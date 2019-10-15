@@ -802,6 +802,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             onHandlerStateChange={this.onPanStateChange}
           >
             <Animated.View
+              style={styles.flex}
               ref={this.containerRef}
               onLayout={this.onContainerLayout}
             >
