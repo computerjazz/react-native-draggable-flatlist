@@ -69,6 +69,13 @@ const debugGestureState = (state, context) => {
   console.log(`## ${context} debug gesture state: ${state} - ${stateStr}`)
 }
 
+export interface ListRenderItemInfo<T> {
+  item: T,
+  index: number,
+  drag: (index: number) => void,
+  isActive: boolean,
+}
+
 interface Props<T> extends VirtualizedListProps<T> {
   autoscrollSpeed: number,
   autoscrollThreshold: number,
@@ -82,12 +89,7 @@ interface Props<T> extends VirtualizedListProps<T> {
     from: number,
     to: number,
   }) => void
-  renderItem: (params: {
-    item: T,
-    index: number,
-    drag: (index: number) => void,
-    isActive: boolean,
-  }) => React.ComponentType
+  renderItem: (params: ListRenderItemInfo<T>) => React.ComponentType
   animationConfig: Partial<Animated.SpringConfig>,
 }
 
