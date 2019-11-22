@@ -85,7 +85,7 @@ interface Props<T> extends VirtualizedListProps<T> {
   renderItem: (params: {
     item: T,
     index: number,
-    drag: (index: number) => void,
+    drag: () => void,
     isActive: boolean,
   }) => React.ComponentType
   animationConfig: Partial<Animated.SpringConfig>,
@@ -248,7 +248,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       // Remeasure on next paint  
       this.updateCellData(this.props.data)
       onNextFrame(this.flushQueue)
-      this.disabled.setValue(0)
     }
   }
 
@@ -318,6 +317,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     this.spacerIndex.setValue(-1)
     this.activeIndex.setValue(-1)
+    this.disabled.setValue(0)
   }
 
   updateCellData = (data: T[] = []) => data.forEach((item: T, index: number) => {
