@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 import {
   Platform,
   StatusBar,
@@ -31,7 +31,6 @@ const {
   sub,
   event,
   block,
-  debug,
   eq,
   neq,
   and,
@@ -50,6 +49,7 @@ const {
   spring,
   defined,
   max,
+  debug,
 } = Animated
 
 // Fire onScrollComplete when within this many
@@ -87,13 +87,13 @@ interface Props<T> extends VirtualizedListProps<T> {
     index: number,
     drag: () => void,
     isActive: boolean,
-  }) => React.ComponentType
+  }) => JSX.Element
   animationConfig: Partial<Animated.SpringConfig>,
 }
 
 type State = {
   activeKey: string | null,
-  hoverComponent: React.ComponentType | null,
+  hoverComponent: JSX.Element | null,
 }
 
 type CellData = {
@@ -177,7 +177,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   distToTopEdge = max(0, this.hoverAnim)
-  distToBottomEdge = max(0, sub(this.containerEnd, add(this.hoverAnim, this.activeCellSize)))
+  distToBottomEdge = max(0, sub(this.containerEnd, add(this.containerOffset, this.hoverAnim, this.activeCellSize)))
 
   cellAnim = new Map<string, {
     config: Animated.SpringConfig,
@@ -480,7 +480,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   onContainerLayout = () => {
     const { horizontal } = this.props
     this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
-      // console.log(`container layout x ${x} y ${y} w ${w} h ${h} pageX ${pageX} pageY ${pageY}`)
       this.containerOffset.setValue(horizontal ? pageX : pageY)
       this.containerEnd.setValue(add(this.containerOffset, horizontal ? w : h))
     })
