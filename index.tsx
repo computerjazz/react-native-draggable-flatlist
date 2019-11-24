@@ -139,6 +139,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   touchCellOffset = new Value(0)
   panGestureState = new Value(-1)
   tapGestureState = new Value(0)
+
+  isPressedIn = {
+    native: or(
+      eq(this.panGestureState, GestureState.ACTIVE),
+      eq(this.tapGestureState, GestureState.BEGAN),
+    ),
+    js: false,
+  }
+
   hasMoved = new Value(0)
   disabled = new Value(0)
 
@@ -326,18 +335,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (cell) cell.currentIndex.setValue(index)
   })
 
-  sharedAnimVals = [
-    this.activeIndex,
-    this.activeCellSize,
-    this.hoverOffset,
-    this.scrollOffset,
-    this.isHovering,
-    this.hoverTo,
-    this.hoverScrollSnapshot,
-    this.hasMoved,
-    this.spacerIndex,
-  ]
-
   setCellData = (key: string, index: number) => {
     const clock = new Clock()
     const currentIndex = new Value(index)
@@ -387,7 +384,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       new Value(-1),
       new Value(0),
       isShifted,
-      ...this.sharedAnimVals,
+      this.activeIndex,
+      this.activeCellSize,
+      this.hoverOffset,
+      this.scrollOffset,
+      this.isHovering,
+      this.hoverTo,
+      this.hoverScrollSnapshot,
+      this.hasMoved,
+      this.spacerIndex,
       config.toValue,
       state.position,
       state.time,
@@ -396,6 +401,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onHasMoved,
       onChangeSpacerIndex,
       onFinished,
+      this.isPressedIn.native,
     )
 
     const tapState = new Value<number>(0)
@@ -491,11 +497,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   isAutoscrolling = {
-    native: new Value<number>(0),
-    js: false,
-  }
-
-  isPressedIn = {
     native: new Value<number>(0),
     js: false,
   }

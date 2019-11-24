@@ -162,6 +162,7 @@ export const setupCell = proc((
   onHasMoved,
   onChangeSpacerIndex,
   onFinished,
+  isPressedIn,
 ) => block([
   set(midpoint, getMidpoint(size, offset)),
   set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
@@ -188,7 +189,7 @@ export const setupCell = proc((
       position,
       toValue,
     ),
-    cond(hasMoved, onHasMoved, set(position, translate)),
+    cond(hasMoved, onHasMoved, cond(isPressedIn, set(position, translate))),
   ]),
   cond(neq(prevSpacerIndex, spacerIndex), [
     set(prevSpacerIndex, spacerIndex),
