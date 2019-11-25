@@ -84,6 +84,7 @@ export const getOnChangeTranslate = proc((
   spacerIndex,
   position,
   toValue,
+  isPressedIn,
 ) => block([
   cond(or(not(isAfterActive), initialized), [
     set(hoverScrollSnapshot, scrollOffset),
@@ -92,7 +93,7 @@ export const getOnChangeTranslate = proc((
       setMultiCond(spacerIndex, isAfterActive, isShifted, sub(currentIndex, 1), currentIndex, currentIndex, add(currentIndex, 1)),
     ])
   ], set(initialized, 1)),
-  set(toValue, translate),
+  cond(isPressedIn, set(toValue, translate)),
 ]))
 
 
@@ -188,6 +189,7 @@ export const setupCell = proc((
       spacerIndex,
       position,
       toValue,
+      isPressedIn,
     ),
     cond(hasMoved, onHasMoved, cond(isPressedIn, set(position, translate))),
   ]),
