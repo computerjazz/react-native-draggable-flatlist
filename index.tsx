@@ -141,10 +141,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   tapGestureState = new Value(0)
 
   isPressedIn = {
-    native: or(
-      eq(this.panGestureState, GestureState.ACTIVE),
-      eq(this.tapGestureState, GestureState.BEGAN),
-    ),
+    native: new Value<number>(0),
     js: false,
   }
 
@@ -616,6 +613,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ])
 
   onGestureRelease = [
+    set(this.isPressedIn.native, 0),
     cond(this.isHovering, [
       set(this.disabled, 1),
       cond(defined(this.hoverClock), [
@@ -636,6 +634,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ), [
           set(this.tapGestureState, state),
           cond(eq(state, GestureState.BEGAN), [
+            set(this.isPressedIn.native, 1),
             set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
           ]),
         ]),
