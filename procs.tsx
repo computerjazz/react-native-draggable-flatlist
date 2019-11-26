@@ -172,7 +172,7 @@ export const setupCell = proc((
   set(cellStart, getCellStart(isAfterActive, size, offset, activeCellSize, scrollOffset)),
   set(translate, getTranslate(isHovering, currentIndex, activeIndex, isAfterHoverMid, activeCellSize)),
   set(isShifted, getIsShifted(translate)),
-  cond(neq(translate, prevTrans), [
+  cond(and(isPressedIn, neq(translate, prevTrans)), [
     set(prevTrans, translate),
     getOnChangeTranslate(
       translate,
@@ -191,7 +191,7 @@ export const setupCell = proc((
       toValue,
       isPressedIn,
     ),
-    cond(hasMoved, onHasMoved, cond(isPressedIn, set(position, translate))),
+    cond(hasMoved, onHasMoved, set(position, translate)),
   ]),
   cond(neq(prevSpacerIndex, spacerIndex), [
     set(prevSpacerIndex, spacerIndex),
