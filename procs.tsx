@@ -19,6 +19,7 @@ let {
   debug,
   Value,
   spring,
+  lessThan,
 } = Animated
 
 if (!proc) {
@@ -53,45 +54,17 @@ export const getCellStart = proc((isAfterActive, size, offset, activeCellSize, s
   cond(isAfterActive, sub(add(offset, size), activeCellSize), offset), scrollOffset)
 )
 
-
-const setMultiCond = proc((
-  val,
-  firstCond,
-  secondCond,
-  firstAndSecond,
-  firstOnly,
-  secondOnly,
-  none
-) => set(val,
-  cond(firstCond,
-    cond(secondCond, firstAndSecond, firstOnly),
-    cond(secondCond, secondOnly, none)
-  )
-))
-
 export const getOnChangeTranslate = proc((
   translate,
-  hasMoved,
   isAfterActive,
-  isShifted,
-  cellStart,
-  size,
   initialized,
-  currentIndex,
   hoverScrollSnapshot,
   scrollOffset,
-  hoverTo,
-  spacerIndex,
-  position,
   toValue,
   isPressedIn,
 ) => block([
   cond(or(not(isAfterActive), initialized), [
     set(hoverScrollSnapshot, scrollOffset),
-    cond(hasMoved, [
-      setMultiCond(hoverTo, isAfterActive, isShifted, sub(cellStart, size), cellStart, cellStart, add(cellStart, size)),
-      setMultiCond(spacerIndex, isAfterActive, isShifted, sub(currentIndex, 1), currentIndex, currentIndex, add(currentIndex, 1)),
-    ])
   ], set(initialized, 1)),
   cond(isPressedIn, set(toValue, translate)),
 ]))
@@ -164,30 +137,32 @@ export const setupCell = proc((
   onChangeSpacerIndex,
   onFinished,
   isPressedIn,
+  isHoveringOverCell,
 ) => block([
   set(midpoint, getMidpoint(size, offset)),
   set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
   set(hoverMid, getHoverMid(isAfterActive, midpoint, activeCellSize)),
   set(isAfterHoverMid, getIsAfterHoverMid(hoverMid, hoverOffset)),
   set(cellStart, getCellStart(isAfterActive, size, offset, activeCellSize, scrollOffset)),
+
+  cond(isPressedIn, set(isHoveringOverCell, and(
+    greaterOrEq(hoverOffset, sub(offset, divide(activeCellSize, 2))),
+    lessThan(hoverOffset, add(offset, divide(activeCellSize, 2)))
+  ))),
+  cond(and(isPressedIn, isHoveringOverCell, neq(spacerIndex, currentIndex)), [
+    set(spacerIndex, currentIndex),
+    set(hoverTo, sub(offset, scrollOffset)),
+  ]),
   set(translate, getTranslate(isHovering, currentIndex, activeIndex, isAfterHoverMid, activeCellSize)),
   set(isShifted, getIsShifted(translate)),
   cond(and(isPressedIn, neq(translate, prevTrans)), [
     set(prevTrans, translate),
     getOnChangeTranslate(
       translate,
-      hasMoved,
       isAfterActive,
-      isShifted,
-      cellStart,
-      size,
       initialized,
-      currentIndex,
       hoverScrollSnapshot,
       scrollOffset,
-      hoverTo,
-      spacerIndex,
-      position,
       toValue,
       isPressedIn,
     ),

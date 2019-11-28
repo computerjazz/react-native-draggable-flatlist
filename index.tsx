@@ -365,7 +365,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const onHasMoved = startClock(clock)
     const onChangeSpacerIndex = cond(clockRunning(clock), stopClock(clock))
     const onFinished = stopClock(clock)
-
+    const isHoveringOverCell = new Value(0)
     const anim = setupCell(
       currentIndex,
       initialized,
@@ -399,6 +399,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onChangeSpacerIndex,
       onFinished,
       this.isPressedIn.native,
+      isHoveringOverCell,
     )
 
     const tapState = new Value<number>(0)
