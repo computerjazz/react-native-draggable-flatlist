@@ -1,7 +1,6 @@
 import React from 'react'
 import {
   Platform,
-  StatusBar,
   StyleSheet,
   VirtualizedListProps,
   findNodeHandle,
@@ -130,10 +129,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   panGestureHandlerRef = React.createRef()
   tapGestureHandlerRef = React.createRef()
 
-  containerOffset = new Value(0)
-  androidStatusBarSize = new Value(0)
-  containerEnd = new Value(0)
-  containerSize = sub(this.containerEnd, this.containerOffset)
+  containerSize = new Value(0)
 
   touchAbsolute = new Value(0)
   touchCellOffset = new Value(0)
@@ -158,7 +154,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   scrollViewSize = new Value<number>(0)
   isScrolledUp = lessOrEq(sub(this.scrollOffset, scrollPositionTolerance), 0)
   isScrolledDown = greaterOrEq(add(this.scrollOffset, this.containerSize, scrollPositionTolerance), this.scrollViewSize)
-  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset, add(this.containerOffset, this.androidStatusBarSize))
+  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset)
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
 
@@ -183,7 +179,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   distToTopEdge = max(0, this.hoverAnim)
-  distToBottomEdge = max(0, sub(this.containerEnd, add(this.containerOffset, this.hoverAnim, this.activeCellSize)))
+  distToBottomEdge = max(0, sub(this.containerSize, add(this.hoverAnim, this.activeCellSize)))
 
   cellAnim = new Map<string, {
     config: Animated.SpringConfig,
@@ -228,21 +224,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.keyToIndex.set(key, index)
     })
     onRef && onRef(this.flatlistRef)
-  }
-
-  componentDidMount() {
-    if (Platform.OS === "android" && !this.props.horizontal) {
-      // Android measurements do not account for StatusBar, 
-      // so we must do so manually.
-      const { hidden, translucent } = StatusBar._propsStack.reduce((acc, cur) => {
-        if (cur.translucent !== undefined) acc.translucent = cur.translucent
-        if (cur.hidden !== null) acc.hidden = cur.hidden.value
-        return acc
-      }, { hidden: false, translucent: false })
-      if (!(hidden || translucent)) {
-        this.androidStatusBarSize.setValue(StatusBar.currentHeight)
-      }
-    }
   }
 
   componentDidUpdate = async (prevProps: Props<T>) => {
@@ -483,9 +464,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onContainerLayout = () => {
     const { horizontal } = this.props
-    this.containerRef.current._component.measure((x, y, w, h, pageX, pageY) => {
-      this.containerOffset.setValue(horizontal ? pageX : pageY)
-      this.containerEnd.setValue(add(this.containerOffset, horizontal ? w : h))
+    this.containerRef.current._component.measure((x, y, w, h) => {
+      this.containerSize.setValue(horizontal ? w : h)
     })
   }
 
@@ -628,7 +608,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onContainerTapStateChange = event([
     {
-      nativeEvent: ({ state, absoluteX, absoluteY }) => block([
+      nativeEvent: ({ state, x, y }) => block([
         cond(and(
           neq(state, this.tapGestureState),
           not(this.disabled),
@@ -636,7 +616,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           set(this.tapGestureState, state),
           cond(eq(state, GestureState.BEGAN), [
             set(this.isPressedIn.native, 1),
-            set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
+            set(this.touchAbsolute, this.props.horizontal ? x : y),
           ]),
         ]),
       ])
@@ -664,14 +644,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onPanGestureEvent = event([
     {
-      nativeEvent: ({ absoluteY, absoluteX }) => block([
+      nativeEvent: ({ x, y }) => block([
         cond(
           and(
             eq(this.panGestureState, GestureState.ACTIVE),
             not(this.disabled),
           ), [
           cond(not(this.hasMoved), set(this.hasMoved, 1)),
-          set(this.touchAbsolute, this.props.horizontal ? absoluteX : absoluteY),
+          set(this.touchAbsolute, this.props.horizontal ? x : y),
           onChange(this.touchAbsolute, this.checkAutoscroll),
         ]),
       ]),
@@ -689,6 +669,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.hoverAnimState.position
   ])
 
+  hoverComponentTranslate = cond(clockRunning(this.hoverClock), this.runHoverClock, this.hoverAnim)
+
   renderHoverComponent = () => {
     const { hoverComponent } = this.state
     const { horizontal } = this.props
@@ -698,12 +680,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         styles[`hoverComponent${horizontal ? "Horizontal" : "Vertical"}`],
         {
           transform: [{
-            [`translate${horizontal ? "X" : "Y"}`]: block([
-              onChange(this.androidStatusBarSize, []),
-              cond(clockRunning(this.hoverClock), [
-                this.runHoverClock,
-              ], this.hoverAnim)
-            ])
+            [`translate${horizontal ? "X" : "Y"}`]: this.hoverComponentTranslate
           }]
         }]}
       >
