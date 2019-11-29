@@ -11,6 +11,7 @@ import {
   TapGestureHandler,
   State as GestureState,
   FlatList,
+  TapGestureHandlerGestureEvent,
 } from "react-native-gesture-handler"
 import Animated from "react-native-reanimated"
 import {
@@ -68,12 +69,12 @@ const debugGestureState = (state, context) => {
   console.log(`## ${context} debug gesture state: ${state} - ${stateStr}`)
 }
 
-interface Props<T> extends VirtualizedListProps<T> {
-  autoscrollSpeed: number,
-  autoscrollThreshold: number,
-  horizontal: boolean,
+type Modify<T, R> = Omit<T, keyof R> & R;
+type Props<T> = Modify<VirtualizedListProps<T>, {
+  autoscrollSpeed?: number,
+  autoscrollThreshold?: number,
   data: T[],
-  onRef: (ref: React.RefObject<DraggableFlatList<T>>) => void,
+  onRef?: (ref: React.RefObject<DraggableFlatList<T>>) => void,
   onDragBegin?: (index: number) => void,
   onRelease?: (index: number) => void,
   onDragEnd?: (params: {
@@ -88,7 +89,7 @@ interface Props<T> extends VirtualizedListProps<T> {
     isActive: boolean,
   }) => JSX.Element
   animationConfig: Partial<Animated.SpringConfig>,
-}
+}>
 
 type State = {
   activeKey: string | null,
@@ -96,17 +97,17 @@ type State = {
 }
 
 type CellData = {
-  size: Animated.Node<number>,
-  offset: Animated.Node<number>,
+  size: Animated.Value<number>,
+  offset: Animated.Value<number>,
   measurements: {
     size: number,
     offset: number,
   },
   style: ViewStyle,
-  currentIndex: Animated.Node<number>,
+  currentIndex: Animated.Value<number>,
   onLayout: () => void,
   onUnmount: () => void
-  onCellTap: typeof event,
+  onCellTap: (event: TapGestureHandlerGestureEvent) => void,
 }
 
 // Run callback on next paint:
@@ -124,17 +125,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     hoverComponent: null,
   }
 
-  containerRef = React.createRef()
+  containerRef = React.createRef<any>()
   flatlistRef = React.createRef<DraggableFlatList<T>>()
-  panGestureHandlerRef = React.createRef()
-  tapGestureHandlerRef = React.createRef()
+  panGestureHandlerRef = React.createRef<PanGestureHandler>()
+  tapGestureHandlerRef = React.createRef<TapGestureHandler>()
 
   containerSize = new Value(0)
 
   touchAbsolute = new Value(0)
   touchCellOffset = new Value(0)
-  panGestureState = new Value(-1)
-  tapGestureState = new Value(0)
+  panGestureState = new Value(GestureState.UNDETERMINED)
+  tapGestureState = new Value(GestureState.UNDETERMINED)
 
   isPressedIn = {
     native: new Value<number>(0),
@@ -342,8 +343,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
     const initialized = new Value(0)
     const midpoint = new Value(0)
-    const size = new Value(0)
-    const offset = new Value(0)
+    const size = new Value<number>(0)
+    const offset = new Value<number>(0)
     const isAfterActive = new Value(0)
     const hoverMid = new Value(0)
     const isAfterHoverMid = new Value(0)
@@ -392,19 +393,21 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       isHoveringOverCell,
     )
 
-    const tapState = new Value<number>(0)
+    const tapState = new Value<GestureState>(GestureState.UNDETERMINED)
 
-    const transform = [{
-      [`translate${this.props.horizontal ? 'X' : 'Y'}`]: anim,
-    }]
+    const style = {
+      transform: [{
+        [`translate${this.props.horizontal ? 'X' : 'Y'}`]: anim,
+      }]
+    }
 
     const cellData = {
       initialized,
       currentIndex,
       size,
       offset,
-      style: { transform },
-      onLayout: async ({ nativeEvent }) => {
+      style,
+      onLayout: async () => {
         if (this.state.activeKey !== key) this.measureCell(key)
       },
       onUnmount: () => initialized.setValue(0),
@@ -822,12 +825,12 @@ export default DraggableFlatList
 
 type RowItemProps = {
   drag: (
-    hoverComponent: React.ComponentType,
+    hoverComponent: JSX.Element,
     itemKey: string,
   ) => void,
   keyToIndex: Map<string, number>,
   item: any,
-  renderItem: (item: any) => React.ComponentType
+  renderItem: (item: any) => JSX.Element
   itemKey: string
   onUnmount: () => void
 }
