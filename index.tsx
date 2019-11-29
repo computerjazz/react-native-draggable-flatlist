@@ -244,6 +244,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.queue = []
   }
 
+  resetHoverState = () => {
+    this.activeIndex.setValue(-1)
+    this.spacerIndex.setValue(-1)
+    this.disabled.setValue(0)
+    if (this.state.hoverComponent !== null || this.state.activeKey !== null) {
+      this.setState({
+        hoverComponent: null,
+        activeKey: null,
+      })
+    }
+  }
+
   drag = (hoverComponent: React.ComponentType, activeKey: string) => {
     const index = this.keyToIndex.get(activeKey)
     if (this.state.hoverComponent) {
@@ -297,14 +309,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       })
     }
 
-    this.setState({
-      activeKey: null,
-      hoverComponent: null,
-    })
-
-    this.spacerIndex.setValue(-1)
-    this.activeIndex.setValue(-1)
-    this.disabled.setValue(0)
+    this.resetHoverState()
   }
 
   updateCellData = (data: T[] = []) => data.forEach((item: T, index: number) => {
@@ -603,7 +608,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         startClock(this.hoverClock),
       ]),
       call([this.activeIndex], this.onRelease),
-    ])
+    ], call([this.activeIndex], this.resetHoverState))
   ]
 
   onContainerTapStateChange = event([
