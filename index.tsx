@@ -226,7 +226,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     onRef && onRef(this.flatlistRef)
   }
 
-  componentDidUpdate = async (prevProps: Props<T>) => {
+  componentDidUpdate = async (prevProps: Props<T>, prevState) => {
     if (prevProps.data !== this.props.data) {
       this.props.data.forEach((item, index) => {
         const key = this.keyExtractor(item, index)
@@ -236,6 +236,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.updateCellData(this.props.data)
       onNextFrame(this.flushQueue)
     }
+    if (!prevState.activeKey && this.state.activeKey) {
+      const index = this.keyToIndex.get(this.state.activeKey)
+      this.spacerIndex.setValue(index)
+      this.activeIndex.setValue(index)
+      this.activeCellSize.setValue(this.cellData.get(this.state.activeKey).size)
+    }
+
   }
 
   queue: (() => Promise<void>)[] = []
@@ -257,21 +264,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   drag = (hoverComponent: React.ComponentType, activeKey: string) => {
-    const index = this.keyToIndex.get(activeKey)
     if (this.state.hoverComponent) {
       // We can't drag more than one row at a time
       // TODO: Put action on queue?
       console.log("## Can't set multiple active items")
     } else {
       this.isPressedIn.js = true
-      this.spacerIndex.setValue(index)
-      this.activeIndex.setValue(index)
-      this.activeCellSize.setValue(this.cellData.get(activeKey).size)
 
       this.setState({
         activeKey,
         hoverComponent,
       }, () => {
+        const index = this.keyToIndex.get(activeKey)
         const { onDragBegin } = this.props
         onDragBegin && onDragBegin(index)
       }
@@ -652,6 +656,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       nativeEvent: ({ x, y }) => block([
         cond(
           and(
+            this.isHovering,
             eq(this.panGestureState, GestureState.ACTIVE),
             not(this.disabled),
           ), [
@@ -675,6 +680,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ])
 
   hoverComponentTranslate = cond(clockRunning(this.hoverClock), this.runHoverClock, this.hoverAnim)
+  hoverComponentOpacity = and(
+    this.isHovering,
+    neq(this.panGestureState, GestureState.CANCELLED),
+  )
 
   renderHoverComponent = () => {
     const { hoverComponent } = this.state
@@ -684,6 +693,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       <Animated.View style={[
         styles[`hoverComponent${horizontal ? "Horizontal" : "Vertical"}`],
         {
+          opacity: this.hoverComponentOpacity,
           transform: [{
             [`translate${horizontal ? "X" : "Y"}`]: this.hoverComponentTranslate
           }]
