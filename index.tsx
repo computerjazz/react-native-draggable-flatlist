@@ -236,7 +236,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       // Remeasure on next paint  
       this.updateCellData(this.props.data)
       onNextFrame(this.flushQueue)
+
+
+      if (prevProps.data.length !== this.props.data.length) {
+        this.queue.push(() => this.measureAll(this.props.data))
+      }
     }
+
+
     if (!prevState.activeKey && this.state.activeKey) {
       const index = this.keyToIndex.get(this.state.activeKey)
       this.spacerIndex.setValue(index)
@@ -246,7 +253,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   }
 
-  queue: (() => Promise<void>)[] = []
+  queue: (() => (void | Promise<void>))[] = []
   flushQueue = async () => {
     this.queue.forEach(fn => fn())
     this.queue = []
@@ -431,6 +438,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       },
     }
     this.cellData.set(key, cellData)
+  }
+
+  measureAll = (data: T[]) => {
+    data.forEach((d, i) => {
+      const key = this.keyExtractor(d, i)
+      this.measureCell(key)
+    })
   }
 
   measureCell = (key: string): Promise<void> => {
