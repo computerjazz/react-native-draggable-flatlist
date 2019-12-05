@@ -398,6 +398,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onFinished,
       this.isPressedIn.native,
       isHoveringOverCell,
+      this.scrollViewSize
     )
 
     const tapState = new Value<GestureState>(GestureState.UNDETERMINED)

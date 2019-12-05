@@ -138,6 +138,7 @@ export const setupCell = proc((
   onFinished,
   isPressedIn,
   isHoveringOverCell,
+  scrollViewSize,
 ) => block([
   set(midpoint, getMidpoint(size, offset)),
   set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
@@ -147,7 +148,11 @@ export const setupCell = proc((
 
   cond(isPressedIn, set(isHoveringOverCell, and(
     greaterOrEq(hoverOffset, sub(offset, divide(activeCellSize, 2))),
-    lessThan(hoverOffset, add(offset, divide(activeCellSize, 2)))
+    or(
+      lessThan(hoverOffset, add(offset, divide(activeCellSize, 2))),
+      // Dragging past final element
+      greaterOrEq(add(size, offset), scrollViewSize),
+    )
   ))),
   cond(and(isPressedIn, isHoveringOverCell, neq(spacerIndex, currentIndex)), [
     set(spacerIndex, currentIndex),
