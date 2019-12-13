@@ -17,17 +17,17 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 
 Name | Type | Description
 :--- | :--- | :---
-`data` | array | `T[]` Items to be rendered.
-`horizontal` | boolean | Orientation of list.
-`renderItem` | function | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => React.ComponentType`. Call `drag` when the row should become active (in an `onLongPress`).
-`keyExtractor` | function | `(item: T, index: number) => string` Unique key for each item
-`onDragBegin` | function | `(index: number) => void` Called when row becomes active.
-`onRelease` | function | `(index: number) => void` Called when active row touch ends.
-`onDragEnd` | function | `(params: { data: T[], from: number, to: number }) => void` Called after animation has completed. Returns updated ordering of `data` 
-`autoscrollThreshold` | number | Distance from edge of container where list begins to autoscroll when dragging.
-`autoscrollSpeed` | number | Determines how fast the list autoscrolls.
-`onRef` | function | `(ref: React.RefObject<DraggableFlatList<T>>) => void` Returns underlying Animated FlatList ref.
-`animationConfig` | object | `Partial<Animated.SpringConfig>` Configure list animations.
+`data` | `T[]` |  Items to be rendered.
+`horizontal` | `boolean` | Orientation of list.
+`renderItem` | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => JSX.Element`  | Call `drag` when the row should become active (in an `onLongPress`).
+`keyExtractor` | `(item: T, index: number) => string` |  Unique key for each item
+`onDragBegin` | `(index: number) => void` |  Called when row becomes active.
+`onRelease` | `(index: number) => void` | Called when active row touch ends.
+`onDragEnd` | `(params: { data: T[], from: number, to: number }) => void` |  Called after animation has completed. Returns updated ordering of `data` 
+`autoscrollThreshold` | `number` | Distance from edge of container where list begins to autoscroll when dragging.
+`autoscrollSpeed` | `number` | Determines how fast the list autoscrolls.
+`onRef` | `(ref: React.RefObject<DraggableFlatList<T>>) => void` |  Returns underlying Animated FlatList ref.
+`animationConfig` | `Partial<Animated.SpringConfig>` |  Configure list animations. See [reanimated spring config](https://github.com/software-mansion/react-native-reanimated/blob/master/react-native-reanimated.d.ts#L112-L120)
 
 ## Example
 
@@ -36,14 +36,16 @@ import React, { Component } from 'react'
 import { View, TouchableOpacity, Text } from 'react-native'
 import DraggableFlatList from 'react-native-draggable-flatlist'
 
-class Example extends Component {
-
-  state = {
-    data: [...Array(20)].map((d, index) => ({
-      key: `item-${index}`,
+const exampleData = [...Array(20)].map((d, index) => ({
+      key: `item-${index}`, // For example only -- don't use index as your key!
       label: index,
       backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index * 5}, ${132})`,
     }))
+
+class Example extends Component {
+
+  state = {
+    data: exampleData
   }
 
   renderItem = ({ item, index, drag, isActive }) => {
