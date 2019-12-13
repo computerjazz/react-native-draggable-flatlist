@@ -1,13 +1,13 @@
 # React Native Draggable FlatList
 
-A drag-and-drop-enabled FlatList component for React Native.
+A drag-and-drop-enabled FlatList component for React Native.<br />
 Fully native interactions powered by [Reanimated](https://github.com/kmagiera/react-native-reanimated) and [React Native Gesture Handler](https://github.com/kmagiera/react-native-gesture-handler)
 
 ![Draggable FlatList demo](https://i.imgur.com/XmUcN4Z.gif)
 
 ## Install
-1. Install [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
-2. `npm install react-native-draggable-flatlist` or `yarn add react-native-draggable-flatlist`
+1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
+2. `npm install` or `yarn add` `react-native-draggable-flatlist` 
 3. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
 
 ## Api
@@ -19,7 +19,7 @@ Name | Type | Description
 :--- | :--- | :---
 `data` | `T[]` |  Items to be rendered.
 `horizontal` | `boolean` | Orientation of list.
-`renderItem` | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => JSX.Element`  | Call `drag` when the row should become active (in an `onLongPress`).
+`renderItem` | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => JSX.Element`  | Call `drag` when the row should become active (i.e. in an `onLongPress` or `onPressIn`).
 `keyExtractor` | `(item: T, index: number) => string` |  Unique key for each item
 `onDragBegin` | `(index: number) => void` |  Called when row becomes active.
 `onRelease` | `(index: number) => void` | Called when active row touch ends.
