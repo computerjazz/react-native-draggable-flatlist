@@ -1,11 +1,14 @@
 # React Native Draggable FlatList
 
+A drag-and-drop-enabled FlatList component for React Native.
+Fully native interactions powered by [Reanimated](https://github.com/kmagiera/react-native-reanimated) and [React Native Gesture Handler](https://github.com/kmagiera/react-native-gesture-handler)
+
 ![Draggable FlatList demo](https://i.imgur.com/XmUcN4Z.gif)
 
 ## Install
-
-1. `npm install react-native-draggable-flatlist` or `yarn add react-native-draggable-flatlist`
-2. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
+1. Install [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
+2. `npm install react-native-draggable-flatlist` or `yarn add react-native-draggable-flatlist`
+3. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
 
 ## Api
 
@@ -14,14 +17,17 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 
 Name | Type | Description
 :--- | :--- | :---
-`data` | Array | Items to be rendered.
-`horizontal` | Boolean | Orientation of list.
-`renderItem` | Function | `({ item, index, move, moveEnd, isActive }) => <Component />`. Call `move` when the row should become active (in an `onPress`, `onLongPress`, etc). Call `moveEnd` when the gesture is complete (in `onPressOut`).
-`keyExtractor` | Function | `(item, index) => string`
-`contentContainerStyle` | Object |
-`scrollPercent` | Number | Sets where scrolling begins. A value of `5` will scroll up if the finger is in the top 5% of the FlatList container and scroll down in the bottom 5%. 
-`onMoveEnd` | Function | `({ data, to, from, row }) => void` Returns updated ordering of `data` 
-`onMoveBegin` | Function | `(index) => void` Called when row becomes active.
+`data` | array | `T[]` Items to be rendered.
+`horizontal` | boolean | Orientation of list.
+`renderItem` | function | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => React.ComponentType`. Call `drag` when the row should become active (in an `onLongPress`).
+`keyExtractor` | function | `(item: T, index: number) => string` Unique key for each item
+`onDragBegin` | function | `(index: number) => void` Called when row becomes active.
+`onRelease` | function | `(index: number) => void` Called when active row touch ends.
+`onDragEnd` | function | `(params: { data: T[], from: number, to: number }) => void` Called after animation has completed. Returns updated ordering of `data` 
+`autoscrollThreshold` | number | Distance from edge of container where list begins to autoscroll when dragging.
+`autoscrollSpeed` | number | Determines how fast the list autoscrolls.
+`onRef` | function | `(ref: React.RefObject<DraggableFlatList<T>>) => void` Returns underlying Animated FlatList ref.
+`animationConfig` | object | `Partial<Animated.SpringConfig>` Configure list animations.
 
 ## Example
 
@@ -40,7 +46,7 @@ class Example extends Component {
     }))
   }
 
-  renderItem = ({ item, index, move, moveEnd, isActive }) => {
+  renderItem = ({ item, index, drag, isActive }) => {
     return (
       <TouchableOpacity
         style={{ 
@@ -49,8 +55,7 @@ class Example extends Component {
           alignItems: 'center', 
           justifyContent: 'center' 
         }}
-        onLongPress={move}
-        onPressOut={moveEnd}
+        onLongPress={drag}
       >
         <Text style={{ 
           fontWeight: 'bold', 
@@ -68,8 +73,7 @@ class Example extends Component {
           data={this.state.data}
           renderItem={this.renderItem}
           keyExtractor={(item, index) => `draggable-item-${item.key}`}
-          scrollPercent={5}
-          onMoveEnd={({ data }) => this.setState({ data })}
+          onDragEnd={({ data }) => this.setState({ data })}
         />
       </View>
     )
