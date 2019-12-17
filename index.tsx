@@ -523,15 +523,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   })
 
   scrollToIndex = (index) => {
-    this.flatList.scrollToIndex(index)
+    this.flatlistRef.scrollToIndex(index)
   }
 
   scrollToEnd = (params) => {
-		this.flatList.scrollToEnd(params)
+		this.flatlistRef.scrollToEnd(params)
   }	
   
   set getItemLayout(func) {
-    this.flatList.getItemLayout = func
+    this.flatlistRef.getItemLayout = func
   }
 
   getScrollTargetOffset = (
