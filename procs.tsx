@@ -111,6 +111,9 @@ export const setupCell = proc((
   isPressedIn,
 ) => block([
   set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
+
+  // Determining spacer index is hard to visualize.
+  // see diagram here: https://i.imgur.com/jRPf5t3.jpg
   cond(isPressedIn,
     cond(isAfterActive, [
       cond(
@@ -146,6 +149,8 @@ export const setupCell = proc((
     ),
   ),
 
+  // Translate cell down if it is before active index and active cell has passed it.
+  // Translate cell up if it is after the active index and active cell has passed it.
   cond(neq(currentIndex, activeIndex), set(translate, cond(
     cond(isAfterActive,
       lessOrEq(currentIndex, spacerIndex),
