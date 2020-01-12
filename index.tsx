@@ -710,11 +710,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     )
   }
 
-  activeCellStyle = {
-    [this.props.horizontal ? "width" : "height"]: 0,
-    opacity: 0,
-  }
-
   renderItem = ({ item, index }) => {
     const key = this.keyExtractor(item, index)
     const { renderItem } = this.props
@@ -734,7 +729,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   CellRendererComponent = (cellProps) => {
     const { item, index, children, onLayout } = cellProps
-    const { data, horizontal } = this.props
+    const { horizontal } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
     if (!this.cellData.get(key)) this.setCellData(key, index)
@@ -746,8 +741,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
 
     const isActiveCell = activeKey === key
-    const isLast = index === data.length - 1
-    const activeCellData = this.cellData.get(activeKey)
     return (
       <Animated.View
         onLayout={onLayout}
@@ -765,21 +758,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             <Animated.View
               ref={ref}
               onLayout={onCellLayout}
-              style={isActiveCell ? this.activeCellStyle : undefined}
+              style={isActiveCell ? { opacity: 0 } : undefined}
             >
               {children}
             </Animated.View>
           </TapGestureHandler>
-          {isLast && activeCellData ? (
-            <Animated.View
-              style={{
-                opacity: 0,
-                // The active cell is removed from the list, so we need to add its size to the end 
-                // for our list to remain a consistent size
-                [horizontal ? "width" : "height"]: activeCellData.measurements.size
-              }}
-            />
-          ) : null}
         </Animated.View>
       </Animated.View>
     )

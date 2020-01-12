@@ -19,6 +19,8 @@ let {
   Value,
   spring,
   lessThan,
+  lessOrEq,
+  multiply,
   debug,
 } = Animated
 
@@ -125,7 +127,7 @@ export const setupCell = proc((
         ),
         set(spacerIndex, currentIndex)
       )
-    ], [
+    ], cond(lessThan(currentIndex, activeIndex), [
       cond(
         and(
           lessThan(hoverOffset, add(offset, size)),
@@ -140,15 +142,21 @@ export const setupCell = proc((
         ),
         set(spacerIndex, currentIndex)
       ),
-    ]),
+    ])
+    ),
   ),
 
-  set(translate, cond(
+  cond(neq(currentIndex, activeIndex), set(translate, cond(
     cond(isAfterActive,
-      greaterThan(currentIndex, spacerIndex),
-      not(lessThan(currentIndex, spacerIndex)),
-    ), cond(isHovering, activeCellSize, 0), 0)
-  ),
+      lessOrEq(currentIndex, spacerIndex),
+      greaterOrEq(currentIndex, spacerIndex),
+    ),
+    cond(isHovering,
+      cond(isAfterActive,
+        multiply(activeCellSize, -1),
+        activeCellSize
+      ), 0), 0)
+  )),
 
   // Set value hovering element will snap to once released
   cond(
