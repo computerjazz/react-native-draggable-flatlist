@@ -69,6 +69,19 @@ const debugGestureState = (state, context) => {
   console.log(`## ${context} debug gesture state: ${state} - ${stateStr}`)
 }
 
+export type DragEndParams<T> = {
+  data: T[],
+  from: number,
+  to: number,
+}
+
+export type RenderItemParams<T> = {
+  item: T,
+  index: number,
+  drag: () => void,
+  isActive: boolean,
+}
+
 type Modify<T, R> = Omit<T, keyof R> & R;
 type Props<T> = Modify<VirtualizedListProps<T>, {
   autoscrollSpeed?: number,
@@ -77,18 +90,10 @@ type Props<T> = Modify<VirtualizedListProps<T>, {
   onRef?: (ref: React.RefObject<DraggableFlatList<T>>) => void,
   onDragBegin?: (index: number) => void,
   onRelease?: (index: number) => void,
-  onDragEnd?: (params: {
-    data: T[],
-    from: number,
-    to: number,
-  }) => void
-  renderItem: (params: {
-    item: T,
-    index: number,
-    drag: () => void,
-    isActive: boolean,
-  }) => JSX.Element
+  onDragEnd?: (params: DragEndParams<T>) => void
+  renderItem: (params: RenderItemParams<T>) => JSX.Element
   animationConfig: Partial<Animated.SpringConfig>,
+  debug?: boolean,
 }>
 
 type State = {
@@ -159,11 +164,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2))
   hoverOffset = add(this.hoverAnim, this.scrollOffset)
 
-  // Stash a snapshot of scroll position at the time that 
-  // translation occurs
-  hoverScrollSnapshot = new Value(0)
-  hoverScrollDiff = new Value(0)
-
   hoverTo = new Value(0)
   hoverClock = new Clock()
   hoverAnimState = {
@@ -176,7 +176,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverAnimConfig = {
     ...defaultAnimationConfig,
     ...this.props.animationConfig,
-    toValue: sub(this.hoverTo, sub(this.scrollOffset, this.hoverScrollSnapshot)),
+    toValue: this.hoverTo,
   }
 
   distToTopEdge = max(0, this.hoverAnim)
@@ -243,14 +243,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       }
     }
 
-
     if (!prevState.activeKey && this.state.activeKey) {
       const index = this.keyToIndex.get(this.state.activeKey)
       this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
       this.activeCellSize.setValue(this.cellData.get(this.state.activeKey).size)
     }
-
   }
 
   queue: (() => (void | Promise<void>))[] = []
@@ -349,43 +347,35 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.cellAnim.set(key, { clock, state, config })
 
     const initialized = new Value(0)
-    const midpoint = new Value(0)
     const size = new Value<number>(0)
     const offset = new Value<number>(0)
     const isAfterActive = new Value(0)
-    const hoverMid = new Value(0)
-    const isAfterHoverMid = new Value(0)
-    const cellStart = new Value(0)
     const translate = new Value(0)
-    const isShifted = new Value(0)
 
     const runSrping = cond(clockRunning(clock), springFill(clock, state, config))
     const onHasMoved = startClock(clock)
     const onChangeSpacerIndex = cond(clockRunning(clock), stopClock(clock))
+
     const onFinished = stopClock(clock)
-    const isHoveringOverCell = new Value(0)
+
+    const prevTrans = new Value(0)
+    const prevSpacerIndex = new Value(-1)
+
     const anim = setupCell(
       currentIndex,
       initialized,
       size,
       offset,
-      cellStart,
-      midpoint,
       isAfterActive,
-      hoverMid,
-      isAfterHoverMid,
       translate,
-      new Value(0),
-      new Value(-1),
-      new Value(0),
-      isShifted,
+      prevTrans,
+      prevSpacerIndex,
       this.activeIndex,
       this.activeCellSize,
       this.hoverOffset,
       this.scrollOffset,
       this.isHovering,
       this.hoverTo,
-      this.hoverScrollSnapshot,
       this.hasMoved,
       this.spacerIndex,
       config.toValue,
@@ -397,8 +387,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onChangeSpacerIndex,
       onFinished,
       this.isPressedIn.native,
-      isHoveringOverCell,
-      this.scrollViewSize
     )
 
     const tapState = new Value<GestureState>(GestureState.UNDETERMINED)
@@ -797,8 +785,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     )
   }
 
+  renderDebug() {
+    return (
+      <Animated.Code>
+        {() => block([
+          onChange(this.spacerIndex, debug('spacerIndex: ', this.spacerIndex)),
+        ])}
+      </Animated.Code>
+    )
+  }
+
   render() {
-    const { scrollEnabled } = this.props
+    const { scrollEnabled, debug } = this.props
     const { hoverComponent } = this.state
     return (
       <TapGestureHandler
@@ -829,6 +827,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 scrollEventThrottle={1}
               />
               {!!hoverComponent && this.renderHoverComponent()}
+              {debug && this.renderDebug()}
             </Animated.View>
           </PanGestureHandler>
         </Animated.View>
