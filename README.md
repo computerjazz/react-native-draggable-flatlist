@@ -3,10 +3,10 @@
 A drag-and-drop-enabled FlatList component for React Native.<br />
 Fully native interactions powered by [Reanimated](https://github.com/kmagiera/react-native-reanimated) and [React Native Gesture Handler](https://github.com/kmagiera/react-native-gesture-handler)
 
-![Draggable FlatList demo](https://i.imgur.com/XmUcN4Z.gif)
+![Draggable FlatList demo](https://i.imgur.com/xHCylq1.gif)
 
 ## Install
-1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
+1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler). RNGH requires you to make changes to `MainActivity.java`. Be sure to [follow all Android instructions!](https://software-mansion.github.io/react-native-gesture-handler/docs/getting-started.html#android)
 2. `npm install` or `yarn add` `react-native-draggable-flatlist` 
 3. `import DraggableFlatList from 'react-native-draggable-flatlist'`  
 
