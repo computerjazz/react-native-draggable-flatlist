@@ -26,6 +26,7 @@ let {
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf")
+  // @ts-ignore
   proc = cb => cb
 }
 
@@ -229,6 +230,7 @@ const betterSpring = proc(
         velocity,
         position,
         time,
+        // @ts-ignore
         prevPosition,
       },
       {
