@@ -717,6 +717,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { onUnmount } = this.cellData.get(key)
     return (
       <RowItem
+        extraData={this.props.extraData}
         itemKey={key}
         keyToIndex={this.keyToIndex}
         renderItem={renderItem}
@@ -822,6 +823,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 export default DraggableFlatList
 
 type RowItemProps = {
+  extraData?: any
   drag: (
     hoverComponent: JSX.Element,
     itemKey: string,
