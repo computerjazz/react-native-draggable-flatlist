@@ -115,16 +115,6 @@ type CellData = {
   onCellTap: (event: TapGestureHandlerGestureEvent) => void,
 }
 
-type GetItemLayoutFunctionReturn = {
-  length: number, 
-  offset: number, 
-  index: number
-}
-
-type GetItemLayoutFunction = {
-  (data: object, index: number) : GetItemLayoutFunctionReturn
-}
-
 // Run callback on next paint:
 // https://stackoverflow.com/questions/26556436/react-after-render-code
 function onNextFrame(callback: () => void) {
@@ -528,10 +518,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.flatlistRef.current._component.scrollToEnd(params)
   }	
     
-  getItemLayout = (func: GetItemLayoutFunction ): void => {
-    this.flatlistRef.current._component.getItemLayout = func
-  }
-
   getScrollTargetOffset = (
     distFromTop: number,
     distFromBottom: number,
