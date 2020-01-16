@@ -247,7 +247,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const index = this.keyToIndex.get(this.state.activeKey)
       this.spacerIndex.setValue(index)
       this.activeIndex.setValue(index)
-      this.activeCellSize.setValue(this.cellData.get(this.state.activeKey).size)
+      const size = this.cellData.get(this.state.activeKey).measurements.size
+      this.activeCellSize.setValue(size)
     }
   }
 
