@@ -93,6 +93,7 @@ type Props<T> = Modify<VirtualizedListProps<T>, {
   onDragEnd?: (params: DragEndParams<T>) => void
   renderItem: (params: RenderItemParams<T>) => JSX.Element
   animationConfig: Partial<Animated.SpringConfig>,
+  activationDistance?: number,
   debug?: boolean,
 }>
 
@@ -137,6 +138,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   containerSize = new Value(0)
 
+  activationDistance = new Value(0)
   touchAbsolute = new Value(0)
   touchCellOffset = new Value(0)
   panGestureState = new Value(GestureState.UNDETERMINED)
@@ -215,6 +217,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     autoscrollSpeed: 100,
     animationConfig: {},
     scrollEnabled: true,
+    activationDistance: 0,
   }
 
   constructor(props: Props<T>) {
@@ -410,16 +413,16 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onUnmount: () => initialized.setValue(0),
       onCellTap: event([{
         nativeEvent: ({ state, y, x }) => getOnCellTap(
-          state,
-          tapState,
-          this.disabled,
-          offset,
-          this.scrollOffset,
-          this.hasMoved,
-          this.hoverTo,
-          this.touchCellOffset,
-          this.onGestureRelease,
-          this.props.horizontal ? x : y,
+            state,
+            tapState,
+            this.disabled,
+            offset,
+            this.scrollOffset,
+            this.hasMoved,
+            this.hoverTo,
+            this.touchCellOffset,
+            this.onGestureRelease,
+            this.props.horizontal ? x : y,
         )
       }]),
       measurements: {
@@ -641,12 +644,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onPanStateChange = event([
     {
-      nativeEvent: ({ state }) => block([
+      nativeEvent: ({ state, x, y }) => block([
         cond(and(
           neq(state, this.panGestureState),
           not(this.disabled),
         ), [
           set(this.panGestureState, state),
+          cond(eq(this.panGestureState, GestureState.BEGAN),
+            set(this.activationDistance, sub(this.touchAbsolute, this.props.horizontal ? x : y)),
+          ),
           cond(or(
             eq(state, GestureState.END),
             eq(state, GestureState.CANCELLED),
@@ -668,7 +674,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             not(this.disabled),
           ), [
           cond(not(this.hasMoved), set(this.hasMoved, 1)),
-          set(this.touchAbsolute, this.props.horizontal ? x : y),
+          set(this.touchAbsolute, add(this.props.horizontal ? x : y, this.activationDistance)),
           onChange(this.touchAbsolute, this.checkAutoscroll),
         ]),
       ]),
@@ -781,8 +787,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   render() {
-    const { scrollEnabled, debug } = this.props
+    const { scrollEnabled, debug, horizontal, activationDistance } = this.props
     const { hoverComponent } = this.state
+    const activeOffset = [-activationDistance, activationDistance]
     return (
       <TapGestureHandler
         ref={this.tapGestureHandlerRef}
@@ -793,6 +800,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             ref={this.panGestureHandlerRef}
             onGestureEvent={this.onPanGestureEvent}
             onHandlerStateChange={this.onPanStateChange}
+            activeOffsetY={!horizontal ? activeOffset : undefined}
+            activeOffsetX={horizontal ? activeOffset : undefined}
           >
             <Animated.View
               style={styles.flex}
