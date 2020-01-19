@@ -28,6 +28,7 @@ Name | Type | Description
 `autoscrollSpeed` | `number` | Determines how fast the list autoscrolls.
 `onRef` | `(ref: React.RefObject<DraggableFlatList<T>>) => void` |  Returns underlying Animated FlatList ref.
 `animationConfig` | `Partial<Animated.SpringConfig>` |  Configure list animations. See [reanimated spring config](https://github.com/software-mansion/react-native-reanimated/blob/master/react-native-reanimated.d.ts#L112-L120)
+`activationDistance` | `number` | Distance a finger must travel before the gesture handler activates. Useful when using a draggable list within a TabNavigator so that the list does not capture navigator gestures.
 
 ## Example
 
