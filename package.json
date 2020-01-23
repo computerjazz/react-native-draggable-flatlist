@@ -6,6 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/computerjazz/react-native-draggable-flatlist.git"
@@ -29,5 +34,10 @@
   "peerDependencies": {
     "react-native-gesture-handler": "^1.0.0",
     "react-native-reanimated": "^1.0.0"
+  },
+  "devDependencies": {
+    "husky": "^4.2.0",
+    "prettier": "1.19.1",
+    "pretty-quick": "^2.0.1"
   }
 }
