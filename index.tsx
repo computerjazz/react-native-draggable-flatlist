@@ -869,7 +869,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   render() {
     const { scrollEnabled, debug, horizontal, activationDistance } = this.props;
     const { hoverComponent } = this.state;
-    const activeOffset = [-activationDistance, activationDistance];
+    let dynamicProps = {};
+    if (activationDistance) {
+      const activeOffset = [-activationDistance, activationDistance];
+      dynamicProps = horizontal
+        ? { activeOffsetX: activeOffset }
+        : { activeOffsetY: activeOffset };
+    }
     return (
       <TapGestureHandler
         ref={this.tapGestureHandlerRef}
@@ -880,8 +886,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             ref={this.panGestureHandlerRef}
             onGestureEvent={this.onPanGestureEvent}
             onHandlerStateChange={this.onPanStateChange}
-            activeOffsetY={!horizontal ? activeOffset : undefined}
-            activeOffsetX={horizontal ? activeOffset : undefined}
+            {...dynamicProps}
           >
             <Animated.View
               style={styles.flex}
