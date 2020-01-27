@@ -25,7 +25,8 @@ let {
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf");
-  proc = cb => cb;
+  const procStub = (cb: (...params: Animated.Node<number>[]) => void) => cb;
+  proc = procStub;
 }
 
 export const getIsAfterActive = proc((currentIndex, activeIndex) =>
