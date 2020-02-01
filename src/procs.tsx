@@ -25,21 +25,33 @@ let {
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf");
-  const procStub = (cb: (...params: Animated.Node<number>[]) => void) => cb;
+  const procStub = (cb: any) => cb;
   proc = procStub;
 }
 
-export const getIsAfterActive = proc((currentIndex, activeIndex) =>
-  greaterThan(currentIndex, activeIndex)
+export const getIsAfterActive = proc(
+  (currentIndex: Animated.Node<number>, activeIndex: Animated.Node<number>) =>
+    greaterThan(currentIndex, activeIndex)
 );
 
 export const getCellStart = proc(
-  (isAfterActive, offset, activeCellSize, scrollOffset) =>
+  (
+    isAfterActive: Animated.Node<number>,
+    offset: Animated.Node<number>,
+    activeCellSize: Animated.Node<number>,
+    scrollOffset: Animated.Node<number>
+  ) =>
     sub(cond(isAfterActive, sub(offset, activeCellSize), offset), scrollOffset)
 );
 
 export const getOnChangeTranslate = proc(
-  (translate, isAfterActive, initialized, toValue, isPressedIn) =>
+  (
+    translate: Animated.Node<number>,
+    isAfterActive: Animated.Node<number>,
+    initialized: Animated.Value<number>,
+    toValue: Animated.Value<number>,
+    isPressedIn: Animated.Node<number>
+  ) =>
     block([
       cond(or(not(isAfterActive), initialized), [], set(initialized, 1)),
       cond(isPressedIn, set(toValue, translate))
@@ -48,16 +60,16 @@ export const getOnChangeTranslate = proc(
 
 export const getOnCellTap = proc(
   (
-    state,
-    tapState,
-    disabled,
-    offset,
-    scrollOffset,
-    hasMoved,
-    hoverTo,
-    touchCellOffset,
-    onGestureRelease,
-    touchOffset
+    state: Animated.Node<number>,
+    tapState: Animated.Value<number>,
+    disabled: Animated.Node<number>,
+    offset: Animated.Node<number>,
+    scrollOffset: Animated.Node<number>,
+    hasMoved: Animated.Value<number>,
+    hoverTo: Animated.Value<number>,
+    touchCellOffset: Animated.Value<number>,
+    onGestureRelease: Animated.Node<number>,
+    touchOffset: Animated.Node<number>
   ) =>
     block([
       cond(and(neq(state, tapState), not(disabled)), [
@@ -72,37 +84,43 @@ export const getOnCellTap = proc(
     ])
 );
 
-export const hardReset = proc((position, finished, time, toValue) =>
-  block([set(position, 0), set(finished, 0), set(time, 0), set(toValue, 0)])
+export const hardReset = proc(
+  (
+    position: Animated.Value<number>,
+    finished: Animated.Value<number>,
+    time: Animated.Value<number>,
+    toValue: Animated.Value<number>
+  ) =>
+    block([set(position, 0), set(finished, 0), set(time, 0), set(toValue, 0)])
 );
 
 export const setupCell = proc(
   (
-    currentIndex,
-    initialized,
-    size,
-    offset,
-    isAfterActive,
-    translate,
-    prevTrans,
-    prevSpacerIndex,
-    activeIndex,
-    activeCellSize,
-    hoverOffset,
-    scrollOffset,
-    isHovering,
-    hoverTo,
-    hasMoved,
-    spacerIndex,
-    toValue,
-    position,
-    time,
-    finished,
-    runSpring,
-    onHasMoved,
-    onChangeSpacerIndex,
-    onFinished,
-    isPressedIn
+    currentIndex: Animated.Node<number>,
+    initialized: Animated.Value<number>,
+    size: Animated.Node<number>,
+    offset: Animated.Node<number>,
+    isAfterActive: Animated.Value<number>,
+    translate: Animated.Value<number>,
+    prevTrans: Animated.Value<number>,
+    prevSpacerIndex: Animated.Value<number>,
+    activeIndex: Animated.Node<number>,
+    activeCellSize: Animated.Node<number>,
+    hoverOffset: Animated.Node<number>,
+    scrollOffset: Animated.Node<number>,
+    isHovering: Animated.Node<number>,
+    hoverTo: Animated.Value<number>,
+    hasMoved: Animated.Value<number>,
+    spacerIndex: Animated.Value<number>,
+    toValue: Animated.Value<number>,
+    position: Animated.Value<number>,
+    time: Animated.Value<number>,
+    finished: Animated.Value<number>,
+    runSpring: Animated.Node<number>,
+    onHasMoved: Animated.Node<number>,
+    onChangeSpacerIndex: Animated.Node<number>,
+    onFinished: Animated.Node<number>,
+    isPressedIn: Animated.Node<number>
   ) =>
     block([
       set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
@@ -217,19 +235,19 @@ export const setupCell = proc(
 
 const betterSpring = proc(
   (
-    finished,
-    velocity,
-    position,
-    time,
-    prevPosition,
-    toValue,
-    damping,
-    mass,
-    stiffness,
-    overshootClamping,
-    restSpeedThreshold,
-    restDisplacementThreshold,
-    clock
+    finished: Animated.Value<number>,
+    velocity: Animated.Value<number>,
+    position: Animated.Value<number>,
+    time: Animated.Value<number>,
+    prevPosition: Animated.Value<number>,
+    toValue: Animated.Value<number>,
+    damping: Animated.Value<number>,
+    mass: Animated.Value<number>,
+    stiffness: Animated.Value<number>,
+    overshootClamping: Animated.SpringConfig["overshootClamping"],
+    restSpeedThreshold: Animated.Value<number>,
+    restDisplacementThreshold: Animated.Value<number>,
+    clock: Animated.Clock
   ) =>
     spring(
       clock,
@@ -238,6 +256,7 @@ const betterSpring = proc(
         velocity,
         position,
         time,
+        // @ts-ignore -- https://github.com/software-mansion/react-native-reanimated/blob/master/src/animations/spring.js#L177
         prevPosition
       },
       {
@@ -252,7 +271,11 @@ const betterSpring = proc(
     )
 );
 
-export function springFill(clock, state, config) {
+export function springFill(
+  clock: Animated.Clock,
+  state: Animated.SpringState,
+  config: Animated.SpringConfig
+) {
   return betterSpring(
     state.finished,
     state.velocity,
@@ -263,6 +286,7 @@ export function springFill(clock, state, config) {
     config.damping,
     config.mass,
     config.stiffness,
+    //@ts-ignore
     config.overshootClamping,
     config.restSpeedThreshold,
     config.restDisplacementThreshold,

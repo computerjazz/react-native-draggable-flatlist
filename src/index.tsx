@@ -90,7 +90,7 @@ export type DragEndParams<T> = {
 
 export type RenderItemParams<T> = {
   item: T;
-  index: number;
+  index?: number; // This is technically a "last known index" since cells don't necessarily rerender when their index changes
   drag: () => void;
   isActive: boolean;
 };
@@ -873,7 +873,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { activeKey } = this.state;
     const key = this.keyExtractor(item, index);
     if (!this.cellData.get(key)) this.setCellData(key, index);
-    const { style, onLayout: onCellLayout, onCellTap } = this.cellData.get(key);
+    const cellData = this.cellData.get(key);
+    if (!cellData) return null;
+    const { style, onLayout: onCellLayout, onCellTap } = cellData;
     let ref = this.cellRefs.get(key);
     if (!ref) {
       ref = React.createRef();
