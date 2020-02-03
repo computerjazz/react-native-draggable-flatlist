@@ -2,6 +2,7 @@
 
 A drag-and-drop-enabled FlatList component for React Native.<br />
 Fully native interactions powered by [Reanimated](https://github.com/kmagiera/react-native-reanimated) and [React Native Gesture Handler](https://github.com/kmagiera/react-native-gesture-handler)
+To use swipeable list items in a DraggableFlatList see [react-native-swipeable-item](https://github.com/computerjazz/react-native-swipeable-item)
 
 ![Draggable FlatList demo](https://i.imgur.com/xHCylq1.gif)
 
