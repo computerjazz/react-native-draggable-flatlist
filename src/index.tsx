@@ -110,6 +110,7 @@ type Props<T> = Modify<
     animationConfig: Partial<Animated.SpringConfig>;
     activationDistance?: number;
     debug?: boolean;
+    layoutInvalidationKey?: string;
   } & Partial<DefaultProps>
 >;
 
@@ -275,8 +276,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       // Remeasure on next paint
       this.updateCellData(this.props.data);
       onNextFrame(this.flushQueue);
+      const layoutInvalidationKeyHasChanged =
+        prevProps.layoutInvalidationKey !== this.props.layoutInvalidationKey;
 
-      if (this.dataHasChanged(prevProps.data, this.props.data)) {
+      if (
+        layoutInvalidationKeyHasChanged ||
+        this.dataHasChanged(prevProps.data, this.props.data)
+      ) {
         this.queue.push(() => this.measureAll(this.props.data));
       }
     }
