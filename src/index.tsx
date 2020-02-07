@@ -459,7 +459,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       size,
       offset,
       style,
-      onLayout: async () => {
+      onLayout: () => {
         if (this.state.activeKey !== key) this.measureCell(key);
       },
       onUnmount: () => initialized.setValue(0),
@@ -654,18 +654,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
   };
 
-  isAtTopEdge = cond(
-    lessOrEq(this.distToTopEdge, this.props.autoscrollThreshold!),
-    1,
-    0
+  isAtTopEdge = lessOrEq(this.distToTopEdge, this.props.autoscrollThreshold!);
+  isAtBottomEdge = lessOrEq(
+    this.distToBottomEdge,
+    this.props.autoscrollThreshold!
   );
-
-  isAtBottomEdge = cond(
-    lessOrEq(this.distToBottomEdge, this.props.autoscrollThreshold!),
-    1,
-    0
-  );
-
   isAtEdge = or(this.isAtBottomEdge, this.isAtTopEdge);
 
   autoscrollParams = [
@@ -684,7 +677,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       eq(this.panGestureState, GestureState.ACTIVE),
       not(this.isAutoscrolling.native)
     ),
-    [call(this.autoscrollParams, this.autoscroll)]
+    call(this.autoscrollParams, this.autoscroll)
   );
 
   onScroll = event([
@@ -741,13 +734,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         x,
         y
       }: GestureHandlerGestureEventNativeEvent & TapGestureHandlerEventExtra) =>
-        block([
-          cond(and(neq(state, this.tapGestureState), not(this.disabled)), [
-            set(this.tapGestureState, state),
-            cond(eq(state, GestureState.BEGAN), [
-              set(this.isPressedIn.native, 1),
-              set(this.touchAbsolute, this.props.horizontal ? x : y)
-            ])
+        cond(and(neq(state, this.tapGestureState), not(this.disabled)), [
+          set(this.tapGestureState, state),
+          cond(eq(state, GestureState.BEGAN), [
+            set(this.isPressedIn.native, 1),
+            set(this.touchAbsolute, this.props.horizontal ? x : y)
           ])
         ])
     }
@@ -760,25 +751,23 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         x,
         y
       }: GestureHandlerGestureEventNativeEvent & PanGestureHandlerEventExtra) =>
-        block([
-          cond(and(neq(state, this.panGestureState), not(this.disabled)), [
-            set(this.panGestureState, state),
-            cond(
-              eq(this.panGestureState, GestureState.ACTIVE),
-              set(
-                this.activationDistance,
-                sub(this.touchAbsolute, this.props.horizontal ? x : y)
-              )
-            ),
-            cond(
-              or(
-                eq(state, GestureState.END),
-                eq(state, GestureState.CANCELLED),
-                eq(state, GestureState.FAILED)
-              ),
-              this.onGestureRelease
+        cond(and(neq(state, this.panGestureState), not(this.disabled)), [
+          set(this.panGestureState, state),
+          cond(
+            eq(this.panGestureState, GestureState.ACTIVE),
+            set(
+              this.activationDistance,
+              sub(this.touchAbsolute, this.props.horizontal ? x : y)
             )
-          ])
+          ),
+          cond(
+            or(
+              eq(state, GestureState.END),
+              eq(state, GestureState.CANCELLED),
+              eq(state, GestureState.FAILED)
+            ),
+            this.onGestureRelease
+          )
         ])
     }
   ]);
@@ -786,42 +775,29 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   onPanGestureEvent = event([
     {
       nativeEvent: ({ x, y }: PanGestureHandlerEventExtra) =>
-        block([
-          cond(
-            and(
-              this.isHovering,
-              eq(this.panGestureState, GestureState.ACTIVE),
-              not(this.disabled)
-            ),
-            [
-              cond(not(this.hasMoved), set(this.hasMoved, 1)),
-              set(
-                this.touchAbsolute,
-                add(this.props.horizontal ? x : y, this.activationDistance)
-              ),
-              onChange(this.touchAbsolute, this.checkAutoscroll)
-            ]
-          )
-        ])
+        cond(
+          and(
+            this.isHovering,
+            eq(this.panGestureState, GestureState.ACTIVE),
+            not(this.disabled)
+          ),
+          [
+            cond(not(this.hasMoved), set(this.hasMoved, 1)),
+            set(
+              this.touchAbsolute,
+              add(this.props.horizontal ? x : y, this.activationDistance)
+            )
+          ]
+        )
     }
-  ]);
-
-  runHoverClock = cond(clockRunning(this.hoverClock), [
-    spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
-    cond(eq(this.hoverAnimState.finished, 1), [
-      stopClock(this.hoverClock),
-      call(this.moveEndParams, this.onDragEnd),
-      this.resetHoverSpring,
-      set(this.hasMoved, 0)
-    ]),
-    this.hoverAnimState.position
   ]);
 
   hoverComponentTranslate = cond(
     clockRunning(this.hoverClock),
-    this.runHoverClock,
+    this.hoverAnimState.position,
     this.hoverAnim
   );
+
   hoverComponentOpacity = and(
     this.isHovering,
     neq(this.panGestureState, GestureState.CANCELLED)
@@ -964,6 +940,26 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               />
               {!!hoverComponent && this.renderHoverComponent()}
               {debug && this.renderDebug()}
+              <Animated.Code>
+                {() =>
+                  block([
+                    onChange(this.touchAbsolute, this.checkAutoscroll),
+                    cond(clockRunning(this.hoverClock), [
+                      spring(
+                        this.hoverClock,
+                        this.hoverAnimState,
+                        this.hoverAnimConfig
+                      ),
+                      cond(eq(this.hoverAnimState.finished, 1), [
+                        stopClock(this.hoverClock),
+                        call(this.moveEndParams, this.onDragEnd),
+                        this.resetHoverSpring,
+                        set(this.hasMoved, 0)
+                      ])
+                    ])
+                  ])
+                }
+              </Animated.Code>
             </Animated.View>
           </PanGestureHandler>
         </Animated.View>
