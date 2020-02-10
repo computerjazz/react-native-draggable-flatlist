@@ -58,32 +58,6 @@ export const getOnChangeTranslate = proc(
     ])
 );
 
-export const getOnCellTap = proc(
-  (
-    state: Animated.Node<number>,
-    tapState: Animated.Value<number>,
-    disabled: Animated.Node<number>,
-    offset: Animated.Node<number>,
-    scrollOffset: Animated.Node<number>,
-    hasMoved: Animated.Value<number>,
-    hoverTo: Animated.Value<number>,
-    touchCellOffset: Animated.Value<number>,
-    onGestureRelease: Animated.Node<number>,
-    touchOffset: Animated.Node<number>
-  ) =>
-    block([
-      cond(and(neq(state, tapState), not(disabled)), [
-        set(tapState, state),
-        cond(eq(state, GestureState.BEGAN), [
-          set(hasMoved, 0),
-          set(hoverTo, sub(offset, scrollOffset)),
-          set(touchCellOffset, touchOffset)
-        ]),
-        cond(eq(state, GestureState.END), onGestureRelease)
-      ])
-    ])
-);
-
 export const hardReset = proc(
   (
     position: Animated.Value<number>,
