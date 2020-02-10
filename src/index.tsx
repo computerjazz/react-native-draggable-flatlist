@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import {
   PanGestureHandler,
-  TapGestureHandler,
   State as GestureState,
   FlatList,
   GestureHandlerGestureEventNativeEvent,
@@ -147,7 +146,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   containerRef = React.createRef<Animated.View>();
   flatlistRef = React.createRef<AnimatedFlatListType<T>>();
   panGestureHandlerRef = React.createRef<PanGestureHandler>();
-  tapGestureHandlerRef = React.createRef<TapGestureHandler>();
 
   containerSize = new Value<number>(0);
 
@@ -155,7 +153,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   touchAbsolute = new Value<number>(0);
   touchCellOffset = new Value<number>(0);
   panGestureState = new Value(GestureState.UNDETERMINED);
-  tapGestureState = new Value(GestureState.UNDETERMINED);
 
   isPressedIn = {
     native: new Value<number>(0),
