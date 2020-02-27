@@ -856,7 +856,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   render() {
-    const { scrollEnabled, debug, horizontal, activationDistance } = this.props;
+    const {
+      scrollEnabled,
+      debug,
+      horizontal,
+      activationDistance,
+      listHeader,
+      listFooter,
+      listEmpty
+    } = this.props;
     const { hoverComponent } = this.state;
     let dynamicProps = {};
     if (activationDistance) {
@@ -879,6 +887,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         >
           <AnimatedFlatList
             {...this.props}
+            ListHeaderComponent={listHeader}
+            ListFooterComponent={listFooter}
+            ListEmptyComponent={listEmpty}
             CellRendererComponent={this.CellRendererComponent}
             ref={this.flatlistRef}
             onContentSizeChange={this.onListContentSizeChange}
