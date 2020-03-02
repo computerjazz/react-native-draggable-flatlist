@@ -687,7 +687,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ]);
 
   onGestureRelease = [
-    set(this.isPressedIn.native, 0),
     cond(
       this.isHovering,
       [
@@ -855,6 +854,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     );
   }
 
+  onContainerTouchEnd = () => {
+    this.isPressedIn.native.setValue(0);
+  };
+
   render() {
     const { scrollEnabled, debug, horizontal, activationDistance } = this.props;
     const { hoverComponent } = this.state;
@@ -876,6 +879,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           style={styles.flex}
           ref={this.containerRef}
           onLayout={this.onContainerLayout}
+          onTouchEnd={this.onContainerTouchEnd}
         >
           <AnimatedFlatList
             {...this.props}
@@ -894,6 +898,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           <Animated.Code>
             {() =>
               block([
+                onChange(
+                  this.isPressedIn.native,
+                  cond(not(this.isPressedIn.native), this.onGestureRelease)
+                ),
                 onChange(this.touchAbsolute, this.checkAutoscroll),
                 cond(clockRunning(this.hoverClock), [
                   spring(
