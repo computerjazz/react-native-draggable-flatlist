@@ -108,6 +108,7 @@ type Props<T> = Modify<
     activationDistance?: number;
     debug?: boolean;
     layoutInvalidationKey?: string;
+    onScrollOffsetChange?: (scrollOffset: number) => void;
   } & Partial<DefaultProps>
 >;
 
@@ -859,7 +860,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   };
 
   render() {
-    const { scrollEnabled, debug, horizontal, activationDistance } = this.props;
+    const {
+      scrollEnabled,
+      debug,
+      horizontal,
+      activationDistance,
+      onScrollOffsetChange
+    } = this.props;
     const { hoverComponent } = this.state;
     let dynamicProps = {};
     if (activationDistance) {
@@ -894,7 +901,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             scrollEventThrottle={1}
           />
           {!!hoverComponent && this.renderHoverComponent()}
-          {debug && this.renderDebug()}
           <Animated.Code>
             {() =>
               block([
@@ -919,6 +925,19 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               ])
             }
           </Animated.Code>
+          {onScrollOffsetChange && (
+            <Animated.Code>
+              {() =>
+                onChange(
+                  this.scrollOffset,
+                  call([this.scrollOffset], ([offset]) =>
+                    onScrollOffsetChange(offset)
+                  )
+                )
+              }
+            </Animated.Code>
+          )}
+          {debug && this.renderDebug()}
         </Animated.View>
       </PanGestureHandler>
     );
