@@ -65,6 +65,7 @@ const defaultAnimationConfig = {
 const defaultProps = {
   autoscrollThreshold: 30,
   autoscrollSpeed: 100,
+  autoscrollAnimated: true,
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
   activationDistance: 0
@@ -98,6 +99,7 @@ type Props<T> = Modify<
   {
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
+    autoscrollAnimated?: boolean;
     data: T[];
     onRef?: (ref: React.RefObject<AnimatedFlatListType<T>>) => void;
     onDragBegin?: (index: number) => void;
@@ -572,15 +574,18 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (this.resolveAutoscroll) this.resolveAutoscroll(params);
   };
 
-  scrollToAsync = (offset: number): Promise<readonly number[]> =>
-    new Promise((resolve, reject) => {
+  scrollToAsync = (offset: number): Promise<readonly number[]> => {
+    const { autoscrollAnimated } = this.props;
+
+    return new Promise((resolve, reject) => {
       this.resolveAutoscroll = resolve;
       this.targetScrollOffset.setValue(offset);
       this.isAutoscrolling.native.setValue(1);
       this.isAutoscrolling.js = true;
       const flatlistRef = this.flatlistRef.current;
-      if (flatlistRef) flatlistRef.getNode().scrollToOffset({ offset });
+      if (flatlistRef) flatlistRef.getNode().scrollToOffset({ offset, animated: autoscrollAnimated });
     });
+  };
 
   getScrollTargetOffset = (
     distFromTop: number,
