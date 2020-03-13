@@ -2,7 +2,7 @@ import React from "react";
 import {
   Platform,
   StyleSheet,
-  VirtualizedListProps,
+  FlatListProps,
   findNodeHandle,
   ViewStyle,
   FlatList as RNFlatList,
@@ -94,7 +94,7 @@ export type RenderItemParams<T> = {
 
 type Modify<T, R> = Omit<T, keyof R> & R;
 type Props<T> = Modify<
-  VirtualizedListProps<T>,
+  FlatListProps<T>,
   {
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
