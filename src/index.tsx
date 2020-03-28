@@ -790,6 +790,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   renderItem = ({ item, index }: { item: T; index: number }) => {
     const key = this.keyExtractor(item, index);
+    if (index !== this.keyToIndex.get(key)) this.keyToIndex.set(key, index);
     const { renderItem } = this.props;
     if (!this.cellData.get(key)) this.setCellData(key, index);
     const { onUnmount } = this.cellData.get(key) || {
