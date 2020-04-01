@@ -866,7 +866,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       debug,
       horizontal,
       activationDistance,
-      onScrollOffsetChange
+      onScrollOffsetChange,
+      containterStyle,
     } = this.props;
     const { hoverComponent } = this.state;
     let dynamicProps = {};
@@ -884,7 +885,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         {...dynamicProps}
       >
         <Animated.View
-          style={styles.flex}
+          style={containterStyle || styles.flex}
           ref={this.containerRef}
           onLayout={this.onContainerLayout}
           onTouchEnd={this.onContainerTouchEnd}
