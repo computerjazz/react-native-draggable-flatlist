@@ -251,7 +251,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     onRef && onRef(this.flatlistRef);
   }
 
-  dataHasChanged = (a: T[], b: T[]) => {
+  dataKeysHaveChanged = (a: T[], b: T[]) => {
     const lengthHasChanged = a.length !== b.length;
     if (lengthHasChanged) return true;
 
@@ -263,7 +263,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   };
 
   componentDidUpdate = async (prevProps: Props<T>, prevState: State) => {
-    if (prevProps.data !== this.props.data) {
+    const layoutInvalidationKeyHasChanged =
+      prevProps.layoutInvalidationKey !== this.props.layoutInvalidationKey;
+    const dataHasChanged = prevProps.data !== this.props.data;
+    if (layoutInvalidationKeyHasChanged || dataHasChanged) {
       this.props.data.forEach((item, index) => {
         const key = this.keyExtractor(item, index);
         this.keyToIndex.set(key, index);
@@ -271,12 +274,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       // Remeasure on next paint
       this.updateCellData(this.props.data);
       onNextFrame(this.flushQueue);
-      const layoutInvalidationKeyHasChanged =
-        prevProps.layoutInvalidationKey !== this.props.layoutInvalidationKey;
 
       if (
         layoutInvalidationKeyHasChanged ||
-        this.dataHasChanged(prevProps.data, this.props.data)
+        this.dataKeysHaveChanged(prevProps.data, this.props.data)
       ) {
         this.queue.push(() => this.measureAll(this.props.data));
       }
@@ -443,7 +444,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.isPressedIn.native
     );
 
-    const tapState = new Value<GestureState>(GestureState.UNDETERMINED);
     const transform = this.props.horizontal
       ? [{ translateX: anim }]
       : [{ translateY: anim }];
