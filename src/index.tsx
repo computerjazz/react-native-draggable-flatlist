@@ -970,7 +970,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             keyExtractor={this.keyExtractor}
             onScroll={this.onScroll}
             scrollEventThrottle={1}
-            contentContainerStyle={styles.contentContainerStyle}
+            contentContainerStyle={Platform.OS === "ios" ? undefined : styles.contentContainerStyle}
           />
           {!!hoverComponent && this.renderHoverComponent()}
           <Animated.Code>
