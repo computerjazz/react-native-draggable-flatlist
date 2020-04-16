@@ -674,13 +674,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             this.props.horizontal ? contentOffset.x : contentOffset.y
           ),
           cond(
-            and(eq(contentOffset.y, 0), not(this.isLoading), this.isNotFirstLoad, not(this.isPressedIn.native)),
+            and(eq(contentOffset.y, 0), not(this.isLoading), this.isNotFirstLoad),
             //lessThan(contentOffset.y, 100),
             block([
               set(this.isLoading, 1),
 
               call([this.scrollOffset], () => {
-                if (this.props.customPullToRefresh && !this.props.refreshing && !this.state.isLoaderActive) {
+                if (this.props.customPullToRefresh && !this.props.refreshing && !this.state.isLoaderActive && !this.state.activeKey) {
                   this.setState({ isLoaderActive: true }, () => {
                     this.props.customPullToRefresh()
                     //await this.timeout()
@@ -906,10 +906,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   };
 
   componentDidMount() {
-    setTimeout(() => {
-      this.scrollToContent(false);
-      this.isNotFirstLoad.setValue(1)
-    }, 1);
+    if (Platform.OS === 'android') {
+      setTimeout(() => {
+        this.scrollToContent(false);
+        this.isNotFirstLoad.setValue(1)
+      }, 1);
+    }
+  
 
   }
 
@@ -970,7 +973,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             keyExtractor={this.keyExtractor}
             onScroll={this.onScroll}
             scrollEventThrottle={1}
-            contentContainerStyle={styles.contentContainerStyle}
+            contentContainerStyle={Platform.OS === "ios" ? undefined : styles.contentContainerStyle}
           />
           {!!hoverComponent && this.renderHoverComponent()}
           <Animated.Code>
