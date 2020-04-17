@@ -377,8 +377,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     }
 
     this.resetHoverState();
-
-    this.scrollToContent()
   };
 
   updateCellData = (data: T[] = []) =>
@@ -674,13 +672,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             this.props.horizontal ? contentOffset.x : contentOffset.y
           ),
           cond(
-            and(eq(contentOffset.y, 0), not(this.isLoading), this.isNotFirstLoad),
-            //lessThan(contentOffset.y, 100),
+            and(eq(contentOffset.y, 0), not(this.isLoading), this.isNotFirstLoad, not(this.isHovering)),
             block([
               set(this.isLoading, 1),
 
               call([this.scrollOffset], () => {
-                if (this.props.customPullToRefresh && !this.props.refreshing && !this.state.isLoaderActive && !this.state.activeKey) {
+                if (this.props.customPullToRefresh && !this.props.refreshing && !this.state.isLoaderActive) {
                   this.setState({ isLoaderActive: true }, () => {
                     this.props.customPullToRefresh()
                     //await this.timeout()
@@ -995,9 +992,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                     call(this.moveEndParams, this.onDragEnd),
                     this.resetHoverSpring,
                     set(this.hasMoved, 0),
-                    cond(lessOrEq(this.scrollOffset, 50),
-                      call([], () => { this.scrollToContent() })
-                    )
                   ])
                 ])
               ])
