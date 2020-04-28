@@ -905,7 +905,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   };
 
   componentDidMount() {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === 'android' && this.props.onRefresh) {
       setTimeout(() => {
         this.scrollToContent(false);
         this.isNotFirstLoad.setValue(1)
