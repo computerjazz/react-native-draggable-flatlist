@@ -111,6 +111,9 @@ type Props<T> = Modify<
     debug?: boolean;
     layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
+    refreshing?: boolean;
+    onRefresh?: () => void;
+    refreshControlOffset?: number;
   } & Partial<DefaultProps>
 >;
 
@@ -949,7 +952,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               <Animated.View style={styles.indicatorContainer}>
                 <ActivityIndicator size="large" />
               </Animated.View>
-
             </Animated.View>))}
           <AnimatedFlatList
             {...this.props}
