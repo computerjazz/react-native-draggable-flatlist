@@ -68,7 +68,8 @@ const defaultProps = {
   autoscrollSpeed: 100,
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
-  activationDistance: 0
+  activationDistance: 0,
+  refreshControlOffset: 50,
 };
 
 type DefaultProps = Readonly<typeof defaultProps>;
@@ -677,11 +678,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
               set(this.isLoading, 1),
 
               call([this.scrollOffset], () => {
-                if (this.props.customPullToRefresh && !this.props.refreshing && !this.state.isLoaderActive) {
+                if (this.props.onRefresh && !this.props.refreshing && !this.state.isLoaderActive) {
                   this.setState({ isLoaderActive: true }, () => {
-                    this.props.customPullToRefresh()
-                    //await this.timeout()
-                    //console.log('loading')
+                    this.props.onRefresh();
 
                     setTimeout(() => {
 
@@ -724,7 +723,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   scrollToContent = (animated = true) => {
     const flatlistRef = this.flatlistRef.current;
     if (flatlistRef) {
-      flatlistRef.getNode().scrollToOffset({ offset: 51, animated });
+      flatlistRef.getNode().scrollToOffset({ offset: this.props.refreshControlOffset + 1, animated });
     }
   }
 
@@ -909,7 +908,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         this.isNotFirstLoad.setValue(1)
       }, 1);
     }
-  
+
 
   }
 
@@ -919,7 +918,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       debug,
       horizontal,
       activationDistance,
-      onScrollOffsetChange
+      onScrollOffsetChange,
+      refreshControl,
     } = this.props;
     const { hoverComponent } = this.state;
     let dynamicProps = {};
@@ -942,23 +942,15 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           onLayout={this.onContainerLayout}
           onTouchEnd={this.onContainerTouchEnd}
         >
-          {this.props.customPullToRefresh && (
+          {Platform.OS === 'android' && this.props.onRefresh && this.state.isLoaderActive && (refreshControl ? refreshControl : (
             <Animated.View
-              style={{
-                //backgroundColor: 'red',
-                height: 50,
-                zIndex: -1,
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: 0,
-              }}
+              style={styles.indicatorAbsoluteWrapper}
             >
               <Animated.View style={styles.indicatorContainer}>
-                <ActivityIndicator size="large" animating={this.state.isLoaderActive} />
+                <ActivityIndicator size="large" />
               </Animated.View>
 
-            </Animated.View>)}
+            </Animated.View>))}
           <AnimatedFlatList
             {...this.props}
             CellRendererComponent={this.CellRendererComponent}
@@ -970,7 +962,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             keyExtractor={this.keyExtractor}
             onScroll={this.onScroll}
             scrollEventThrottle={1}
-            contentContainerStyle={Platform.OS === "ios" ? undefined : styles.contentContainerStyle}
+            contentContainerStyle={Platform.OS === "ios" ? this.props.contentContainerStyle : [{paddingTop: this.props.refreshControlOffset}, this.props.contentContainerStyle]}
+            refreshControl={Platform.OS === "ios" ? refreshControl : undefined}
           />
           {!!hoverComponent && this.renderHoverComponent()}
           <Animated.Code>
@@ -1074,7 +1067,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  contentContainerStyle: {
-    paddingTop: 50
+  indicatorAbsoluteWrapper: {
+    height: 50,
+    zIndex: -1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
   },
 });
