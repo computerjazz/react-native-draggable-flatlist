@@ -100,6 +100,7 @@ type Props<T> = Modify<
     autoscrollThreshold?: number;
     data: T[];
     onRef?: (ref: React.RefObject<AnimatedFlatListType<T>>) => void;
+    dragDisabled?: boolean;
     onDragBegin?: (index: number) => void;
     onRelease?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;
@@ -796,6 +797,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { onUnmount } = this.cellData.get(key) || {
       onUnmount: () => console.log("## error, no cellData")
     };
+    const { dragDisabled } = this.props;
     return (
       <RowItem
         extraData={this.props.extraData}
@@ -803,7 +805,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         keyToIndex={this.keyToIndex}
         renderItem={renderItem}
         item={item}
-        drag={this.drag}
+        drag={dragDisabled ? () => {} : this.drag}
         onUnmount={onUnmount}
       />
     );
