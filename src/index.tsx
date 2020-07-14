@@ -815,7 +815,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 [`translate${horizontal ? "X" : "Y"}`]: this
                   .hoverComponentTranslate
               }
-            ]
+              // We need the cast because the transform array usually accepts
+              // only specific keys, and we dynamically generate the key
+              // above
+            ] as Animated.AnimatedTransform
           }
         ]}
       >
