@@ -536,7 +536,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           : !flatListNode
           ? "no flatlist node"
           : "invalid ref";
-        console.log(`## can't measure ${key} reason: ${reason}`);
+        console.log(`## can't measure ${key} reason: ${reason}, the parent node should specify the dimension, example: if you're using <View> set it to <View style={{flex:1}}`);
         this.queue.push(() => this.measureCell(key));
         return resolve();
       }
