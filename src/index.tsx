@@ -226,6 +226,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   keyToIndex = new Map<string, number>();
 
+  /** Whether we've sent an incomplete call to the FlatList to do a scroll */
   isAutoscrolling = {
     native: new Value<number>(0),
     js: false
@@ -611,23 +612,49 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     return targetOffset;
   };
 
-  autoscroll = async ([
-    distFromTop,
-    distFromBottom,
-    scrollOffset,
-    isScrolledUp,
-    isScrolledDown
-  ]: readonly number[]) => {
-    const targetOffset = this.getScrollTargetOffset(
-      distFromTop,
-      distFromBottom,
-      scrollOffset,
-      !!isScrolledUp,
-      !!isScrolledDown
-    );
-    if (targetOffset >= 0 && this.isPressedIn.js) {
-      const nextScrollParams = await this.scrollToAsync(targetOffset);
-      this.autoscroll(nextScrollParams);
+  /** Ensure that only 1 call to autoscroll is active at a time */
+  autoscrollLooping = false;
+  autoscroll = async (params: readonly number[]) => {
+    if (this.autoscrollLooping) {
+      return;
+    }
+    this.autoscrollLooping = true;
+    try {
+      let shouldScroll = true;
+      let curParams = params;
+      while (shouldScroll) {
+        const [
+          distFromTop,
+          distFromBottom,
+          scrollOffset,
+          isScrolledUp,
+          isScrolledDown
+        ] = curParams;
+        const targetOffset = this.getScrollTargetOffset(
+          distFromTop,
+          distFromBottom,
+          scrollOffset,
+          !!isScrolledUp,
+          !!isScrolledDown
+        );
+        const scrollingUpAtTop = !!(
+          isScrolledUp && targetOffset <= scrollOffset
+        );
+        const scrollingDownAtBottom = !!(
+          isScrolledDown && targetOffset >= scrollOffset
+        );
+        shouldScroll =
+          targetOffset >= 0 &&
+          this.isPressedIn.js &&
+          !scrollingUpAtTop &&
+          !scrollingDownAtBottom;
+
+        if (shouldScroll) {
+          curParams = await this.scrollToAsync(targetOffset);
+        }
+      }
+    } finally {
+      this.autoscrollLooping = false;
     }
   };
 
@@ -669,17 +696,26 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             and(
               this.isAutoscrolling.native,
               or(
+                // We've scrolled to where we want to be
                 lessOrEq(
                   abs(sub(this.targetScrollOffset, this.scrollOffset)),
                   scrollPositionTolerance
                 ),
-                this.isScrolledUp,
-                this.isScrolledDown
+                // We're at the start, but still want to scroll farther up
+                and(
+                  this.isScrolledUp,
+                  lessOrEq(this.targetScrollOffset, this.scrollOffset)
+                ),
+                // We're at the end, but still want to scroll further down
+                and(
+                  this.isScrolledDown,
+                  greaterOrEq(this.targetScrollOffset, this.scrollOffset)
+                )
               )
             ),
             [
+              // Finish scrolling
               set(this.isAutoscrolling.native, 0),
-              this.checkAutoscroll,
               call(this.autoscrollParams, this.onAutoscrollComplete)
             ]
           )
@@ -779,7 +815,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 [`translate${horizontal ? "X" : "Y"}`]: this
                   .hoverComponentTranslate
               }
-            ]
+              // We need the cast because the transform array usually accepts
+              // only specific keys, and we dynamically generate the key
+              // above
+            ] as Animated.AnimatedTransform
           }
         ]}
       >
