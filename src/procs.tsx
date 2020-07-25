@@ -210,7 +210,13 @@ export const setupCell = (proc as RetypedProc)(
       ]),
       runSpring,
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
-      cond(eq(spacerIndex, currentIndex), set(placeholderOffset, offset)),
+      cond(
+        eq(spacerIndex, currentIndex),
+        set(
+          placeholderOffset,
+          cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
+        )
+      ),
       position
     ])
 );
