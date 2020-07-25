@@ -860,9 +860,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   renderPlaceholder = () => {
     const { renderPlaceholder, horizontal } = this.props;
-    if (!renderPlaceholder) return null;
     const { activeKey } = this.state;
-    if (!activeKey) return null;
+    if (!activeKey || !renderPlaceholder) return null;
     const activeIndex = this.keyToIndex.get(activeKey);
     if (activeIndex === undefined) return null;
     const activeItem = this.props.data[activeIndex];
