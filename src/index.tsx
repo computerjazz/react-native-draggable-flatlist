@@ -104,6 +104,7 @@ type Props<T> = Modify<
     onRelease?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;
     renderItem: (params: RenderItemParams<T>) => React.ReactNode;
+    renderPlaceholder?: (params: { item: T; index: number }) => React.ReactNode;
     animationConfig: Partial<Animated.SpringConfig>;
     activationDistance?: number;
     debug?: boolean;
@@ -411,7 +412,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     );
     const onHasMoved = startClock(clock);
     const onChangeSpacerIndex = cond(clockRunning(clock), stopClock(clock));
-
     const onFinished = stopClock(clock);
 
     const prevTrans = new Value(0);
@@ -442,7 +442,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onHasMoved,
       onChangeSpacerIndex,
       onFinished,
-      this.isPressedIn.native
+      this.isPressedIn.native,
+      this.placeholderOffset
     );
 
     const transform = this.props.horizontal
@@ -905,14 +906,43 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     this.isPressedIn.native.setValue(0);
   };
 
+  placeholderOffset = new Value(0);
+  placeholderPos = sub(this.placeholderOffset, this.scrollOffset);
+
+  renderPlaceholder = () => {
+    const { renderPlaceholder, horizontal } = this.props;
+    const { activeKey } = this.state;
+    if (!activeKey) return null;
+    const activeIndex = this.keyToIndex.get(activeKey);
+    if (activeIndex === undefined) return null;
+    const activeItem = this.props.data[activeIndex];
+    const translateKey = horizontal ? "translateX" : "translateY";
+    const sizeKey = horizontal ? "width" : "height";
+    const style = {
+      ...StyleSheet.absoluteFillObject,
+      [sizeKey]: this.activeCellSize,
+      transform: [
+        { [translateKey]: this.placeholderPos }
+      ] as Animated.AnimatedTransform
+    };
+
+    return !!renderPlaceholder ? (
+      <Animated.View style={style}>
+        {renderPlaceholder({ item: activeItem, index: activeIndex })}
+      </Animated.View>
+    ) : null;
+  };
+
   render() {
     const {
       scrollEnabled,
       debug,
       horizontal,
       activationDistance,
-      onScrollOffsetChange
+      onScrollOffsetChange,
+      renderPlaceholder
     } = this.props;
+
     const { hoverComponent } = this.state;
     let dynamicProps = {};
     if (activationDistance) {
@@ -934,6 +964,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           onLayout={this.onContainerLayout}
           onTouchEnd={this.onContainerTouchEnd}
         >
+          {!!renderPlaceholder && this.renderPlaceholder()}
           <AnimatedFlatList
             {...this.props}
             CellRendererComponent={this.CellRendererComponent}
