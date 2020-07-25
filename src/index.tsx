@@ -181,6 +181,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2));
   hoverOffset = add(this.hoverAnim, this.scrollOffset);
 
+  placeholderOffset = new Value(0);
+  placeholderPos = sub(this.placeholderOffset, this.scrollOffset);
+
   hoverTo = new Value(0);
   hoverClock = new Clock();
   hoverAnimState = {
@@ -855,6 +858,30 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     );
   };
 
+  renderPlaceholder = () => {
+    const { renderPlaceholder, horizontal } = this.props;
+    const { activeKey } = this.state;
+    if (!activeKey) return null;
+    const activeIndex = this.keyToIndex.get(activeKey);
+    if (activeIndex === undefined) return null;
+    const activeItem = this.props.data[activeIndex];
+    const translateKey = horizontal ? "translateX" : "translateY";
+    const sizeKey = horizontal ? "width" : "height";
+    const style = {
+      ...StyleSheet.absoluteFillObject,
+      [sizeKey]: this.activeCellSize,
+      transform: [
+        { [translateKey]: this.placeholderPos }
+      ] as Animated.AnimatedTransform
+    };
+
+    return !!renderPlaceholder ? (
+      <Animated.View style={style}>
+        {renderPlaceholder({ item: activeItem, index: activeIndex })}
+      </Animated.View>
+    ) : null;
+  };
+
   CellRendererComponent = (cellProps: any) => {
     const { item, index, children, onLayout } = cellProps;
     const { horizontal } = this.props;
@@ -904,33 +931,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   onContainerTouchEnd = () => {
     this.isPressedIn.native.setValue(0);
-  };
-
-  placeholderOffset = new Value(0);
-  placeholderPos = sub(this.placeholderOffset, this.scrollOffset);
-
-  renderPlaceholder = () => {
-    const { renderPlaceholder, horizontal } = this.props;
-    const { activeKey } = this.state;
-    if (!activeKey) return null;
-    const activeIndex = this.keyToIndex.get(activeKey);
-    if (activeIndex === undefined) return null;
-    const activeItem = this.props.data[activeIndex];
-    const translateKey = horizontal ? "translateX" : "translateY";
-    const sizeKey = horizontal ? "width" : "height";
-    const style = {
-      ...StyleSheet.absoluteFillObject,
-      [sizeKey]: this.activeCellSize,
-      transform: [
-        { [translateKey]: this.placeholderPos }
-      ] as Animated.AnimatedTransform
-    };
-
-    return !!renderPlaceholder ? (
-      <Animated.View style={style}>
-        {renderPlaceholder({ item: activeItem, index: activeIndex })}
-      </Animated.View>
-    ) : null;
   };
 
   render() {
