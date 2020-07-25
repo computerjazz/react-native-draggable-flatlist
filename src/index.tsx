@@ -860,6 +860,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   renderPlaceholder = () => {
     const { renderPlaceholder, horizontal } = this.props;
+    if (!renderPlaceholder) return null;
     const { activeKey } = this.state;
     if (!activeKey) return null;
     const activeIndex = this.keyToIndex.get(activeKey);
@@ -875,11 +876,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       ] as Animated.AnimatedTransform
     };
 
-    return !!renderPlaceholder ? (
+    return (
       <Animated.View style={style}>
         {renderPlaceholder({ item: activeItem, index: activeIndex })}
       </Animated.View>
-    ) : null;
+    );
   };
 
   CellRendererComponent = (cellProps: any) => {
