@@ -100,7 +100,8 @@ export const setupCell = (proc as RetypedProc)(
     onHasMoved: Animated.Node<number>,
     onChangeSpacerIndex: Animated.Node<number>,
     onFinished: Animated.Node<number>,
-    isPressedIn: Animated.Node<number>
+    isPressedIn: Animated.Node<number>,
+    placeholderOffset: Animated.Value<number>
   ) =>
     block([
       set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
@@ -209,6 +210,13 @@ export const setupCell = (proc as RetypedProc)(
       ]),
       runSpring,
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
+      cond(
+        eq(spacerIndex, currentIndex),
+        set(
+          placeholderOffset,
+          cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
+        )
+      ),
       position
     ])
 );
