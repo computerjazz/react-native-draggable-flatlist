@@ -46,6 +46,7 @@ const {
   stopClock,
   spring,
   defined,
+  min,
   max,
   debug
 } = Animated;
