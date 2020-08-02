@@ -67,7 +67,8 @@ const defaultProps = {
   autoscrollSpeed: 100,
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
-  activationDistance: 0
+  activationDistance: 0,
+  constrained: false
 };
 
 type DefaultProps = Readonly<typeof defaultProps>;
@@ -109,6 +110,7 @@ type Props<T> = Modify<
     debug?: boolean;
     layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
+    constrained?: boolean;
   } & Partial<DefaultProps>
 >;
 
@@ -176,7 +178,16 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     add(this.scrollOffset, this.containerSize, scrollPositionTolerance),
     this.scrollViewSize
   );
-  hoverAnim = sub(this.touchAbsolute, this.touchCellOffset);
+
+  hoverAnimUnconstrained = sub(this.touchAbsolute, this.touchCellOffset);
+  hoverAnimConstrained = min(
+    sub(this.containerSize, this.activeCellSize),
+    max(0, this.hoverAnimUnconstrained)
+  );
+
+  hoverAnim = this.props.constrained
+    ? this.hoverAnimConstrained
+    : this.hoverAnimUnconstrained;
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2));
   hoverOffset = add(this.hoverAnim, this.scrollOffset);
 
