@@ -1,5 +1,4 @@
 import Animated from "react-native-reanimated";
-import { State as GestureState } from "react-native-gesture-handler";
 
 let {
   or,
@@ -68,9 +67,16 @@ export const hardReset = proc(
     block([set(position, 0), set(finished, 0), set(time, 0), set(toValue, 0)])
 );
 
-export const setupCell = proc(
+/**
+ * The in react-native-reanimated.d.ts definition of `proc` only has generics
+ * for up to 10 arguments. We cast it to accept any params to avoid errors when
+ * type-checking.
+ */
+type RetypedProc = (cb: (...params: any) => Animated.Node<number>) => typeof cb;
+
+export const setupCell = (proc as RetypedProc)(
   (
-    currentIndex: Animated.Node<number>,
+    currentIndex: Animated.Value<number>,
     initialized: Animated.Value<number>,
     size: Animated.Node<number>,
     offset: Animated.Node<number>,
@@ -94,7 +100,8 @@ export const setupCell = proc(
     onHasMoved: Animated.Node<number>,
     onChangeSpacerIndex: Animated.Node<number>,
     onFinished: Animated.Node<number>,
-    isPressedIn: Animated.Node<number>
+    isPressedIn: Animated.Node<number>,
+    placeholderOffset: Animated.Value<number>
   ) =>
     block([
       set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
@@ -203,11 +210,18 @@ export const setupCell = proc(
       ]),
       runSpring,
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
+      cond(
+        eq(spacerIndex, currentIndex),
+        set(
+          placeholderOffset,
+          cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
+        )
+      ),
       position
     ])
 );
 
-const betterSpring = proc(
+const betterSpring = (proc as RetypedProc)(
   (
     finished: Animated.Value<number>,
     velocity: Animated.Value<number>,

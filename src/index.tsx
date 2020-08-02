@@ -105,6 +105,7 @@ type Props<T> = Modify<
     onRelease?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;
     renderItem: (params: RenderItemParams<T>) => React.ReactNode;
+    renderPlaceholder?: (params: { item: T; index: number }) => React.ReactNode;
     animationConfig: Partial<Animated.SpringConfig>;
     activationDistance?: number;
     debug?: boolean;
@@ -191,6 +192,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2));
   hoverOffset = add(this.hoverAnim, this.scrollOffset);
 
+  placeholderOffset = new Value(0);
+  placeholderPos = sub(this.placeholderOffset, this.scrollOffset);
+
   hoverTo = new Value(0);
   hoverClock = new Clock();
   hoverAnimState = {
@@ -237,6 +241,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   keyToIndex = new Map<string, number>();
 
+  /** Whether we've sent an incomplete call to the FlatList to do a scroll */
   isAutoscrolling = {
     native: new Value<number>(0),
     js: false
@@ -421,7 +426,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     );
     const onHasMoved = startClock(clock);
     const onChangeSpacerIndex = cond(clockRunning(clock), stopClock(clock));
-
     const onFinished = stopClock(clock);
 
     const prevTrans = new Value(0);
@@ -452,7 +456,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       onHasMoved,
       onChangeSpacerIndex,
       onFinished,
-      this.isPressedIn.native
+      this.isPressedIn.native,
+      this.placeholderOffset
     );
 
     const transform = this.props.horizontal
@@ -622,23 +627,49 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     return targetOffset;
   };
 
-  autoscroll = async ([
-    distFromTop,
-    distFromBottom,
-    scrollOffset,
-    isScrolledUp,
-    isScrolledDown
-  ]: readonly number[]) => {
-    const targetOffset = this.getScrollTargetOffset(
-      distFromTop,
-      distFromBottom,
-      scrollOffset,
-      !!isScrolledUp,
-      !!isScrolledDown
-    );
-    if (targetOffset >= 0 && this.isPressedIn.js) {
-      const nextScrollParams = await this.scrollToAsync(targetOffset);
-      this.autoscroll(nextScrollParams);
+  /** Ensure that only 1 call to autoscroll is active at a time */
+  autoscrollLooping = false;
+  autoscroll = async (params: readonly number[]) => {
+    if (this.autoscrollLooping) {
+      return;
+    }
+    this.autoscrollLooping = true;
+    try {
+      let shouldScroll = true;
+      let curParams = params;
+      while (shouldScroll) {
+        const [
+          distFromTop,
+          distFromBottom,
+          scrollOffset,
+          isScrolledUp,
+          isScrolledDown
+        ] = curParams;
+        const targetOffset = this.getScrollTargetOffset(
+          distFromTop,
+          distFromBottom,
+          scrollOffset,
+          !!isScrolledUp,
+          !!isScrolledDown
+        );
+        const scrollingUpAtTop = !!(
+          isScrolledUp && targetOffset <= scrollOffset
+        );
+        const scrollingDownAtBottom = !!(
+          isScrolledDown && targetOffset >= scrollOffset
+        );
+        shouldScroll =
+          targetOffset >= 0 &&
+          this.isPressedIn.js &&
+          !scrollingUpAtTop &&
+          !scrollingDownAtBottom;
+
+        if (shouldScroll) {
+          curParams = await this.scrollToAsync(targetOffset);
+        }
+      }
+    } finally {
+      this.autoscrollLooping = false;
     }
   };
 
@@ -680,17 +711,26 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             and(
               this.isAutoscrolling.native,
               or(
+                // We've scrolled to where we want to be
                 lessOrEq(
                   abs(sub(this.targetScrollOffset, this.scrollOffset)),
                   scrollPositionTolerance
                 ),
-                this.isScrolledUp,
-                this.isScrolledDown
+                // We're at the start, but still want to scroll farther up
+                and(
+                  this.isScrolledUp,
+                  lessOrEq(this.targetScrollOffset, this.scrollOffset)
+                ),
+                // We're at the end, but still want to scroll further down
+                and(
+                  this.isScrolledDown,
+                  greaterOrEq(this.targetScrollOffset, this.scrollOffset)
+                )
               )
             ),
             [
+              // Finish scrolling
               set(this.isAutoscrolling.native, 0),
-              this.checkAutoscroll,
               call(this.autoscrollParams, this.onAutoscrollComplete)
             ]
           )
@@ -708,7 +748,13 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           set(this.hoverAnimState.position, this.hoverAnim),
           startClock(this.hoverClock)
         ]),
-        call([this.activeIndex], this.onRelease)
+        [
+          call([this.activeIndex], this.onRelease),
+          cond(
+            not(this.hasMoved),
+            call([this.activeIndex], this.resetHoverState)
+          )
+        ]
       ],
       call([this.activeIndex], this.resetHoverState)
     )
@@ -790,7 +836,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 [`translate${horizontal ? "X" : "Y"}`]: this
                   .hoverComponentTranslate
               }
-            ]
+              // We need the cast because the transform array usually accepts
+              // only specific keys, and we dynamically generate the key
+              // above
+            ] as Animated.AnimatedTransform
           }
         ]}
       >
@@ -817,6 +866,30 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         drag={this.drag}
         onUnmount={onUnmount}
       />
+    );
+  };
+
+  renderPlaceholder = () => {
+    const { renderPlaceholder, horizontal } = this.props;
+    const { activeKey } = this.state;
+    if (!activeKey || !renderPlaceholder) return null;
+    const activeIndex = this.keyToIndex.get(activeKey);
+    if (activeIndex === undefined) return null;
+    const activeItem = this.props.data[activeIndex];
+    const translateKey = horizontal ? "translateX" : "translateY";
+    const sizeKey = horizontal ? "width" : "height";
+    const style = {
+      ...StyleSheet.absoluteFillObject,
+      [sizeKey]: this.activeCellSize,
+      transform: [
+        { [translateKey]: this.placeholderPos }
+      ] as Animated.AnimatedTransform
+    };
+
+    return (
+      <Animated.View style={style}>
+        {renderPlaceholder({ item: activeItem, index: activeIndex })}
+      </Animated.View>
     );
   };
 
@@ -877,8 +950,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       debug,
       horizontal,
       activationDistance,
-      onScrollOffsetChange
+      onScrollOffsetChange,
+      renderPlaceholder
     } = this.props;
+
     const { hoverComponent } = this.state;
     let dynamicProps = {};
     if (activationDistance) {
@@ -900,6 +975,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           onLayout={this.onContainerLayout}
           onTouchEnd={this.onContainerTouchEnd}
         >
+          {!!renderPlaceholder && this.renderPlaceholder()}
           <AnimatedFlatList
             {...this.props}
             CellRendererComponent={this.CellRendererComponent}
