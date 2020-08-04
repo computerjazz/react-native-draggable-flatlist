@@ -69,7 +69,7 @@ const defaultProps = {
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
   activationDistance: 0,
-  staysWithinListBoundary: true
+  dragItemOverflow: false
 };
 
 type DefaultProps = Readonly<typeof defaultProps>;
@@ -112,7 +112,7 @@ type Props<T> = Modify<
     debug?: boolean;
     layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
-    staysWithinListBoundary?: boolean;
+    dragItemOverflow?: boolean;
   } & Partial<DefaultProps>
 >;
 
@@ -187,9 +187,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     max(0, this.hoverAnimUnconstrained)
   );
 
-  hoverAnim = this.props.staysWithinListBoundary
-    ? this.hoverAnimConstrained
-    : this.hoverAnimUnconstrained;
+  hoverAnim = this.props.dragItemOverflow
+    ? this.hoverAnimUnconstrained
+    : this.hoverAnimConstrained;
   hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2));
   hoverOffset = add(this.hoverAnim, this.scrollOffset);
 
