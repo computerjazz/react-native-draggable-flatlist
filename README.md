@@ -48,6 +48,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `activationDistance`    | `number`                                                                                  | Distance a finger must travel before the gesture handler activates. Useful when using a draggable list within a TabNavigator so that the list does not capture navigator gestures. |
 | `layoutInvalidationKey` | `string`                                                                                  | Changing this value forces a remeasure of all item layouts. Useful if item size/ordering updates after initial mount.                                                              |
 | `onScrollOffsetChange`  | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                |
+| `dragItemOverflow`      | `boolean`                                                                                 | If true, dragged item follows finger beyond list boundary.                                                                                                                         |
 
 ## Example
 
