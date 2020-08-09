@@ -112,7 +112,7 @@ type Props<T> = Modify<
     debug?: boolean;
     layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
-    onSpacerIndexChange?: (placeholderIndex: number) => void;
+    onPlaceholderIndexChange?: (placeholderIndex: number) => void;
     dragItemOverflow?: boolean;
   } & Partial<DefaultProps>
 >;
@@ -871,14 +871,14 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     );
   };
 
-  renderOnSpacerIndexChange = () => (
+  renderOnPlaceholderIndexChange = () => (
     <Animated.Code>
       {() =>
         block([
           onChange(
             this.spacerIndex,
             call([this.spacerIndex], ([spacerIndex]) =>
-              this.props.onSpacerIndexChange!(spacerIndex)
+              this.props.onPlaceholderIndexChange!(spacerIndex)
             )
           )
         ])
@@ -969,7 +969,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       activationDistance,
       onScrollOffsetChange,
       renderPlaceholder,
-      onSpacerIndexChange
+      onPlaceholderIndexChange
     } = this.props;
 
     const { hoverComponent } = this.state;
@@ -993,7 +993,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           onLayout={this.onContainerLayout}
           onTouchEnd={this.onContainerTouchEnd}
         >
-          {!!onSpacerIndexChange && this.renderOnSpacerIndexChange()}
+          {!!onPlaceholderIndexChange && this.renderOnPlaceholderIndexChange()}
           {!!renderPlaceholder && this.renderPlaceholder()}
           <AnimatedFlatList
             {...this.props}
