@@ -8,7 +8,7 @@ To use swipeable list items in a DraggableFlatList see [React Native Swipeable I
 
 ## Install
 
-1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler). RNGH requires you to make changes to `MainActivity.java`. Be sure to [follow all Android instructions!](https://software-mansion.github.io/react-native-gesture-handler/docs/getting-started.html#android)
+1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler). RNGH requires you to make changes to `MainActivity.java`. Be sure to [follow all Android instructions!](https://docs.swmansion.com/react-native-gesture-handler/docs/#android)
 2. Install this package using `npm` or `yarn`
 
 with `npm`:
