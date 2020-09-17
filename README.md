@@ -55,7 +55,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 
 ```javascript
 import React, { Component } from "react";
-import { View, TouchableOpacity, Text } from "react-native";
+import { View, Pressable, Text } from "react-native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 
 const exampleData = [...Array(20)].map((d, index) => ({
@@ -72,7 +72,7 @@ class Example extends Component {
 
   renderItem = ({ item, index, drag, isActive }) => {
     return (
-      <TouchableOpacity
+      <Pressable
         style={{
           height: 100,
           backgroundColor: isActive ? "blue" : item.backgroundColor,
@@ -90,7 +90,7 @@ class Example extends Component {
         >
           {item.label}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
