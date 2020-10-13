@@ -68,6 +68,7 @@ const defaultProps = {
   autoscrollSpeed: 100,
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
+  dragHitSlop: 0,
   activationDistance: 0,
   dragItemOverflow: false
 };
@@ -963,6 +964,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   render() {
     const {
+      dragHitSlop,
       scrollEnabled,
       debug,
       horizontal,
@@ -983,6 +985,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     return (
       <PanGestureHandler
         ref={this.panGestureHandlerRef}
+        hitSlop={dragHitSlop}
         onGestureEvent={this.onPanGestureEvent}
         onHandlerStateChange={this.onPanStateChange}
         {...dynamicProps}
