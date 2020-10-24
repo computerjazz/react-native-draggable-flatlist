@@ -50,6 +50,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `onScrollOffsetChange`     | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                |
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                   |
 | `dragItemOverflow`         | `boolean`                                                                                 | If true, dragged item follows finger beyond list boundary.                                                                                                                         |
+| `debug`                    | `boolean`                                                                                 | A useful prop used to debug this component. It will log warnings and errors and also a component to debug its animation.                                                           |
 
 ## Example
 
