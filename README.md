@@ -50,7 +50,8 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `onScrollOffsetChange`     | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                |
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                   |
 | `dragItemOverflow`         | `boolean`                                                                                 | If true, dragged item follows finger beyond list boundary.                                                                                                                         |
-| `dragHitSlop` | `object: {top: number, left: number, bottom: number, right: number}` | Enables control over what part of the connected view area can be used to begin recognizing the gesture. Numbers need to be non-positive (only possible to reduce responsive area).
+| `dragHitSlop` | `object: {top: number, left: number, bottom: number, right: number}` | Enables control over what part of the connected view area can be used to begin recognizing the gesture. Numbers need to be non-positive (only possible to reduce responsive area).|
+| `debug`                    | `boolean`                                                                                 | Enables debug logging and animation debugger.                                                           |
 
 
 ## Example

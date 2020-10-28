@@ -68,16 +68,12 @@ const defaultProps = {
   autoscrollSpeed: 100,
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
+  dragHitSlop: 0,
   activationDistance: 0,
   dragItemOverflow: false
 };
 
 type DefaultProps = Readonly<typeof defaultProps>;
-
-const debugGestureState = (state: GestureState, context: string) => {
-  const stateStr = Object.entries(GestureState).find(([k, v]) => v === state);
-  console.log(`## ${context} debug gesture state: ${state} - ${stateStr}`);
-};
 
 type AnimatedFlatListType<T> = { getNode: () => RNFlatList<T> };
 
@@ -338,7 +334,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     if (this.state.hoverComponent) {
       // We can't drag more than one row at a time
       // TODO: Put action on queue?
-      console.log("## Can't set multiple active items");
+      if (this.props.debug) console.log("## Can't set multiple active items");
     } else {
       this.isPressedIn.js = true;
 
@@ -523,7 +519,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
         const size = horizontal ? w : h;
         const offset = baseOffset + extraOffset;
-        // console.log(`measure key ${key}: wdith ${w} height ${h} x ${x} y ${y} size ${size} offset ${offset}`)
+
+        if (this.props.debug)
+          console.log(
+            `measure key ${key}: wdith ${w} height ${h} x ${x} y ${y} size ${size} offset ${offset}`
+          );
+
         if (cellData) {
           cellData.size.setValue(size);
           cellData.offset.setValue(offset);
@@ -537,7 +538,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       };
 
       const onFail = () => {
-        console.log("## measureLayout fail!", key);
+        if (this.props.debug) console.log("## measureLayout fail!", key);
       };
 
       const ref = this.cellRefs.get(key);
@@ -554,7 +555,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           : !flatListNode
           ? "no flatlist node"
           : "invalid ref";
-        console.log(`## can't measure ${key} reason: ${reason}`);
+        if (this.props.debug)
+          console.log(`## can't measure ${key} reason: ${reason}`);
         this.queue.push(() => this.measureCell(key));
         return resolve();
       }
@@ -856,7 +858,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { renderItem } = this.props;
     if (!this.cellData.get(key)) this.setCellData(key, index);
     const { onUnmount } = this.cellData.get(key) || {
-      onUnmount: () => console.log("## error, no cellData")
+      onUnmount: () => {
+        if (this.props.debug) console.log("## error, no cellData");
+      }
     };
     return (
       <RowItem
@@ -963,6 +967,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   render() {
     const {
+      dragHitSlop,
       scrollEnabled,
       debug,
       horizontal,
@@ -983,6 +988,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     return (
       <PanGestureHandler
         ref={this.panGestureHandlerRef}
+        hitSlop={dragHitSlop}
         onGestureEvent={this.onPanGestureEvent}
         onHandlerStateChange={this.onPanStateChange}
         {...dynamicProps}
@@ -1061,16 +1067,20 @@ type RowItemProps<T> = {
   renderItem: (params: RenderItemParams<T>) => React.ReactNode;
   itemKey: string;
   onUnmount: () => void;
+  debug?: boolean;
 };
 
 class RowItem<T> extends React.PureComponent<RowItemProps<T>> {
   drag = () => {
-    const { drag, renderItem, item, keyToIndex, itemKey } = this.props;
+    const { drag, renderItem, item, keyToIndex, itemKey, debug } = this.props;
     const hoverComponent = renderItem({
       isActive: true,
       item,
       index: keyToIndex.get(itemKey),
-      drag: () => console.log("## attempt to call drag() on hovering component")
+      drag: () => {
+        if (debug)
+          console.log("## attempt to call drag() on hovering component");
+      }
     });
     drag(hoverComponent, itemKey);
   };
