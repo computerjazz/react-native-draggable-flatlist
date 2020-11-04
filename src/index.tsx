@@ -542,9 +542,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       };
 
       const ref = this.cellRefs.get(key);
-      const viewNode = ref && ref.current && ref.current.getNode();
-      const flatListNode =
-        this.flatlistRef.current && this.flatlistRef.current.getNode();
+      const viewNode = ref && ref.current;
+      const flatListNode = this.flatlistRef.current;
 
       if (viewNode && flatListNode) {
         const nodeHandle = findNodeHandle(flatListNode);
@@ -573,7 +572,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     const { horizontal } = this.props;
     const containerRef = this.containerRef.current;
     if (containerRef) {
-      containerRef.getNode().measure((x, y, w, h) => {
+      containerRef.measure((x, y, w, h) => {
         this.containerSize.setValue(horizontal ? w : h);
       });
     }
@@ -599,7 +598,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.isAutoscrolling.native.setValue(1);
       this.isAutoscrolling.js = true;
       const flatlistRef = this.flatlistRef.current;
-      if (flatlistRef) flatlistRef.getNode().scrollToOffset({ offset });
+      if (flatlistRef) flatlistRef.scrollToOffset({ offset });
     });
 
   getScrollTargetOffset = (
