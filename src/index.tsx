@@ -6,7 +6,8 @@ import {
   findNodeHandle,
   ViewStyle,
   FlatList as RNFlatList,
-  NativeScrollEvent
+  NativeScrollEvent,
+  StyleProp
 } from "react-native";
 import {
   PanGestureHandler,
@@ -109,6 +110,7 @@ type Props<T> = Modify<
     layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
     onPlaceholderIndexChange?: (placeholderIndex: number) => void;
+    containerStyle?: StyleProp<ViewStyle>;
     dragItemOverflow?: boolean;
   } & Partial<DefaultProps>
 >;
@@ -974,7 +976,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       activationDistance,
       onScrollOffsetChange,
       renderPlaceholder,
-      onPlaceholderIndexChange
+      onPlaceholderIndexChange,
+      containerStyle
     } = this.props;
 
     const { hoverComponent } = this.state;
@@ -994,7 +997,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         {...dynamicProps}
       >
         <Animated.View
-          style={styles.flex}
+          style={[styles.flex, containerStyle]}
           ref={this.containerRef}
           onLayout={this.onContainerLayout}
           onTouchEnd={this.onContainerTouchEnd}
