@@ -13,7 +13,8 @@ import {
   State as GestureState,
   FlatList,
   GestureHandlerGestureEventNativeEvent,
-  PanGestureHandlerEventExtra
+  PanGestureHandlerEventExtra,
+  PanGestureHandlerProperties
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { springFill, setupCell } from "./procs";
@@ -68,7 +69,7 @@ const defaultProps = {
   autoscrollSpeed: 100,
   animationConfig: defaultAnimationConfig as Animated.SpringConfig,
   scrollEnabled: true,
-  dragHitSlop: 0,
+  dragHitSlop: 0 as PanGestureHandlerProperties["hitSlop"],
   activationDistance: 0,
   dragItemOverflow: false
 };
