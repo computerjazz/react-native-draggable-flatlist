@@ -523,7 +523,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
         if (this.props.debug)
           console.log(
-            `measure key ${key}: wdith ${w} height ${h} x ${x} y ${y} size ${size} offset ${offset}`
+            `measure key ${key}: width ${w} height ${h} x ${x} y ${y} size ${size} offset ${offset}`
           );
 
         if (cellData) {
