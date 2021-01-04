@@ -140,7 +140,10 @@ function onNextFrame(callback: () => void) {
   });
 }
 
-class DraggableFlatList<T> extends React.Component<DraggableFlatListProps<T>, State> {
+class DraggableFlatList<T> extends React.Component<
+  DraggableFlatListProps<T>,
+  State
+> {
   state: State = {
     activeKey: null,
     hoverComponent: null
@@ -248,7 +251,7 @@ class DraggableFlatList<T> extends React.Component<DraggableFlatListProps<T>, St
 
   queue: (() => void | Promise<void>)[] = [];
 
-  static getDerivedStateFromProps(props: Props<any>) {
+  static getDerivedStateFromProps(props: DraggableFlatListProps<any>) {
     return {
       extraData: props.extraData
     };
@@ -256,7 +259,7 @@ class DraggableFlatList<T> extends React.Component<DraggableFlatListProps<T>, St
 
   static defaultProps = defaultProps;
 
-  constructor(props: Props<T>) {
+  constructor(props: DraggableFlatListProps<T>) {
     super(props);
     const { data, onRef } = props;
     data.forEach((item, index) => {
@@ -277,7 +280,10 @@ class DraggableFlatList<T> extends React.Component<DraggableFlatListProps<T>, St
     return !sameKeys;
   };
 
-  componentDidUpdate = async (prevProps: Props<T>, prevState: State) => {
+  componentDidUpdate = async (
+    prevProps: DraggableFlatListProps<T>,
+    prevState: State
+  ) => {
     const layoutInvalidationKeyHasChanged =
       prevProps.layoutInvalidationKey !== this.props.layoutInvalidationKey;
     const dataHasChanged = prevProps.data !== this.props.data;
