@@ -92,7 +92,7 @@ export type RenderItemParams<T> = {
 };
 
 type Modify<T, R> = Omit<T, keyof R> & R;
-type Props<T> = Modify<
+export type DraggableFlatListProps<T> = Modify<
   FlatListProps<T>,
   {
     autoscrollSpeed?: number;
@@ -140,7 +140,7 @@ function onNextFrame(callback: () => void) {
   });
 }
 
-class DraggableFlatList<T> extends React.Component<Props<T>, State> {
+class DraggableFlatList<T> extends React.Component<DraggableFlatListProps<T>, State> {
   state: State = {
     activeKey: null,
     hoverComponent: null
