@@ -877,7 +877,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   };
 
   renderOnPlaceholderIndexChange = () => (
-    <Animated.Code>
+    <Animated.Code dependencies={[]}>
       {() =>
         block([
           onChange(
@@ -952,7 +952,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   renderDebug() {
     return (
-      <Animated.Code>
+      <Animated.Code dependencies={[]}>
         {() =>
           block([
             onChange(this.spacerIndex, debug("spacerIndex: ", this.spacerIndex))
@@ -1015,7 +1015,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             scrollEventThrottle={1}
           />
           {!!hoverComponent && this.renderHoverComponent()}
-          <Animated.Code>
+          <Animated.Code dependencies={[]}>
             {() =>
               block([
                 onChange(
@@ -1040,7 +1040,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             }
           </Animated.Code>
           {onScrollOffsetChange && (
-            <Animated.Code>
+            <Animated.Code dependencies={[]}>
               {() =>
                 onChange(
                   this.scrollOffset,
