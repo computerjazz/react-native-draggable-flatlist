@@ -56,6 +56,8 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 
 ## Example
 
+Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rndfl-dragwithhovereffect
+
 ```javascript
 import React, { Component } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
