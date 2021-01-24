@@ -157,11 +157,10 @@ class DraggableFlatList<T> extends React.Component<
 
   containerSize = new Value<number>(0);
 
-  activationDistance = new Value<number>(0);
-  touchInit = new Value<number>(0);
-  touchAbsolute = new Value<number>(0);
+  touchInit = new Value<number>(0); // Position of initial touch
+  activationDistance = new Value<number>(0); // Distance finger travels from initial touch to when dragging begins
+  touchAbsolute = new Value<number>(0); // Finger position on screen, relative to container
   panGestureState = new Value(GestureState.UNDETERMINED);
-  activeCellOffset = new Value<number>(0);
 
   isPressedIn = {
     native: new Value<number>(0),
@@ -171,11 +170,12 @@ class DraggableFlatList<T> extends React.Component<
   hasMoved = new Value(0);
   disabled = new Value(0);
 
-  activeIndex = new Value<number>(-1);
+  activeIndex = new Value<number>(-1); // Index of hovering cell
+  spacerIndex = new Value<number>(-1); // Index of hovered-over cell
   isHovering = greaterThan(this.activeIndex, -1);
 
-  spacerIndex = new Value<number>(-1);
-  activeCellSize = new Value<number>(0);
+  activeCellSize = new Value<number>(0); // Height or width of acctive cell
+  activeCellOffset = new Value<number>(0); // Distance between active cell and edge of container
 
   scrollOffset = new Value<number>(0);
   scrollViewSize = new Value<number>(0);
@@ -185,7 +185,7 @@ class DraggableFlatList<T> extends React.Component<
     this.scrollViewSize
   );
 
-  touchCellOffset = sub(this.touchInit, this.activeCellOffset);
+  touchCellOffset = sub(this.touchInit, this.activeCellOffset); // Distance between touch point and edge of cell
   hoverAnimUnconstrained = sub(
     sub(this.touchAbsolute, this.activationDistance),
     this.touchCellOffset
