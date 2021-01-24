@@ -826,19 +826,17 @@ class DraggableFlatList<T> extends React.Component<
   onPanGestureEvent = event([
     {
       nativeEvent: ({ x, y }: PanGestureHandlerGestureEvent["nativeEvent"]) =>
-        block([
-          cond(
-            and(
-              this.isHovering,
-              eq(this.panGestureState, GestureState.ACTIVE),
-              not(this.disabled)
-            ),
-            [
-              cond(not(this.hasMoved), set(this.hasMoved, 1)),
-              [set(this.touchAbsolute, this.props.horizontal ? x : y)]
-            ]
-          )
-        ])
+        cond(
+          and(
+            this.isHovering,
+            eq(this.panGestureState, GestureState.ACTIVE),
+            not(this.disabled)
+          ),
+          [
+            cond(not(this.hasMoved), set(this.hasMoved, 1)),
+            [set(this.touchAbsolute, this.props.horizontal ? x : y)]
+          ]
+        )
     }
   ]);
 
