@@ -55,7 +55,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `containerStyle`           | `StyleProp<ViewStyle>`                                                                    | Style of the main component.                                                                                                                                                       |
 
 ## Example
-Example snack: https://snack.expo.io/@computerjazz/rndfl-example
+Example snack: https://snack.expo.io/@computerjazz/rndfl-example <br />
 Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rndfl-dragwithhovereffect
 
 ```typescript
