@@ -20,17 +20,6 @@ import {
 import Animated from 'react-native-reanimated';
 import { springFill, setupCell } from './procs';
 
-const State = {
-  UNDETERMINED: 0,
-  FAILED: 1,
-  BEGAN: 2,
-  CANCELLED: 3,
-  ACTIVE: 4,
-  END: 5,
-};
-
-console.log("LOAD!!!!!!")
-
 const RevState = {
   0: 'undetermined',
   1: 'faied',
@@ -206,7 +195,7 @@ class DraggableFlatList<T> extends React.Component<
   );
 
   touchCellOffset = sub(this.touchInit, this.activeCellOffset)
-  hoverAnimUnconstrained = sub(this.touchAbsolute, this.touchCellOffset)
+  hoverAnimUnconstrained = sub(sub(this.touchAbsolute, this.activationDistance), this.touchCellOffset)
   hoverAnimConstrained = min(
     sub(this.containerSize, this.activeCellSize),
     max(0, this.hoverAnimUnconstrained)
@@ -256,9 +245,12 @@ class DraggableFlatList<T> extends React.Component<
   moveEndParams = [this.activeIndex, this.spacerIndex];
 
   resetHoverSpring = [
-    set(this.hoverAnimState.time, 0),
+    set(this.touchAbsolute, this.hoverAnimConfig.toValue),
+    set(this.touchInit, 0),
+    set(this.activeCellOffset, 0),
+    set(this.activationDistance, 0),
     set(this.hoverAnimState.position, this.hoverAnimConfig.toValue),
-    // set(this.touchAbsolute, this.hoverAnimConfig.toValue),
+    set(this.hoverAnimState.time, 0),
     set(this.hoverAnimState.finished, 0),
     set(this.hoverAnimState.velocity, 0),
     set(this.hasMoved, 0)
@@ -266,8 +258,7 @@ class DraggableFlatList<T> extends React.Component<
 
   keyToIndex = new Map<string, number>();
 
-  /** Whether we've sent an incomplete call to the FlatList to do a scroll */
-  isAutoscrolling = {
+  isAutoScrollInProgress = {
     native: new Value<number>(0),
     js: false,
   };
@@ -412,7 +403,6 @@ class DraggableFlatList<T> extends React.Component<
         return this.measureCell(key);
       });
     }
-
     this.resetHoverState();
   };
 
@@ -617,7 +607,7 @@ class DraggableFlatList<T> extends React.Component<
   resolveAutoscroll?: (scrollParams: readonly number[]) => void;
 
   onAutoscrollComplete = (params: readonly number[]) => {
-    this.isAutoscrolling.js = false;
+    this.isAutoScrollInProgress.js = false;
     if (this.resolveAutoscroll) this.resolveAutoscroll(params);
   };
 
@@ -625,8 +615,8 @@ class DraggableFlatList<T> extends React.Component<
     new Promise((resolve, reject) => {
       this.resolveAutoscroll = resolve;
       this.targetScrollOffset.setValue(offset);
-      this.isAutoscrolling.native.setValue(1);
-      this.isAutoscrolling.js = true;
+      this.isAutoScrollInProgress.native.setValue(1);
+      this.isAutoScrollInProgress.js = true;
       const flatlistRef = this.flatlistRef.current;
       if (flatlistRef) flatlistRef.getNode().scrollToOffset({ offset });
     });
@@ -638,7 +628,7 @@ class DraggableFlatList<T> extends React.Component<
     isScrolledUp: boolean,
     isScrolledDown: boolean
   ) => {
-    if (this.isAutoscrolling.js) return -1;
+    if (this.isAutoScrollInProgress.js) return -1;
     const { autoscrollThreshold, autoscrollSpeed } = this.props;
     const scrollUp = distFromTop < autoscrollThreshold!;
     const scrollDown = distFromBottom < autoscrollThreshold!;
@@ -660,7 +650,7 @@ class DraggableFlatList<T> extends React.Component<
     return targetOffset;
   };
 
-  /** Ensure that only 1 call to autoscroll is active at a time */
+  // Ensure that only 1 call to autoscroll is active at a time
   autoscrollLooping = false;
   autoscroll = async (params: readonly number[]) => {
     if (this.autoscrollLooping) {
@@ -727,7 +717,7 @@ class DraggableFlatList<T> extends React.Component<
       not(and(this.isAtTopEdge, this.isScrolledUp)),
       not(and(this.isAtBottomEdge, this.isScrolledDown)),
       eq(this.panGestureState, GestureState.ACTIVE),
-      not(this.isAutoscrolling.native)
+      not(this.isAutoScrollInProgress.native)
     ),
     call(this.autoscrollParams, this.autoscroll)
   );
@@ -742,7 +732,7 @@ class DraggableFlatList<T> extends React.Component<
           ),
           cond(
             and(
-              this.isAutoscrolling.native,
+              this.isAutoScrollInProgress.native,
               or(
                 // We've scrolled to where we want to be
                 lessOrEq(
@@ -763,7 +753,7 @@ class DraggableFlatList<T> extends React.Component<
             ),
             [
               // Finish scrolling
-              set(this.isAutoscrolling.native, 0),
+              set(this.isAutoScrollInProgress.native, 0),
               call(this.autoscrollParams, this.onAutoscrollComplete),
             ]
           ),
@@ -777,8 +767,9 @@ class DraggableFlatList<T> extends React.Component<
       [
         set(this.disabled, 1),
         cond(defined(this.hoverClock), [
-          call([], ([]) => console.log(`GEST RELESE!!`)),
-          cond(clockRunning(this.hoverClock), stopClock(this.hoverClock)),
+          cond(clockRunning(this.hoverClock), [
+            stopClock(this.hoverClock)
+          ]),
           set(this.hoverAnimState.position, this.hoverAnim),
           startClock(this.hoverClock),
         ]),
@@ -794,8 +785,6 @@ class DraggableFlatList<T> extends React.Component<
     ),
   ];
 
-  st = new Animated.Value(GestureState.UNDETERMINED)
-
   onPanStateChange = event([
     {
       nativeEvent: ({
@@ -804,7 +793,6 @@ class DraggableFlatList<T> extends React.Component<
         y,
       }: PanGestureHandlerStateChangeEvent["nativeEvent"]) =>
         cond(and(neq(state, this.panGestureState), not(this.disabled)), [
-
           cond(or(
             eq(state, GestureState.BEGAN),
             // GestureState.BEGAN may be skipped on fast swipes
@@ -818,21 +806,15 @@ class DraggableFlatList<T> extends React.Component<
             [
               set(
                 this.activationDistance,
-                sub(this.touchInit, y)
+                sub(this.props.horizontal ? x : y, this.touchInit)
               ),
-              call([this.activationDistance, this.touchAbsolute, this.activeCellOffset], ([d, ta, aco]) => {
-                console.log(`set act dist: ${d}, touch: ${ta}, activeCellOfset: ${aco}`);
-              }),
+              set(this.touchAbsolute, this.props.horizontal ? x : y),
             ]
           ),
           cond(
-            neq(this.panGestureState, state), [
-            set(this.st, state),
-            call([this.panGestureState, this.st], ([a, b]) => {
-              console.log(`ST Chg!! (${RevState[a]} -> ${RevState[b]})`);
-            }),
+            neq(this.panGestureState, state),
             set(this.panGestureState, state),
-          ]),
+          ),
           cond(
             or(
               eq(state, GestureState.END),
@@ -862,7 +844,6 @@ class DraggableFlatList<T> extends React.Component<
                   this.touchAbsolute,
                   this.props.horizontal ? x : y
                 ),
-                call([this.touchAbsolute], ([ta]) => console.log(`y: ${ta}`))
               ]
             ]
           ),
@@ -895,8 +876,7 @@ class DraggableFlatList<T> extends React.Component<
             opacity: this.hoverComponentOpacity,
             transform: [
               {
-                [`translate${horizontal ? 'X' : 'Y'}`]: this
-                  .hoverComponentTranslate,
+                [`translate${horizontal ? 'X' : 'Y'}`]: this.hoverComponentTranslate
               },
               // We need the cast because the transform array usually accepts
               // only specific keys, and we dynamically generate the key
@@ -1027,7 +1007,6 @@ class DraggableFlatList<T> extends React.Component<
     const {
       dragHitSlop,
       scrollEnabled,
-      debug,
       horizontal,
       activationDistance,
       onScrollOffsetChange,
@@ -1078,7 +1057,9 @@ class DraggableFlatList<T> extends React.Component<
                   this.isPressedIn.native,
                   cond(not(this.isPressedIn.native), this.onGestureRelease)
                 ),
-                onChange(this.hoverAnim, this.checkAutoscroll),
+                // This onChange handles autoscroll checking BUT it also ensures that
+                // hover translation is continually evaluated. Removing it causes a flicker.
+                onChange(this.hoverComponentTranslate, this.checkAutoscroll),
                 cond(clockRunning(this.hoverClock), [
                   spring(
                     this.hoverClock,
@@ -1086,9 +1067,9 @@ class DraggableFlatList<T> extends React.Component<
                     this.hoverAnimConfig
                   ),
                   cond(eq(this.hoverAnimState.finished, 1), [
+                    this.resetHoverSpring,
                     stopClock(this.hoverClock),
                     call(this.moveEndParams, this.onDragEnd),
-                    this.resetHoverSpring,
                     set(this.hasMoved, 0),
                   ]),
                 ]),
