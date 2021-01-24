@@ -335,6 +335,7 @@ class DraggableFlatList<T> extends React.Component<
   resetHoverState = () => {
     this.activeIndex.setValue(-1);
     this.spacerIndex.setValue(-1);
+    this.touchAbsolute.setValue(0);
     this.disabled.setValue(0);
     if (this.state.hoverComponent !== null || this.state.activeKey !== null) {
       this.setState({
@@ -787,7 +788,7 @@ class DraggableFlatList<T> extends React.Component<
         cond(and(neq(state, this.panGestureState), not(this.disabled)), [
           cond(
             or(
-              eq(state, GestureState.BEGAN),
+              eq(state, GestureState.BEGAN), // Called on press in on Android, NOT on ios!
               // GestureState.BEGAN may be skipped on fast swipes
               and(
                 eq(state, GestureState.ACTIVE),
