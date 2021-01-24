@@ -183,7 +183,7 @@ export const setupCell = (proc as RetypedProc)(
           sub(
             offset,
             scrollOffset,
-            cond(isAfterActive, sub(activeCellSize, size)) // Account for cells of differing size
+            cond(isAfterActive, sub(activeCellSize, size), 0) // Account for cells of differing size
           )
         )
       ),
