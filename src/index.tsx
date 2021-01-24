@@ -1082,7 +1082,7 @@ class DraggableFlatList<T> extends React.Component<
               }
             </Animated.Code>
           )}
-          {debug && this.renderDebug()}
+          {!!this.props.debug && this.renderDebug()}
         </Animated.View>
       </PanGestureHandler>
     );
