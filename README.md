@@ -55,32 +55,48 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `containerStyle`           | `StyleProp<ViewStyle>`                                                                    | Style of the main component.                                                                                                                                                       |
 
 ## Example
-
+Example snack: https://snack.expo.io/@computerjazz/rndfl-example
 Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rndfl-dragwithhovereffect
 
-```javascript
+```typescript
 import React, { Component } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
-import DraggableFlatList from "react-native-draggable-flatlist";
+import DraggableFlatList, { RenderItemParams } from "react-native-draggable-flatlist";
 
-const exampleData = [...Array(20)].map((d, index) => ({
-  key: `item-${index}`, // For example only -- don't use index as your key!
-  label: index,
-  backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index *
-    5}, ${132})`
-}));
+const NUM_ITEMS = 10
+
+function getColor(i: number) {
+  const multiplier = 255 / (NUM_ITEMS - 1);
+  const colorVal = i * multiplier;
+  return `rgb(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal})`;
+}
+
+type Item = {
+  key: string;
+  label: string;
+  backgroundColor: string;
+}
+
+const exampleData: Item[] = [...Array(20)].map((d, index) => {
+  const backgroundColor = getColor(index)
+  return {
+  key: `item-${backgroundColor}`,
+  label: String(index),
+  backgroundColor,
+  }
+});
 
 class Example extends Component {
   state = {
     data: exampleData
   };
 
-  renderItem = ({ item, index, drag, isActive }) => {
+  renderItem = ({ item, index, drag, isActive }: RenderItemParams<Item>) => {
     return (
       <TouchableOpacity
         style={{
           height: 100,
-          backgroundColor: isActive ? "blue" : item.backgroundColor,
+          backgroundColor: isActive ? "red" : item.backgroundColor,
           alignItems: "center",
           justifyContent: "center"
         }}
