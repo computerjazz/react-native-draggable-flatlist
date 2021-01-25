@@ -50,65 +50,82 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `onScrollOffsetChange`     | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                |
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                   |
 | `dragItemOverflow`         | `boolean`                                                                                 | If true, dragged item follows finger beyond list boundary.                                                                                                                         |
-| `dragHitSlop` | `object: {top: number, left: number, bottom: number, right: number}` | Enables control over what part of the connected view area can be used to begin recognizing the gesture. Numbers need to be non-positive (only possible to reduce responsive area).|
-| `debug`                    | `boolean`                                                                                 | Enables debug logging and animation debugger.                                                           |
-
+| `dragHitSlop`              | `object: {top: number, left: number, bottom: number, right: number}`                      | Enables control over what part of the connected view area can be used to begin recognizing the gesture. Numbers need to be non-positive (only possible to reduce responsive area). |
+| `debug`                    | `boolean`                                                                                 | Enables debug logging and animation debugger.                                                                                                                                      |
+| `containerStyle`           | `StyleProp<ViewStyle>`                                                                    | Style of the main component.                                                                                                                                                       |
 
 ## Example
+Example snack: https://snack.expo.io/@computerjazz/rndfl-example <br />
+Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rndfl-dragwithhovereffect
 
-```javascript
-import React, { Component } from "react";
-import { View, TouchableOpacity, Text } from "react-native";
-import DraggableFlatList from "react-native-draggable-flatlist";
+```typescript
+import React, { useState, useCallback } from 'react';
+import { View, TouchableOpacity, Text } from 'react-native';
+import DraggableFlatList, {
+  RenderItemParams,
+} from 'react-native-draggable-flatlist';
 
-const exampleData = [...Array(20)].map((d, index) => ({
-  key: `item-${index}`, // For example only -- don't use index as your key!
-  label: index,
-  backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index *
-    5}, ${132})`
-}));
+const NUM_ITEMS = 10;
 
-class Example extends Component {
-  state = {
-    data: exampleData
+function getColor(i: number) {
+  const multiplier = 255 / (NUM_ITEMS - 1);
+  const colorVal = i * multiplier;
+  return `rgb(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal})`;
+}
+
+const exampleData: Item[] = [...Array(20)].map((d, index) => {
+  const backgroundColor = getColor(index);
+  return {
+    key: `item-${backgroundColor}`,
+    label: String(index),
+    backgroundColor,
   };
+});
 
-  renderItem = ({ item, index, drag, isActive }) => {
-    return (
-      <TouchableOpacity
-        style={{
-          height: 100,
-          backgroundColor: isActive ? "blue" : item.backgroundColor,
-          alignItems: "center",
-          justifyContent: "center"
-        }}
-        onLongPress={drag}
-      >
-        <Text
+type Item = {
+  key: string;
+  label: string;
+  backgroundColor: string;
+};
+
+function Example() {
+  const [data, setData] = useState(exampleData);
+
+  const renderItem = useCallback(
+    ({ item, index, drag, isActive }: RenderItemParams<Item>) => {
+      return (
+        <TouchableOpacity
           style={{
-            fontWeight: "bold",
-            color: "white",
-            fontSize: 32
+            height: 100,
+            backgroundColor: isActive ? 'red' : item.backgroundColor,
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        >
-          {item.label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+          onLongPress={drag}>
+          <Text
+            style={{
+              fontWeight: 'bold',
+              color: 'white',
+              fontSize: 32,
+            }}>
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    []
+  );
 
-  render() {
-    return (
-      <View style={{ flex: 1 }}>
-        <DraggableFlatList
-          data={this.state.data}
-          renderItem={this.renderItem}
-          keyExtractor={(item, index) => `draggable-item-${item.key}`}
-          onDragEnd={({ data }) => this.setState({ data })}
-        />
-      </View>
-    );
-  }
+  return (
+    <View style={{ flex: 1 }}>
+      <DraggableFlatList
+        data={data}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => `draggable-item-${item.key}`}
+        onDragEnd={({ data }) => setData(data)}
+      />
+    </View>
+  );
 }
 
 export default Example;
