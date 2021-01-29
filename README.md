@@ -53,17 +53,19 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `dragHitSlop`              | `object: {top: number, left: number, bottom: number, right: number}`                      | Enables control over what part of the connected view area can be used to begin recognizing the gesture. Numbers need to be non-positive (only possible to reduce responsive area). |
 | `debug`                    | `boolean`                                                                                 | Enables debug logging and animation debugger.                                                                                                                                      |
 | `containerStyle`           | `StyleProp<ViewStyle>`                                                                    | Style of the main component.                                                                                                                                                       |
+| `justSwap`                 | `boolean`                                                                                 | Enables swap without sort.                                                                                                                                                         |
 
 ## Example
+
 Example snack: https://snack.expo.io/@computerjazz/rndfl-example <br />
 Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rndfl-dragwithhovereffect
 
 ```typescript
-import React, { useState, useCallback } from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import React, { useState, useCallback } from "react";
+import { View, TouchableOpacity, Text } from "react-native";
 import DraggableFlatList, {
-  RenderItemParams,
-} from 'react-native-draggable-flatlist';
+  RenderItemParams
+} from "react-native-draggable-flatlist";
 
 const NUM_ITEMS = 10;
 
@@ -78,7 +80,7 @@ const exampleData: Item[] = [...Array(20)].map((d, index) => {
   return {
     key: `item-${backgroundColor}`,
     label: String(index),
-    backgroundColor,
+    backgroundColor
   };
 });
 
@@ -97,17 +99,19 @@ function Example() {
         <TouchableOpacity
           style={{
             height: 100,
-            backgroundColor: isActive ? 'red' : item.backgroundColor,
-            alignItems: 'center',
-            justifyContent: 'center',
+            backgroundColor: isActive ? "red" : item.backgroundColor,
+            alignItems: "center",
+            justifyContent: "center"
           }}
-          onLongPress={drag}>
+          onLongPress={drag}
+        >
           <Text
             style={{
-              fontWeight: 'bold',
-              color: 'white',
-              fontSize: 32,
-            }}>
+              fontWeight: "bold",
+              color: "white",
+              fontSize: 32
+            }}
+          >
             {item.label}
           </Text>
         </TouchableOpacity>

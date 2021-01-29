@@ -72,7 +72,8 @@ const defaultProps = {
   scrollEnabled: true,
   dragHitSlop: 0 as PanGestureHandlerProperties["hitSlop"],
   activationDistance: 0,
-  dragItemOverflow: false
+  dragItemOverflow: false,
+  justSwap: false
 };
 
 type DefaultProps = Readonly<typeof defaultProps>;
@@ -113,6 +114,7 @@ export type DraggableFlatListProps<T> = Modify<
     onPlaceholderIndexChange?: (placeholderIndex: number) => void;
     containerStyle?: StyleProp<ViewStyle>;
     dragItemOverflow?: boolean;
+    justSwap?: boolean;
   } & Partial<DefaultProps>
 >;
 
@@ -376,13 +378,19 @@ class DraggableFlatList<T> extends React.Component<
   };
 
   onDragEnd = ([from, to]: readonly number[]) => {
-    const { onDragEnd } = this.props;
+    const { onDragEnd, justSwap } = this.props;
     if (onDragEnd) {
       const { data } = this.props;
       let newData = [...data];
       if (from !== to) {
-        newData.splice(from, 1);
-        newData.splice(to, 0, data[from]);
+        if (justSwap) {
+          const temp = newData[from];
+          newData[from] = newData[to];
+          newData[to] = temp;
+        } else {
+          newData.splice(from, 1);
+          newData.splice(to, 0, data[from]);
+        }
       }
 
       onDragEnd({ from, to, data: newData });
@@ -443,6 +451,8 @@ class DraggableFlatList<T> extends React.Component<
     const prevTrans = new Value(0);
     const prevSpacerIndex = new Value(-1);
 
+    const triggerSort = new Animated.Value<number>(this.props.justSwap ? 0 : 1);
+
     const anim = setupCell(
       currentIndex,
       initialized,
@@ -469,7 +479,8 @@ class DraggableFlatList<T> extends React.Component<
       onChangeSpacerIndex,
       onFinished,
       this.isPressedIn.native,
-      this.placeholderOffset
+      this.placeholderOffset,
+      triggerSort
     );
 
     const transform = this.props.horizontal

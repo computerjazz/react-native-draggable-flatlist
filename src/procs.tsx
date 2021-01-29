@@ -101,7 +101,8 @@ export const setupCell = (proc as RetypedProc)(
     onChangeSpacerIndex: Animated.Node<number>,
     onFinished: Animated.Node<number>,
     isPressedIn: Animated.Node<number>,
-    placeholderOffset: Animated.Value<number>
+    placeholderOffset: Animated.Value<number>,
+    triggerSort: Animated.Value<number>
   ) =>
     block([
       set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
@@ -156,21 +157,28 @@ export const setupCell = (proc as RetypedProc)(
       // Translate cell down if it is before active index and active cell has passed it.
       // Translate cell up if it is after the active index and active cell has passed it.
       cond(
-        neq(currentIndex, activeIndex),
-        set(
-          translate,
-          cond(
+        eq(triggerSort, 1),
+        cond(
+          neq(currentIndex, activeIndex),
+          set(
+            translate,
             cond(
-              isAfterActive,
-              lessOrEq(currentIndex, spacerIndex),
-              greaterOrEq(currentIndex, spacerIndex)
-            ),
-            cond(
-              isHovering,
-              cond(isAfterActive, multiply(activeCellSize, -1), activeCellSize),
+              cond(
+                isAfterActive,
+                lessOrEq(currentIndex, spacerIndex),
+                greaterOrEq(currentIndex, spacerIndex)
+              ),
+              cond(
+                isHovering,
+                cond(
+                  isAfterActive,
+                  multiply(activeCellSize, -1),
+                  activeCellSize
+                ),
+                0
+              ),
               0
-            ),
-            0
+            )
           )
         )
       ),
