@@ -542,7 +542,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       };
 
       const ref = this.cellRefs.get(key);
-      const viewNode = ref && ref.current;
+      const viewNode = ref?.current;
       const flatListNode = this.flatlistRef.current;
 
       if (viewNode && flatListNode) {
