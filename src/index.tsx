@@ -20,15 +20,7 @@ import {
 import Animated from "react-native-reanimated";
 import { springFill, setupCell } from "./procs";
 
-const FlatListWithRef = React.forwardRef((props, ref) => (
-  <FlatList {...props} ref={ref} />
-)) as <T>(
-  p: FlatListProps<T> & { ref: React.Ref<FlatList<T>> }
-) => React.ReactElement;
-
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatListWithRef) as <
-  T
->(
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as <T>(
   props: Animated.AnimateProps<
     FlatListProps<T> & { ref: React.Ref<FlatList<T>> }
   >,
@@ -573,7 +565,7 @@ class DraggableFlatList<T> extends React.Component<
       const flatListNode = this.flatlistRef.current;
 
       if (viewNode && flatListNode) {
-        const nodeHandle = findNodeHandle(flatListNode);
+        const nodeHandle = findNodeHandle(RNFlatList);
         if (nodeHandle) viewNode.measureLayout(nodeHandle, onSuccess, onFail);
       } else {
         let reason = !ref
