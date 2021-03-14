@@ -82,8 +82,6 @@ const defaultProps = {
 
 type DefaultProps = Readonly<typeof defaultProps>;
 
-type AnimatedFlatListType<T> = { getNode: () => RNFlatList<T> };
-
 export type DragEndParams<T> = {
   data: T[];
   from: number;
