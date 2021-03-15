@@ -73,9 +73,9 @@ const defaultAnimationConfig = {
 const defaultProps = {
   autoscrollThreshold: 30,
   autoscrollSpeed: 100,
-  animationConfig: defaultAnimationConfig as Animated.SpringConfig,
+  animationConfig: defaultAnimationConfig,
   scrollEnabled: true,
-  dragHitSlop: 0 as PanGestureHandlerProperties["hitSlop"],
+  dragHitSlop: 0,
   activationDistance: 0,
   dragItemOverflow: false,
 };
@@ -201,7 +201,6 @@ class DraggableFlatList<T> extends React.Component<
   hoverAnim = this.props.dragItemOverflow
     ? this.hoverAnimUnconstrained
     : this.hoverAnimConstrained;
-  hoverMid = add(this.hoverAnim, divide(this.activeCellSize, 2));
   hoverOffset = add(this.hoverAnim, this.scrollOffset);
 
   placeholderOffset = new Value(0);
