@@ -1,6 +1,6 @@
 import Animated from "react-native-reanimated";
 
-let {
+const {
   or,
   set,
   cond,
@@ -14,17 +14,17 @@ let {
   greaterThan,
   greaterOrEq,
   not,
-  proc,
   Value,
   spring,
   lessThan,
   lessOrEq,
   multiply,
 } = Animated;
+let { proc } = Animated;
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf");
-  const procStub = (cb: any) => cb;
+  const procStub = <T,>(cb: T) => cb;
   proc = procStub;
 }
 

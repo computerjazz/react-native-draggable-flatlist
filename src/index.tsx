@@ -13,7 +13,6 @@ import {
   PanGestureHandler,
   State as GestureState,
   FlatList,
-  PanGestureHandlerProperties,
   PanGestureHandlerStateChangeEvent,
   PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
@@ -23,8 +22,7 @@ import { springFill, setupCell } from "./procs";
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as <T>(
   props: Animated.AnimateProps<
     FlatListProps<T> & { ref: React.Ref<FlatList<T>> }
-  >,
-  context?: any
+  >
 ) => React.ReactElement;
 
 const {
@@ -42,7 +40,6 @@ const {
   or,
   call,
   onChange,
-  divide,
   greaterThan,
   greaterOrEq,
   lessOrEq,
@@ -261,7 +258,7 @@ class DraggableFlatList<T> extends React.Component<
 
   queue: (() => void | Promise<void>)[] = [];
 
-  static getDerivedStateFromProps(props: DraggableFlatListProps<any>) {
+  static getDerivedStateFromProps<U>(props: DraggableFlatListProps<U>) {
     return {
       extraData: props.extraData,
     };
@@ -508,7 +505,7 @@ class DraggableFlatList<T> extends React.Component<
   };
 
   measureCell = (key: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const { horizontal } = this.props;
 
       const onSuccess = (x: number, y: number, w: number, h: number) => {
@@ -562,7 +559,8 @@ class DraggableFlatList<T> extends React.Component<
       const flatListNode = this.flatlistRef.current;
 
       if (viewNode && flatListNode) {
-        const nodeHandle = findNodeHandle(RNFlatList);
+        // @ts-ignore
+        const nodeHandle = findNodeHandle(flatListNode);
         if (nodeHandle) viewNode.measureLayout(nodeHandle, onSuccess, onFail);
       } else {
         let reason = !ref
@@ -588,7 +586,7 @@ class DraggableFlatList<T> extends React.Component<
     const { horizontal } = this.props;
     const containerRef = this.containerRef.current;
     if (containerRef) {
-      containerRef.getNode().measure((x, y, w, h) => {
+      containerRef.getNode().measure((_x, _y, w, h) => {
         this.containerSize.setValue(horizontal ? w : h);
       });
     }
@@ -608,7 +606,7 @@ class DraggableFlatList<T> extends React.Component<
   };
 
   scrollToAsync = (offset: number): Promise<readonly number[]> =>
-    new Promise((resolve, reject) => {
+    new Promise((resolve) => {
       this.resolveAutoscroll = resolve;
       this.targetScrollOffset.setValue(offset);
       this.isAutoScrollInProgress.native.setValue(1);
