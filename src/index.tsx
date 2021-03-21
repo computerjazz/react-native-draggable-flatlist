@@ -861,7 +861,7 @@ class DraggableFlatList<T> extends React.Component<
             ? styles.hoverComponentHorizontal
             : styles.hoverComponentVertical,
           {
-            opacity: this.hoverComponentOpacity[" __value"],
+            opacity: this.hoverComponentOpacity,
             transform: [
               {
                 [`translate${horizontal ? "X" : "Y"}`]: this
