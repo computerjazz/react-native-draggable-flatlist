@@ -58,7 +58,7 @@
     "pretty-quick": "^2.0.1",
     "react": "^16.13.1",
     "react-native": "^0.61.5",
-    "react-native-gesture-handler": "^1.5.3",
+    "react-native-gesture-handler": "^1.10.0",
     "react-native-reanimated": "^1.13.0",
     "react-test-renderer": "~16.11.0",
     "typescript": "^3.7.3"

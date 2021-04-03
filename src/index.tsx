@@ -113,6 +113,7 @@ export type DraggableFlatListProps<T> = Modify<
     onPlaceholderIndexChange?: (placeholderIndex: number) => void;
     containerStyle?: StyleProp<ViewStyle>;
     dragItemOverflow?: boolean;
+    simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
   } & Partial<DefaultProps>
 >;
 
@@ -1002,7 +1003,8 @@ class DraggableFlatList<T> extends React.Component<
       onScrollOffsetChange,
       renderPlaceholder,
       onPlaceholderIndexChange,
-      containerStyle
+      containerStyle,
+      simultaneousHandlers
     } = this.props;
 
     const { hoverComponent } = this.state;
@@ -1019,6 +1021,7 @@ class DraggableFlatList<T> extends React.Component<
         hitSlop={dragHitSlop}
         onGestureEvent={this.onPanGestureEvent}
         onHandlerStateChange={this.onPanStateChange}
+        simultaneousHandlers={simultaneousHandlers}
         {...dynamicProps}
       >
         <Animated.View
@@ -1040,6 +1043,7 @@ class DraggableFlatList<T> extends React.Component<
             keyExtractor={this.keyExtractor}
             onScroll={this.onScroll}
             scrollEventThrottle={1}
+            simultaneousHandlers={simultaneousHandlers}
           />
           {!!hoverComponent && this.renderHoverComponent()}
           <Animated.Code dependencies={[]}>
