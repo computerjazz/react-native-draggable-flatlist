@@ -239,7 +239,8 @@ class DraggableFlatList<T> extends React.Component<
 
   moveEndParams = [this.activeIndex, this.spacerIndex];
 
-  resetHoverSpring = [
+  // Note: this could use a refactor as it combines touch state + cell animation
+  resetTouchedCell = [
     set(this.touchAbsolute, this.hoverAnimConfig.toValue),
     set(this.touchInit, 0),
     set(this.activeCellOffset, 0),
@@ -775,7 +776,7 @@ class DraggableFlatList<T> extends React.Component<
           )
         ]
       ],
-      call([this.activeIndex], this.resetHoverState)
+      [call([this.activeIndex], this.resetHoverState), this.resetTouchedCell]
     )
   ];
 
@@ -1063,7 +1064,7 @@ class DraggableFlatList<T> extends React.Component<
                     this.hoverAnimConfig
                   ),
                   cond(eq(this.hoverAnimState.finished, 1), [
-                    this.resetHoverSpring,
+                    this.resetTouchedCell,
                     stopClock(this.hoverClock),
                     call(this.moveEndParams, this.onDragEnd),
                     set(this.hasMoved, 0)
