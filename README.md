@@ -80,7 +80,7 @@ const exampleData: Item[] = [...Array(20)].map((d, index) => {
   return {
     key: `item-${backgroundColor}`,
     label: String(index),
-    backgroundColor,
+    backgroundColor
   };
 });
 
