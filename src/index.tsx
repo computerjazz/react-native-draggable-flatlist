@@ -21,7 +21,10 @@ import { springFill, setupCell } from "./procs";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as <T>(
   props: Animated.AnimateProps<
-    FlatListProps<T> & { ref: React.Ref<FlatList<T>> }
+    FlatListProps<T> & {
+      ref: React.Ref<FlatList<T>>;
+      simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
+    }
   >
 ) => React.ReactElement;
 
