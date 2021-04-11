@@ -113,6 +113,7 @@ export type DraggableFlatListProps<T> = Modify<
     onPlaceholderIndexChange?: (placeholderIndex: number) => void;
     containerStyle?: StyleProp<ViewStyle>;
     dragItemOverflow?: boolean;
+    simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
   } & Partial<DefaultProps>
 >;
 
@@ -237,7 +238,8 @@ class DraggableFlatList<T> extends React.Component<
 
   moveEndParams = [this.activeIndex, this.spacerIndex];
 
-  resetHoverSpring = [
+  // Note: this could use a refactor as it combines touch state + cell animation
+  resetTouchedCell = [
     set(this.touchAbsolute, this.hoverAnimConfig.toValue),
     set(this.touchInit, 0),
     set(this.activeCellOffset, 0),
@@ -1005,6 +1007,7 @@ class DraggableFlatList<T> extends React.Component<
       renderPlaceholder,
       onPlaceholderIndexChange,
       containerStyle,
+      simultaneousHandlers,
     } = this.props;
 
     const { hoverComponent } = this.state;
@@ -1021,6 +1024,7 @@ class DraggableFlatList<T> extends React.Component<
         hitSlop={dragHitSlop}
         onGestureEvent={this.onPanGestureEvent}
         onHandlerStateChange={this.onPanStateChange}
+        simultaneousHandlers={simultaneousHandlers}
         {...dynamicProps}
       >
         <Animated.View
@@ -1042,6 +1046,7 @@ class DraggableFlatList<T> extends React.Component<
             keyExtractor={this.keyExtractor}
             onScroll={this.onScroll}
             scrollEventThrottle={1}
+            simultaneousHandlers={simultaneousHandlers}
           />
           {!!hoverComponent && this.renderHoverComponent()}
           <Animated.Code dependencies={[]}>
@@ -1061,7 +1066,7 @@ class DraggableFlatList<T> extends React.Component<
                     this.hoverAnimConfig
                   ),
                   cond(eq(this.hoverAnimState.finished, 1), [
-                    this.resetHoverSpring,
+                    this.resetTouchedCell,
                     stopClock(this.hoverClock),
                     call(this.moveEndParams, this.onDragEnd),
                     set(this.hasMoved, 0),
