@@ -64,7 +64,7 @@ Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rn
 import React, { useState, useCallback } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import DraggableFlatList, {
-  RenderItemParams
+  RenderItemParams,
 } from "react-native-draggable-flatlist";
 
 const NUM_ITEMS = 10;
@@ -101,7 +101,7 @@ function Example() {
             height: 100,
             backgroundColor: isActive ? "red" : item.backgroundColor,
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
           }}
           onLongPress={drag}
         >
@@ -109,7 +109,7 @@ function Example() {
             style={{
               fontWeight: "bold",
               color: "white",
-              fontSize: 32
+              fontSize: 32,
             }}
           >
             {item.label}

@@ -1,6 +1,6 @@
 import Animated from "react-native-reanimated";
 
-let {
+const {
   or,
   set,
   cond,
@@ -14,17 +14,17 @@ let {
   greaterThan,
   greaterOrEq,
   not,
-  proc,
   Value,
   spring,
   lessThan,
   lessOrEq,
-  multiply
+  multiply,
 } = Animated;
+let { proc } = Animated;
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf");
-  const procStub = (cb: any) => cb;
+  const procStub = <T,>(cb: T) => cb;
   proc = procStub;
 }
 
@@ -53,7 +53,7 @@ export const getOnChangeTranslate = proc(
   ) =>
     block([
       cond(or(not(isAfterActive), initialized), [], set(initialized, 1)),
-      cond(isPressedIn, set(toValue, translate))
+      cond(isPressedIn, set(toValue, translate)),
     ])
 );
 
@@ -74,7 +74,7 @@ export const hardReset = proc(
  */
 type RetypedProc = (cb: (...params: any) => Animated.Node<number>) => typeof cb;
 
-export const setupCell = (proc as RetypedProc)(
+export const setupCell = proc(
   (
     currentIndex: Animated.Value<number>,
     initialized: Animated.Value<number>,
@@ -132,7 +132,7 @@ export const setupCell = (proc as RetypedProc)(
                 lessThan(add(hoverOffset, activeCellSize), add(offset, size))
               ),
               set(spacerIndex, currentIndex)
-            )
+            ),
           ],
           cond(lessThan(currentIndex, activeIndex), [
             cond(
@@ -148,7 +148,7 @@ export const setupCell = (proc as RetypedProc)(
                 lessThan(hoverOffset, add(offset, divide(size, 2)))
               ),
               set(spacerIndex, currentIndex)
-            )
+            ),
           ])
         )
       ),
@@ -198,15 +198,15 @@ export const setupCell = (proc as RetypedProc)(
           toValue,
           isPressedIn
         ),
-        cond(hasMoved, onHasMoved, set(position, translate))
+        cond(hasMoved, onHasMoved, set(position, translate)),
       ]),
       cond(neq(prevSpacerIndex, spacerIndex), [
         set(prevSpacerIndex, spacerIndex),
         cond(eq(spacerIndex, -1), [
           // Hard reset to prevent stale state bugs
           onChangeSpacerIndex,
-          hardReset(position, finished, time, toValue)
-        ])
+          hardReset(position, finished, time, toValue),
+        ]),
       ]),
       runSpring,
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
@@ -217,7 +217,7 @@ export const setupCell = (proc as RetypedProc)(
           cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
         )
       ),
-      position
+      position,
     ])
 );
 
@@ -245,7 +245,7 @@ const betterSpring = (proc as RetypedProc)(
         position,
         time,
         // @ts-ignore -- https://github.com/software-mansion/react-native-reanimated/blob/master/src/animations/spring.js#L177
-        prevPosition
+        prevPosition,
       },
       {
         toValue,
@@ -254,7 +254,7 @@ const betterSpring = (proc as RetypedProc)(
         stiffness,
         overshootClamping,
         restDisplacementThreshold,
-        restSpeedThreshold
+        restSpeedThreshold,
       }
     )
 );
@@ -274,7 +274,6 @@ export function springFill(
     config.damping,
     config.mass,
     config.stiffness,
-    //@ts-ignore
     config.overshootClamping,
     config.restSpeedThreshold,
     config.restDisplacementThreshold,
