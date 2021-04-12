@@ -1,43 +1,23 @@
 import React, { useRef } from "react";
 import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
-  withSpring
+  withSpring,
 } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "./DraggableFlatListContext";
 
-export type CellRendererComponentProps<T> = {
+type Props<T> = {
   item: T;
   index: number;
   children: React.ReactNode;
   onLayout: () => void;
 };
 
-type Props<T> = CellRendererComponentProps<T> & {
-  horizontal: boolean;
-  activeKey: string | null;
-  keyExtractor: (item: T, index: number) => string;
-  keyToIndex: React.MutableRefObject<Map<string, number>>;
-  flatlistRef: React.RefObject<FlatList<any>>;
-};
-
 function CellRendererComponent<T>(props: Props<T>) {
-  const {
-    item,
-    index,
-    children,
-    horizontal,
-    activeKey,
-    keyExtractor,
-    flatlistRef
-  } = props;
-  const key = keyExtractor(item, index);
-  const offset = useSharedValue(0);
-  const size = useSharedValue(0);
+  const { item, index, children } = props;
 
   const currentIndexAnim = useSharedValue(index);
   currentIndexAnim.value = index;
@@ -52,8 +32,17 @@ function CellRendererComponent<T>(props: Props<T>) {
     horizontalAnim,
     animationConfigRef,
     placeholderOffset,
-    scrollOffset
+    scrollOffset,
+    propsRef,
+    keyExtractor,
+    activeKey,
+    flatlistRef,
   } = useDraggableFlatListContext();
+  const { horizontal } = propsRef;
+
+  const key = keyExtractor(item, index);
+  const offset = useSharedValue(-1);
+  const size = useSharedValue(-1);
 
   useAnimatedReaction(
     () => {
@@ -110,6 +99,8 @@ function CellRendererComponent<T>(props: Props<T>) {
     },
     (result, prev) => {
       if (result && result !== prev) {
+        // item has not yet initialized
+        if (size.value === -1 || offset.value === -1) return;
         const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
         const newPlaceholderOffset = isAfterActive
           ? size.value + (offset.value - activeCellSize.value)
@@ -152,8 +143,8 @@ function CellRendererComponent<T>(props: Props<T>) {
       transform: [
         horizontalAnim.value
           ? { translateX: springTranslate.value }
-          : { translateY: springTranslate.value }
-      ]
+          : { translateY: springTranslate.value },
+      ],
     };
   });
 
@@ -161,18 +152,21 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const onLayout = () => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
-      const baseOffset = horizontal ? x : y;
+      const cellOffset = horizontal ? x : y;
       const cellSize = horizontal ? w : h;
-      const cellOffset = baseOffset;
+      if (isHovering.value && activeIndexAnim.value === index) {
+        // Skip measurement for active item -- it will be incorrect
+        return;
+      }
       cellDataRef.current.set(key, {
-        measurements: { size: cellSize, offset: cellOffset }
+        measurements: { size: cellSize, offset: cellOffset },
       });
       size.value = cellSize;
       offset.value = cellOffset;
     };
 
     const onFail = () => {
-      console.log("on measure fail!!");
+      if (propsRef.debug) console.log(`## on measure fail, index: ${index}`);
     };
 
     const viewNode = viewRef.current;
@@ -187,15 +181,9 @@ function CellRendererComponent<T>(props: Props<T>) {
     <Animated.View ref={viewRef} onLayout={onLayout} style={style}>
       <Animated.View
         pointerEvents={activeKey ? "none" : "auto"}
-        style={{
-          flexDirection: horizontal ? "row" : "column"
-        }}
+        style={{ flexDirection: horizontal ? "row" : "column" }}
       >
-        <Animated.View
-          // ref={ref}
-          // onLayout={onCellLayout}
-          style={isActiveCell ? { opacity: 0 } : undefined}
-        >
+        <Animated.View style={isActiveCell ? { opacity: 0 } : undefined}>
           {children}
         </Animated.View>
       </Animated.View>
@@ -203,4 +191,4 @@ function CellRendererComponent<T>(props: Props<T>) {
   );
 }
 
-export default CellRendererComponent;
+export default React.memo(CellRendererComponent);

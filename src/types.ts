@@ -2,12 +2,11 @@ import {
   FlatList as RNFlatList,
   FlatListProps,
   StyleProp,
-  ViewStyle
+  ViewStyle,
 } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
-
-export type AnimatedFlatListType<T> = { getNode: () => RNFlatList<T> };
 
 export type DragEndParams<T> = {
   data: T[];
@@ -65,3 +64,12 @@ export type RowItemProps<T> = {
   onUnmount?: () => void;
   debug?: boolean;
 };
+
+export type AnimatedFlatListType = <T>(
+  props: Animated.AnimateProps<
+    FlatListProps<T> & {
+      ref: React.Ref<FlatList<T>>;
+      simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
+    }
+  >
+) => React.ReactElement;

@@ -18,7 +18,7 @@ function RowItem<T>(props: RowItemProps<T>) {
         if (debug) {
           console.log("## attempt to call drag() on hovering component");
         }
-      }
+      },
     });
     drag(hoverComponent, itemKey);
   }, []);
@@ -35,7 +35,7 @@ function RowItem<T>(props: RowItemProps<T>) {
     isActive: false,
     item,
     drag,
-    index: keyToIndexRef.current.get(itemKey)
+    index: keyToIndexRef.current.get(itemKey),
   }) as JSX.Element;
 }
 

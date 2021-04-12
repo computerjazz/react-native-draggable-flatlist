@@ -3,13 +3,14 @@ import React, {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState
+  useState,
 } from "react";
 import { StyleSheet, ListRenderItem } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
-  FlatList
+  FlatList,
+  PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -17,24 +18,25 @@ import Animated, {
   useAnimatedScrollHandler,
   useDerivedValue,
   useSharedValue,
-  withSpring
+  withSpring,
 } from "react-native-reanimated";
-import CellRendererComponent, {
-  CellRendererComponentProps
-} from "./CellRendererComponent";
-import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "./constants";
+import CellRendererComponent from "./CellRendererComponent";
+import { DEFAULT_PROPS } from "./constants";
 import { DraggableFlatListProvider } from "./DraggableFlatListContext";
 import HoverComponent from "./HoverComponent";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { AnimatedFlatListType, DraggableFlatListProps } from "./types";
+import { useAutoScroll } from "./useAutoScroll";
 
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+const AnimatedFlatList = Animated.createAnimatedComponent(
+  FlatList
+) as AnimatedFlatListType;
 
 // Run callback on next paint:
 // https://stackoverflow.com/questions/26556436/react-after-render-code
 function onNextFrame(callback: () => void) {
-  setTimeout(function() {
+  setTimeout(function () {
     requestAnimationFrame(callback);
   });
 }
@@ -58,19 +60,19 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
   const {
     dragItemOverflow = DEFAULT_PROPS.dragItemOverflow,
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
-    animationConfig = DEFAULT_PROPS.animationConfig
+    animationConfig = DEFAULT_PROPS.animationConfig,
   } = props;
 
   const animConfig = {
     ...DEFAULT_PROPS.animationConfig,
-    ...animationConfig
+    ...animationConfig,
   };
   const animationConfigRef = useRef(animConfig);
   animationConfigRef.current = animConfig;
 
   const [activeItem, setActiveItem] = useState<ActiveItem>({
     key: null,
-    component: null
+    component: null,
   });
   const { key: activeKey } = activeItem;
   const activeKeyAnim = useSharedValue(activeKey);
@@ -80,7 +82,7 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
   hoverComponentRef.current = activeItem.component;
 
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useRef<AnimatedFlatListType<T>>(null);
+  const flatlistRef = useRef<AnimatedFlatListType>(null);
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
 
   const containerSize = useSharedValue(0);
@@ -88,11 +90,10 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
   const touchInit = useSharedValue(0); // Position of initial touch
   const activationDistance = useSharedValue(0); // Distance finger travels from initial touch to when dragging begins
   const touchAbsolute = useSharedValue(0); // Finger position on screen, relative to container
-  const panGestureState = useSharedValue(GestureState.UNDETERMINED);
 
   const isPressedIn = useRef({
     native: useSharedValue(false),
-    js: false
+    js: false,
   });
 
   const hasMoved = useSharedValue(false);
@@ -112,15 +113,6 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
 
   const scrollOffset = useSharedValue(0);
   const scrollViewSize = useSharedValue(0);
-  const isScrolledUp = useDerivedValue(() => {
-    return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
-  });
-  const isScrolledDown = useDerivedValue(() => {
-    return (
-      scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
-      scrollViewSize.value
-    );
-  });
 
   const touchCellOffset = useDerivedValue(() => {
     // Distance between touch point and edge of cell
@@ -163,19 +155,16 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
     return placeholderScreenOffset.value - scrollOffset.value;
   });
 
-  const distToTopEdge = useDerivedValue(() => {
-    return Math.max(0, hoverAnim.value);
-  });
-
-  const distToBottomEdge = useDerivedValue(() => {
-    return Math.max(
-      0,
-      containerSize.value - (hoverAnim.value + activeCellSize.value)
-    );
-  });
-
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
+
+  useAutoScroll({
+    scrollOffset,
+    scrollViewSize,
+    containerSize,
+    hoverAnim,
+    activeCellSize,
+  });
 
   const keyExtractor = useCallback((item: T, index: number) => {
     if (propsRef.current.keyExtractor)
@@ -216,7 +205,7 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
 
         setActiveItem({
           key: activeKey,
-          component: hoverComponent
+          component: hoverComponent,
         });
 
         const { onDragBegin } = propsRef.current;
@@ -230,16 +219,16 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
   );
 
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: evt => {
+    onScroll: (evt) => {
       scrollOffset.value = horizontalAnim.value
         ? evt.contentOffset.x
         : evt.contentOffset.y;
-    }
+    },
   });
 
   const onContainerLayout = () => {
     if (containerRef.current) {
-      containerRef.current.getNode().measure((x, y, w, h) => {
+      containerRef.current.measure((x, y, w, h) => {
         containerSize.value = props.horizontal ? w : h;
       });
     }
@@ -265,24 +254,10 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
   const extraData = useMemo(
     () => ({
       activeItem,
-      extraData: props.extraData
+      extraData: props.extraData,
     }),
     [activeItem, props.extraData]
   );
-
-  const CellRenderCmpWrapper = (
-    cellRendererProps: CellRendererComponentProps<T>
-  ) => {
-    return (
-      <CellRendererComponent
-        {...cellRendererProps}
-        keyExtractor={keyExtractor}
-        activeKey={activeKey}
-        horizontal={!!props.horizontal}
-        flatlistRef={flatlistRef}
-      />
-    );
-  };
 
   const renderItem: ListRenderItem<T> = useCallback(
     ({ item, index }) => {
@@ -314,7 +289,10 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
     []
   );
 
-  const onGestureEvent = useAnimatedGestureHandler({
+  const onGestureEvent = useAnimatedGestureHandler<
+    PanGestureHandlerGestureEvent,
+    { state: GestureState }
+  >({
     onStart: (evt, ctx) => {
       if (disabled.value) return;
       if (ctx.state !== evt.state) {
@@ -366,7 +344,7 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
       if (ctx.state !== evt.state) {
         ctx.state = evt.state;
       }
-    }
+    },
   });
 
   return (
@@ -384,6 +362,10 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
       isHovering={isHovering}
       placeholderOffset={placeholderOffset}
       animationConfigRef={animationConfigRef}
+      keyExtractor={keyExtractor}
+      flatlistRef={flatlistRef}
+      activeKey={activeKey}
+      propsRef={propsRef}
     >
       <PanGestureHandler
         ref={panGestureHandlerRef}
@@ -405,7 +387,7 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
           />
           <AnimatedFlatList
             {...props}
-            CellRendererComponent={CellRenderCmpWrapper}
+            CellRendererComponent={CellRendererComponent}
             ref={flatlistRef}
             onContentSizeChange={onListContentSizeChange}
             scrollEnabled={!activeItem.component && props.scrollEnabled}
@@ -429,6 +411,6 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
 
 const styles = StyleSheet.create({
   flex: {
-    flex: 1
-  }
+    flex: 1,
+  },
 });

@@ -15,18 +15,18 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey, data }: Props<T>) {
     horizontalAnim,
     activeCellSize,
     keyToIndexRef,
-    placeholderOffset
+    placeholderOffset,
   } = useDraggableFlatListContext();
 
   const style = useAnimatedStyle(() => {
     return horizontalAnim.value
       ? {
           width: activeCellSize.value,
-          transform: [{ translateX: placeholderOffset.value }]
+          transform: [{ translateX: placeholderOffset.value }],
         }
       : {
           height: activeCellSize.value,
-          transform: [{ translateY: placeholderOffset.value }]
+          transform: [{ translateY: placeholderOffset.value }],
         };
   });
 

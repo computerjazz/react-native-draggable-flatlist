@@ -22,8 +22,8 @@ const HoverComponent = ({ component, translate, opacity }: Props) => {
       transform: [
         horizontalAnim.value
           ? { translateX: translate.value }
-          : { translateY: translate.value }
-      ]
+          : { translateY: translate.value },
+      ],
     };
   }, [opacity]);
 

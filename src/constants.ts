@@ -11,7 +11,7 @@ export const DEFAULT_ANIMATION_CONFIG: Animated.WithSpringConfig = {
   stiffness: 100,
   overshootClamping: false,
   restSpeedThreshold: 0.2,
-  restDisplacementThreshold: 0.2
+  restDisplacementThreshold: 0.2,
 };
 
 export const DEFAULT_PROPS = {
@@ -21,5 +21,5 @@ export const DEFAULT_PROPS = {
   scrollEnabled: true,
   dragHitSlop: 0 as PanGestureHandlerProperties["hitSlop"],
   activationDistance: 0,
-  dragItemOverflow: false
+  dragItemOverflow: false,
 };
