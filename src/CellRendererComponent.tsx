@@ -44,53 +44,50 @@ function CellRendererComponent<T>(props: Props<T>) {
   const offset = useSharedValue(-1);
   const size = useSharedValue(-1);
 
-  useAnimatedReaction(
-    () => {
-      // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
-      const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
-      const isBeforeActive = currentIndexAnim.value < activeIndexAnim.value;
-      const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
-      const offsetPlusHalfSize = offset.value + size.value / 2;
-      const offsetPlusSize = offset.value + size.value;
-      let result = -1;
-      if (isAfterActive) {
-        if (
-          hoverPlusActiveSize >= offset.value &&
-          hoverPlusActiveSize < offsetPlusHalfSize
-        ) {
-          // bottom edge of active cell overlaps top half of current cell
-          result = currentIndexAnim.value - 1;
-        } else if (
-          hoverPlusActiveSize >= offsetPlusHalfSize &&
-          hoverPlusActiveSize < offsetPlusSize
-        ) {
-          // bottom edge of active cell overlaps bottom half of current cell
-          result = currentIndexAnim.value;
-        }
-      } else if (isBeforeActive) {
-        if (
-          hoverOffset.value < offsetPlusSize &&
-          hoverOffset.value >= offsetPlusHalfSize
-        ) {
-          // top edge of active cell overlaps bottom half of current cell
-          result = currentIndexAnim.value + 1;
-        } else if (
-          hoverOffset.value >= offset.value &&
-          hoverOffset.value < offsetPlusHalfSize
-        ) {
-          // top edge of active cell overlaps top half of current cell
-          result = currentIndexAnim.value;
-        }
+  useDerivedValue(() => {
+    // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
+    const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
+    const isBeforeActive = currentIndexAnim.value < activeIndexAnim.value;
+    const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
+    const offsetPlusHalfSize = offset.value + size.value / 2;
+    const offsetPlusSize = offset.value + size.value;
+    let result = -1;
+    if (isAfterActive) {
+      if (
+        hoverPlusActiveSize >= offset.value &&
+        hoverPlusActiveSize < offsetPlusHalfSize
+      ) {
+        // bottom edge of active cell overlaps top half of current cell
+        result = currentIndexAnim.value - 1;
+      } else if (
+        hoverPlusActiveSize >= offsetPlusHalfSize &&
+        hoverPlusActiveSize < offsetPlusSize
+      ) {
+        // bottom edge of active cell overlaps bottom half of current cell
+        result = currentIndexAnim.value;
       }
-      return result;
-    },
-    (result, prev) => {
-      if (result !== -1 && result !== prev) {
-        spacerIndexAnim.value = result;
+    } else if (isBeforeActive) {
+      if (
+        hoverOffset.value < offsetPlusSize &&
+        hoverOffset.value >= offsetPlusHalfSize
+      ) {
+        // top edge of active cell overlaps bottom half of current cell
+        result = currentIndexAnim.value + 1;
+      } else if (
+        hoverOffset.value >= offset.value &&
+        hoverOffset.value < offsetPlusHalfSize
+      ) {
+        // top edge of active cell overlaps top half of current cell
+        result = currentIndexAnim.value;
       }
-      return spacerIndexAnim.value;
     }
-  );
+    if (result !== -1 && isHovering.value) {
+      spacerIndexAnim.value = result;
+    }
+    if (!isHovering.value && spacerIndexAnim.value !== -1)
+      spacerIndexAnim.value = -1;
+    return spacerIndexAnim.value;
+  });
 
   useAnimatedReaction(
     () => {
@@ -135,7 +132,9 @@ function CellRendererComponent<T>(props: Props<T>) {
   });
 
   const springTranslate = useDerivedValue(() => {
-    return withSpring(translate.value, animationConfigRef.current);
+    return isHovering.value
+      ? withSpring(translate.value, animationConfigRef.current)
+      : translate.value;
   });
 
   const style = useAnimatedStyle(() => {

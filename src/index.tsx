@@ -15,6 +15,7 @@ import {
 import Animated, {
   runOnJS,
   useAnimatedGestureHandler,
+  useAnimatedRef,
   useAnimatedScrollHandler,
   useDerivedValue,
   useSharedValue,
@@ -53,7 +54,7 @@ type CellData = {
   };
 };
 
-export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
+export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
@@ -82,7 +83,7 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
   hoverComponentRef.current = activeItem.component;
 
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useRef<AnimatedFlatListType>(null);
+  const flatlistRef = useAnimatedRef();
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
 
   const containerSize = useSharedValue(0);
@@ -163,7 +164,10 @@ export default function DFLV2<T>(props: DraggableFlatListProps<T>) {
     scrollViewSize,
     containerSize,
     hoverAnim,
+    isHovering,
     activeCellSize,
+    flatlistRef,
+    horizontal: !!props.horizontal,
   });
 
   const keyExtractor = useCallback((item: T, index: number) => {
