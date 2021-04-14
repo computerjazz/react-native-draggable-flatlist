@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
-import { useDraggableFlatListContext } from "./DraggableFlatListContext";
+import { useStaticValues } from "./DraggableFlatListContext";
 import { RenderPlaceholder } from "./types";
 
 type Props<T> = {
@@ -16,7 +16,7 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey, data }: Props<T>) {
     activeCellSize,
     keyToIndexRef,
     placeholderOffset,
-  } = useDraggableFlatListContext();
+  } = useStaticValues();
 
   const style = useAnimatedStyle(() => {
     return horizontalAnim.value

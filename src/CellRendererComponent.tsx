@@ -7,7 +7,11 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useDraggableFlatListContext } from "./DraggableFlatListContext";
+import {
+  useActiveKey,
+  useProps,
+  useStaticValues,
+} from "./DraggableFlatListContext";
 
 type Props<T> = {
   item: T;
@@ -33,12 +37,13 @@ function CellRendererComponent<T>(props: Props<T>) {
     animationConfigRef,
     placeholderOffset,
     scrollOffset,
-    propsRef,
     keyExtractor,
-    activeKey,
     flatlistRef,
-  } = useDraggableFlatListContext();
-  const { horizontal } = propsRef;
+    propsRef,
+  } = useStaticValues();
+
+  const { activeKey } = useActiveKey();
+  const { horizontal } = useProps();
 
   const key = keyExtractor(item, index);
   const offset = useSharedValue(-1);
@@ -87,7 +92,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     if (!isHovering.value && spacerIndexAnim.value !== -1)
       spacerIndexAnim.value = -1;
     return spacerIndexAnim.value;
-  });
+  }, []);
 
   useAnimatedReaction(
     () => {

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import { useDraggableFlatListContext } from "./DraggableFlatListContext";
+import { useStaticValues } from "./DraggableFlatListContext";
 import { RowItemProps } from "./types";
 
 function RowItem<T>(props: RowItemProps<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
-  const { keyToIndexRef } = useDraggableFlatListContext();
+  const { keyToIndexRef } = useStaticValues();
 
   const drag = useCallback(() => {
     const { drag, renderItem, item, itemKey, debug } = propsRef.current;

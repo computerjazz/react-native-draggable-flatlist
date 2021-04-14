@@ -370,6 +370,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       flatlistRef={flatlistRef}
       activeKey={activeKey}
       propsRef={propsRef}
+      horizontal={props.horizontal}
     >
       <PanGestureHandler
         ref={panGestureHandlerRef}

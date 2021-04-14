@@ -1,6 +1,6 @@
 import React from "react";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
-import { useDraggableFlatListContext } from "./DraggableFlatListContext";
+import { useStaticValues } from "./DraggableFlatListContext";
 
 type Props = {
   component?: React.ReactNode | null;
@@ -9,7 +9,7 @@ type Props = {
 };
 
 const HoverComponent = ({ component, translate, opacity }: Props) => {
-  const { horizontalAnim } = useDraggableFlatListContext();
+  const { horizontalAnim } = useStaticValues();
 
   const animStyle = useAnimatedStyle(() => {
     return {
