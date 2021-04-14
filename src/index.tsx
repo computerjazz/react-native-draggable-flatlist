@@ -778,7 +778,7 @@ class DraggableFlatList<T> extends React.Component<
           ),
         ],
       ],
-      call([this.activeIndex], this.resetHoverState)
+      [call([this.activeIndex], this.resetHoverState), this.resetTouchedCell]
     ),
   ];
 
