@@ -40,7 +40,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     keyExtractor,
     flatlistRef,
     propsRef,
-  } = useStaticValues();
+  } = useStaticValues<T>();
 
   const { activeKey } = useActiveKey();
   const { horizontal } = useProps();
@@ -86,23 +86,28 @@ function CellRendererComponent<T>(props: Props<T>) {
         result = currentIndexAnim.value;
       }
     }
-    if (result !== -1 && isHovering.value) {
+
+    if (result !== -1 && isHovering.value && result !== spacerIndexAnim.value) {
+      // console.log(`setResult: ${currentIndexAnim.value} -> ${result}, h: ${hoverOffset.value} o: ${offset.value} s: ${size.value}`)
       spacerIndexAnim.value = result;
     }
-    if (!isHovering.value && spacerIndexAnim.value !== -1)
+    if (!isHovering.value && spacerIndexAnim.value !== -1) {
       spacerIndexAnim.value = -1;
+    }
     return spacerIndexAnim.value;
   }, []);
 
   useAnimatedReaction(
     () => {
-      const isSpacerIndex = spacerIndexAnim.value === currentIndexAnim.value;
-      return isSpacerIndex;
+      const isActiveSpacerIndex =
+        isHovering.value &&
+        size.value !== -1 &&
+        offset.value !== -1 &&
+        spacerIndexAnim.value === currentIndexAnim.value;
+      return isActiveSpacerIndex;
     },
     (result, prev) => {
       if (result && result !== prev) {
-        // item has not yet initialized
-        if (size.value === -1 || offset.value === -1) return;
         const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
         const newPlaceholderOffset = isAfterActive
           ? size.value + (offset.value - activeCellSize.value)
@@ -115,31 +120,22 @@ function CellRendererComponent<T>(props: Props<T>) {
   const translate = useDerivedValue(() => {
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
-    if (currentIndexAnim.value !== activeIndexAnim.value) {
-      const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
-      const propertyToCheck = isAfterActive
-        ? currentIndexAnim.value <= spacerIndexAnim.value
-        : currentIndexAnim.value >= spacerIndexAnim.value;
+    const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
+    const shouldTranslate = isAfterActive
+      ? currentIndexAnim.value <= spacerIndexAnim.value
+      : currentIndexAnim.value >= spacerIndexAnim.value;
 
-      if (propertyToCheck) {
-        if (isHovering.value) {
-          return isAfterActive
-            ? activeCellSize.value * -1
-            : activeCellSize.value;
-        } else {
-          return 0;
-        }
-      } else {
-        return 0;
-      }
+    if (shouldTranslate) {
+      return activeCellSize.value * (isAfterActive ? -1 : 1);
+    } else {
+      return 0;
     }
-    return 0;
   });
 
   const springTranslate = useDerivedValue(() => {
     return isHovering.value
       ? withSpring(translate.value, animationConfigRef.current)
-      : translate.value;
+      : 0;
   });
 
   const style = useAnimatedStyle(() => {
@@ -170,17 +166,19 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
 
     const onFail = () => {
-      if (propsRef.debug) console.log(`## on measure fail, index: ${index}`);
+      if (propsRef.current.debug)
+        console.log(`## on measure fail, index: ${index}`);
     };
 
     const viewNode = viewRef.current;
     const flatListNode = flatlistRef.current;
     if (viewNode && flatListNode) {
+      //@ts-ignore
       const nodeHandle = findNodeHandle(flatListNode);
+      //@ts-ignore
       if (nodeHandle) viewNode.measureLayout(nodeHandle, onSuccess, onFail);
     }
   };
-
   return (
     <Animated.View ref={viewRef} onLayout={onLayout} style={style}>
       <Animated.View

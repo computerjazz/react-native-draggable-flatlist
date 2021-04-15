@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -19,7 +20,9 @@ import Animated, {
   useAnimatedScrollHandler,
   useDerivedValue,
   useSharedValue,
+  withDelay,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
 import { DEFAULT_PROPS } from "./constants";
@@ -62,6 +65,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     dragItemOverflow = DEFAULT_PROPS.dragItemOverflow,
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
     animationConfig = DEFAULT_PROPS.animationConfig,
+    scrollEnabled = DEFAULT_PROPS.scrollEnabled,
   } = props;
 
   const animConfig = {
@@ -147,10 +151,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   );
   const hoverComponentTranslate = useDerivedValue(() => hoverAnim.value);
 
-  const hoverComponentOpacity = useDerivedValue(() => {
-    return isHovering.value ? 1 : 0;
-  });
-
   const placeholderScreenOffset = useSharedValue(0);
   const placeholderOffset = useDerivedValue(() => {
     return placeholderScreenOffset.value - scrollOffset.value;
@@ -195,18 +195,13 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         isPressedIn.current.js = true;
         isPressedIn.current.native.value = true;
         const index = keyToIndexRef.current.get(activeKey);
-        if (index !== undefined) {
-          spacerIndexAnim.value = index;
-          activeIndexAnim.value = index;
-          isPressedIn.current.native.value = true;
-        }
+
         const cellData = cellDataRef.current.get(activeKey);
         if (cellData) {
           activeCellOffset.value =
             cellData.measurements.offset - scrollOffset.value;
           activeCellSize.value = cellData.measurements.size;
         }
-
         setActiveItem({
           key: activeKey,
           component: hoverComponent,
@@ -214,7 +209,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
         const { onDragBegin } = propsRef.current;
         if (index !== undefined) {
+          spacerIndexAnim.value = index;
           activeIndexAnim.value = index;
+          isPressedIn.current.native.value = true;
           onDragBegin?.(index);
         }
       }
@@ -232,7 +229,8 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onContainerLayout = () => {
     if (containerRef.current) {
-      containerRef.current.measure((x, y, w, h) => {
+      //@ts-ignore
+      containerRef.current.measure((_x, _y, w, h) => {
         containerSize.value = props.horizontal ? w : h;
       });
     }
@@ -279,7 +277,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onDragEnd = useCallback(
     ({ from, to }: { from: number; to: number }) => {
+      setActiveItem({ key: null, component: null });
       const { onDragEnd, data } = propsRef.current;
+
       if (onDragEnd) {
         let newData = [...data];
         if (from !== to) {
@@ -288,7 +288,15 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         }
         onDragEnd({ from, to, data: newData });
       }
-      setActiveItem({ key: null, component: null });
+      activeIndexAnim.value = -1;
+      activeCellSize.value = 0;
+      activeCellOffset.value = 0;
+      snapInProgress.value = false;
+      disabled.value = false;
+      activationDistance.value = 0;
+      touchInit.value = 0;
+      touchAbsolute.value = 0;
+      spacerIndexAnim.value = 0;
     },
     []
   );
@@ -322,19 +330,14 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       const from = activeIndexAnim.value;
       const to = spacerIndexAnim.value;
       disabled.value = true;
-      snapInProgress.value = true;
       snapTo.value = hoverAnim.value;
+      snapInProgress.value = true;
+      hasMoved.value = false;
       snapTo.value = withSpring(
         placeholderOffset.value,
         animationConfigRef.current,
         () => {
-          disabled.value = false;
-          snapInProgress.value = false;
-          activeIndexAnim.value = -1;
-          activationDistance.value = 0;
-          touchInit.value = 0;
-          touchAbsolute.value = 0;
-          hasMoved.value = false;
+          console.log("DONE!");
           runOnJS(onDragEnd)({ from, to });
         }
       );
@@ -369,12 +372,11 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       keyExtractor={keyExtractor}
       flatlistRef={flatlistRef}
       activeKey={activeKey}
-      propsRef={propsRef}
-      horizontal={props.horizontal}
+      props={props}
     >
       <PanGestureHandler
         ref={panGestureHandlerRef}
-        hitSlop={props.dragHitSlop}
+        hitSlop={dragHitSlop}
         onGestureEvent={onGestureEvent}
         simultaneousHandlers={props.simultaneousHandlers}
         {...dynamicProps}
@@ -387,7 +389,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         >
           <PlaceholderItem
             activeKey={activeKey}
-            data={props.data}
             renderPlaceholder={props.renderPlaceholder}
           />
           <AnimatedFlatList
@@ -395,7 +396,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             CellRendererComponent={CellRendererComponent}
             ref={flatlistRef}
             onContentSizeChange={onListContentSizeChange}
-            scrollEnabled={!activeItem.component && props.scrollEnabled}
+            scrollEnabled={!activeItem.component && scrollEnabled}
             renderItem={renderItem}
             extraData={extraData}
             keyExtractor={keyExtractor}
@@ -406,7 +407,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           <HoverComponent
             component={activeItem.component}
             translate={hoverComponentTranslate}
-            opacity={hoverComponentOpacity}
           />
         </Animated.View>
       </PanGestureHandler>

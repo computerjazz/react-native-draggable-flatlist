@@ -1,9 +1,5 @@
-import {
-  FlatList as RNFlatList,
-  FlatListProps,
-  StyleProp,
-  ViewStyle,
-} from "react-native";
+import React from "react";
+import { FlatListProps, StyleProp, ViewStyle } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
@@ -23,7 +19,7 @@ export type DraggableFlatListProps<T> = Modify<
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
     data: T[];
-    onRef?: (ref: React.RefObject<AnimatedFlatListType<T>>) => void;
+    onRef?: (ref: React.RefObject<AnimatedFlatListType>) => void;
     onDragBegin?: (index: number) => void;
     onRelease?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;

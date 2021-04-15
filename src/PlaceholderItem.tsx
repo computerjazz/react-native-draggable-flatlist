@@ -7,24 +7,28 @@ import { RenderPlaceholder } from "./types";
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
   activeKey: string | null;
-  data: T[];
 };
 
-function PlaceholderItem<T>({ renderPlaceholder, activeKey, data }: Props<T>) {
+function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
   const {
     horizontalAnim,
     activeCellSize,
     keyToIndexRef,
     placeholderOffset,
-  } = useStaticValues();
+    spacerIndexAnim,
+    propsRef,
+  } = useStaticValues<T>();
 
   const style = useAnimatedStyle(() => {
+    const opacity = spacerIndexAnim.value > -1 ? 1 : 0;
     return horizontalAnim.value
       ? {
+          opacity,
           width: activeCellSize.value,
           transform: [{ translateX: placeholderOffset.value }],
         }
       : {
+          opacity,
           height: activeCellSize.value,
           transform: [{ translateY: placeholderOffset.value }],
         };
@@ -33,13 +37,13 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey, data }: Props<T>) {
   const activeIndex = activeKey
     ? keyToIndexRef.current.get(activeKey)
     : undefined;
-  const activeItem = activeIndex === undefined ? null : data[activeIndex];
+  const activeItem =
+    activeIndex === undefined ? null : propsRef.current.data[activeIndex];
   const children =
     activeIndex !== undefined &&
     activeItem &&
     renderPlaceholder?.({ item: activeItem, index: activeIndex });
   const isActive = !!children;
-
   return (
     <Animated.View
       pointerEvents={isActive ? "auto" : "none"}

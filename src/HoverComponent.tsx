@@ -5,11 +5,10 @@ import { useStaticValues } from "./DraggableFlatListContext";
 type Props = {
   component?: React.ReactNode | null;
   translate: Animated.SharedValue<number>;
-  opacity: Animated.SharedValue<number>;
 };
 
-const HoverComponent = ({ component, translate, opacity }: Props) => {
-  const { horizontalAnim } = useStaticValues();
+const HoverComponent = ({ component, translate }: Props) => {
+  const { horizontalAnim, isHovering } = useStaticValues();
 
   const animStyle = useAnimatedStyle(() => {
     return {
@@ -18,14 +17,14 @@ const HoverComponent = ({ component, translate, opacity }: Props) => {
       right: horizontalAnim.value ? undefined : 0,
       top: horizontalAnim.value ? 0 : undefined,
       bottom: horizontalAnim.value ? 0 : undefined,
-      opacity: opacity.value,
+      opacity: isHovering.value ? 1 : 0,
       transform: [
         horizontalAnim.value
           ? { translateX: translate.value }
           : { translateY: translate.value },
       ],
     };
-  }, [opacity]);
+  });
 
   return (
     <Animated.View

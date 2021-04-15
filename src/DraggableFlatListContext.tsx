@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useRef } from "react";
 import Animated from "react-native-reanimated";
 import { AnimatedFlatListType, DraggableFlatListProps } from "./types";
 
@@ -16,9 +16,9 @@ type StaticContextValue<T> = {
   horizontalAnim: Animated.SharedValue<boolean>;
   isHovering: Animated.SharedValue<boolean>;
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
-  keyExtractor: (item: T, index: number) => string;
+  keyExtractor: DraggableFlatListProps<T>["keyExtractor"];
   flatlistRef: React.RefObject<AnimatedFlatListType>;
-  activeKey: string | null;
+  propsRef: React.RefObject<DraggableFlatListProps<T>>;
 };
 
 type ActiveKeyContextValue = {
@@ -41,10 +41,12 @@ const PropsContext = React.createContext<PropsContextValue | undefined>(
 );
 
 type Props<T> = StaticContextValue<T> &
-  ActiveKeyContextValue &
-  PropsContextValue & { children: React.ReactNode };
+  ActiveKeyContextValue & {
+    props: DraggableFlatListProps<T>;
+    children: React.ReactNode;
+  };
 
-export const DraggableFlatListProvider = React.memo(function <T>({
+function DraggableFlatListProviderBase<T>({
   children,
   activeIndexAnim,
   spacerIndexAnim,
@@ -62,9 +64,11 @@ export const DraggableFlatListProvider = React.memo(function <T>({
   flatlistRef,
   activeKey,
   keyExtractor,
-  propsRef,
-  horizontal,
+  props,
 }: Props<T>) {
+  const propsRef = useRef(props);
+  propsRef.current = props;
+
   const staticValue = useMemo(() => {
     return {
       activeIndexAnim,
@@ -98,7 +102,6 @@ export const DraggableFlatListProvider = React.memo(function <T>({
     placeholderOffset,
     flatlistRef,
     keyExtractor,
-    propsRef,
   ]);
 
   const activeKeyValue = useMemo(
@@ -110,9 +113,9 @@ export const DraggableFlatListProvider = React.memo(function <T>({
 
   const propsValue = useMemo(
     () => ({
-      horizontal,
+      horizontal: props.horizontal,
     }),
-    [horizontal]
+    [props.horizontal]
   );
 
   return (
@@ -124,19 +127,23 @@ export const DraggableFlatListProvider = React.memo(function <T>({
       </StaticContext.Provider>
     </ActiveKeyContext.Provider>
   );
-});
+}
 
-export const useStaticValues = () => {
-  const value = useContext(StaticContext);
+export const DraggableFlatListProvider = React.memo(
+  DraggableFlatListProviderBase
+);
+
+export function useStaticValues<T>() {
+  const value = useContext(StaticContext) as StaticContextValue<T>;
   if (!value) {
     throw new Error(
       "useStaticValues must be called within StaticContext.Provider"
     );
   }
   return value;
-};
+}
 
-export const useActiveKey = () => {
+export function useActiveKey() {
   const value = useContext(ActiveKeyContext);
   if (!value) {
     throw new Error(
@@ -144,12 +151,12 @@ export const useActiveKey = () => {
     );
   }
   return value;
-};
+}
 
-export const useProps = () => {
+export function useProps() {
   const value = useContext(PropsContext);
   if (!value) {
     throw new Error("useProps must be called within PropsContext.Provider");
   }
   return value;
-};
+}
