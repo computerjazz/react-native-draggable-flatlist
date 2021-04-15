@@ -12,6 +12,7 @@ import {
   useProps,
   useStaticValues,
 } from "./DraggableFlatListContext";
+import { useCellTranslate } from "./useCellTranslate";
 
 type Props<T> = {
   item: T;
@@ -29,14 +30,8 @@ function CellRendererComponent<T>(props: Props<T>) {
   const {
     cellDataRef,
     activeIndexAnim,
-    spacerIndexAnim,
-    hoverOffset,
-    activeCellSize,
     isHovering,
     horizontalAnim,
-    animationConfigRef,
-    placeholderOffset,
-    scrollOffset,
     keyExtractor,
     flatlistRef,
     propsRef,
@@ -48,102 +43,18 @@ function CellRendererComponent<T>(props: Props<T>) {
   const key = keyExtractor(item, index);
   const offset = useSharedValue(-1);
   const size = useSharedValue(-1);
-
-  useDerivedValue(() => {
-    // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
-    const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
-    const isBeforeActive = currentIndexAnim.value < activeIndexAnim.value;
-    const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
-    const offsetPlusHalfSize = offset.value + size.value / 2;
-    const offsetPlusSize = offset.value + size.value;
-    let result = -1;
-    if (isAfterActive) {
-      if (
-        hoverPlusActiveSize >= offset.value &&
-        hoverPlusActiveSize < offsetPlusHalfSize
-      ) {
-        // bottom edge of active cell overlaps top half of current cell
-        result = currentIndexAnim.value - 1;
-      } else if (
-        hoverPlusActiveSize >= offsetPlusHalfSize &&
-        hoverPlusActiveSize < offsetPlusSize
-      ) {
-        // bottom edge of active cell overlaps bottom half of current cell
-        result = currentIndexAnim.value;
-      }
-    } else if (isBeforeActive) {
-      if (
-        hoverOffset.value < offsetPlusSize &&
-        hoverOffset.value >= offsetPlusHalfSize
-      ) {
-        // top edge of active cell overlaps bottom half of current cell
-        result = currentIndexAnim.value + 1;
-      } else if (
-        hoverOffset.value >= offset.value &&
-        hoverOffset.value < offsetPlusHalfSize
-      ) {
-        // top edge of active cell overlaps top half of current cell
-        result = currentIndexAnim.value;
-      }
-    }
-
-    if (result !== -1 && isHovering.value && result !== spacerIndexAnim.value) {
-      // console.log(`setResult: ${currentIndexAnim.value} -> ${result}, h: ${hoverOffset.value} o: ${offset.value} s: ${size.value}`)
-      spacerIndexAnim.value = result;
-    }
-    if (!isHovering.value && spacerIndexAnim.value !== -1) {
-      spacerIndexAnim.value = -1;
-    }
-    return spacerIndexAnim.value;
-  }, []);
-
-  useAnimatedReaction(
-    () => {
-      const isActiveSpacerIndex =
-        isHovering.value &&
-        size.value !== -1 &&
-        offset.value !== -1 &&
-        spacerIndexAnim.value === currentIndexAnim.value;
-      return isActiveSpacerIndex;
-    },
-    (result, prev) => {
-      if (result && result !== prev) {
-        const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
-        const newPlaceholderOffset = isAfterActive
-          ? size.value + (offset.value - activeCellSize.value)
-          : offset.value;
-        placeholderOffset.value = newPlaceholderOffset - scrollOffset.value;
-      }
-    }
-  );
-
-  const translate = useDerivedValue(() => {
-    // Translate cell down if it is before active index and active cell has passed it.
-    // Translate cell up if it is after the active index and active cell has passed it.
-    const isAfterActive = currentIndexAnim.value > activeIndexAnim.value;
-    const shouldTranslate = isAfterActive
-      ? currentIndexAnim.value <= spacerIndexAnim.value
-      : currentIndexAnim.value >= spacerIndexAnim.value;
-
-    if (shouldTranslate) {
-      return activeCellSize.value * (isAfterActive ? -1 : 1);
-    } else {
-      return 0;
-    }
-  });
-
-  const springTranslate = useDerivedValue(() => {
-    return isHovering.value
-      ? withSpring(translate.value, animationConfigRef.current)
-      : 0;
+  const translate = useCellTranslate({
+    cellOffset: offset,
+    cellSize: size,
+    cellIndex: currentIndexAnim,
   });
 
   const style = useAnimatedStyle(() => {
     return {
       transform: [
         horizontalAnim.value
-          ? { translateX: springTranslate.value }
-          : { translateY: springTranslate.value },
+          ? { translateX: translate.value }
+          : { translateY: translate.value },
       ],
     };
   });
@@ -179,6 +90,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       if (nodeHandle) viewNode.measureLayout(nodeHandle, onSuccess, onFail);
     }
   };
+
   return (
     <Animated.View ref={viewRef} onLayout={onLayout} style={style}>
       <Animated.View
