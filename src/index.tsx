@@ -277,6 +277,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onDragEnd = useCallback(
     ({ from, to }: { from: number; to: number }) => {
+      // TODO: The order of operations between state setting, onDragEnd callback
+      // and resetting the animated values is very fickle. Rearranging the order causes
+      // white flashes when the list re-renders. Figure out a more robust way to sync JS and animated values.
       setActiveItem({ key: null, component: null });
       const { onDragEnd, data } = propsRef.current;
 

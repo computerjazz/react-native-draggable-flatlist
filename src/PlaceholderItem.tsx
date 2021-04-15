@@ -15,12 +15,12 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
     activeCellSize,
     keyToIndexRef,
     placeholderOffset,
-    spacerIndexAnim,
+    isHovering,
     propsRef,
   } = useStaticValues<T>();
 
   const style = useAnimatedStyle(() => {
-    const opacity = spacerIndexAnim.value > -1 ? 1 : 0;
+    const opacity = isHovering.value ? 1 : 0;
     return horizontalAnim.value
       ? {
           opacity,
