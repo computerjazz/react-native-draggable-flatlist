@@ -13,7 +13,7 @@ type StaticContextValue<T> = {
   scrollOffset: Animated.SharedValue<number>;
   placeholderOffset: Animated.SharedValue<number>;
   placeholderScreenOffset: Animated.SharedValue<number>;
-  activeKeyAnim: Animated.SharedValue<string>;
+  activeKeyAnim: Animated.SharedValue<string | null>;
   horizontalAnim: Animated.SharedValue<boolean>;
   isHovering: Animated.SharedValue<boolean>;
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;

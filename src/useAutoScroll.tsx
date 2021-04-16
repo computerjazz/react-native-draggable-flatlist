@@ -11,7 +11,7 @@ type Params = {
   scrollViewSize: Animated.SharedValue<number>;
   containerSize: Animated.SharedValue<number>;
   hoverAnim: Animated.SharedValue<number>;
-  isHovering: Animated.SharedValue<boolean>;
+  isPressedIn: Animated.SharedValue<boolean>;
   activeCellSize: Animated.SharedValue<number>;
   flatlistRef: React.RefObject<FlatList<any>>;
   autoscrollThreshold?: number;
@@ -23,7 +23,7 @@ export function useAutoScroll({
   scrollViewSize,
   containerSize,
   hoverAnim,
-  isHovering,
+  isPressedIn,
   activeCellSize,
   flatlistRef,
   autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
@@ -54,11 +54,16 @@ export function useAutoScroll({
   const isAutoscrolling = useSharedValue(false);
 
   const nextScrollTarget = useDerivedValue(() => {
-    const scrollUp = distToTopEdge.value < autoscrollThreshold!;
-    const scrollDown = distToBottomEdge.value < autoscrollThreshold!;
+    const scrollUp =
+      isPressedIn.value && distToTopEdge.value < autoscrollThreshold;
+    const scrollDown =
+      isPressedIn.value && (distToBottomEdge.value < autoscrollThreshold)!;
     const attemptToScroll = scrollUp || scrollDown;
+    // console.log("SCROLL UP?", scrollUp)
+    // console.log("SCROLL DOWN?", scrollDown)
+    // console.log("PRESSED IN???", isPressedIn.value)
     if (
-      !isHovering.value ||
+      !isPressedIn.value ||
       !attemptToScroll ||
       (scrollUp && isScrolledUp.value) ||
       (scrollDown && isScrolledDown.value)
@@ -94,12 +99,16 @@ export function useAutoScroll({
   };
 
   useDerivedValue(() => {
-    if (!isHovering.value) isAutoscrolling.value = false;
+    if (!isPressedIn.value) {
+      isAutoscrolling.value = false;
+      return;
+    }
     if (
       nextScrollTarget.value !== -1 &&
       nextScrollTarget.value !== scrollTarget.value &&
       !isAutoscrolling.value
     ) {
+      console.log("autoscroll!!", nextScrollTarget.value);
       isAutoscrolling.value = true;
       scrollTarget.value = nextScrollTarget.value;
       // Reanimated scrollTo has been really unstable, use custom js scrollTo for the time being

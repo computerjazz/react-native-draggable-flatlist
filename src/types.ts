@@ -51,15 +51,6 @@ export type RenderItemParams<T> = {
 
 export type RenderItem<T> = (params: RenderItemParams<T>) => React.ReactNode;
 
-export type RowItemProps<T> = {
-  extraData?: any;
-  drag: (hoverComponent: React.ReactNode, itemKey: string) => void;
-  item: T;
-  renderItem: RenderItem<T>;
-  itemKey: string;
-  debug?: boolean;
-};
-
 export type AnimatedFlatListType = <T>(
   props: Animated.AnimateProps<
     FlatListProps<T> & {

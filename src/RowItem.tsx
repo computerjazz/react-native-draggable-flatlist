@@ -1,8 +1,17 @@
 import React, { useCallback, useRef } from "react";
 import { useStaticValues } from "./DraggableFlatListContext";
-import { RowItemProps } from "./types";
+import { RenderItem } from "./types";
 
-function RowItem<T>(props: RowItemProps<T>) {
+type Props<T> = {
+  extraData?: any;
+  drag: (hoverComponent: React.ReactNode, itemKey: string) => void;
+  item: T;
+  renderItem: RenderItem<T>;
+  itemKey: string;
+  debug?: boolean;
+};
+
+function RowItem<T>(props: Props<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 

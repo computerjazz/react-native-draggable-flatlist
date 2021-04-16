@@ -28,12 +28,10 @@ import HoverComponent from "./HoverComponent";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";
-import { AnimatedFlatListType, DraggableFlatListProps } from "./types";
+import { DraggableFlatListProps } from "./types";
 import { useAutoScroll } from "./useAutoScroll";
 
-const AnimatedFlatList = Animated.createAnimatedComponent(
-  FlatList
-) as AnimatedFlatListType;
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // Run callback on next paint:
 // https://stackoverflow.com/questions/26556436/react-after-render-code
@@ -156,17 +154,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
 
-  useAutoScroll({
-    scrollOffset,
-    scrollViewSize,
-    containerSize,
-    hoverAnim,
-    isHovering,
-    activeCellSize,
-    flatlistRef,
-    horizontal: !!props.horizontal,
-  });
-
   const keyExtractor = useCallback((item: T, index: number) => {
     if (propsRef.current.keyExtractor)
       return propsRef.current.keyExtractor(item, index);
@@ -190,7 +177,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           console.log("## Can't set multiple active items");
         }
       } else {
-        isPressedIn.value = true;
         const index = keyToIndexRef.current.get(activeKey);
         const cellData = cellDataRef.current.get(activeKey);
         if (cellData) {
@@ -251,6 +237,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       touchInit.value = 0;
       touchAbsolute.value = 0;
       spacerIndexAnim.value = 0;
+      isPressedIn.value = false;
 
       // For some reason this prevents a white flash when from and to index are the same
       if (from === to) setActiveItem({ key: null, component: null });
@@ -265,8 +252,20 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       spacerIndexAnim,
       touchAbsolute,
       touchInit,
+      isPressedIn,
     ]
   );
+
+  useAutoScroll({
+    scrollOffset,
+    scrollViewSize,
+    containerSize,
+    hoverAnim,
+    isPressedIn,
+    activeCellSize,
+    flatlistRef,
+    horizontal: !!props.horizontal,
+  });
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (evt) => {
