@@ -48,7 +48,7 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const style = useAnimatedStyle(() => {
     return {
-      opacity: currentIndexAnim.value === activeIndexAnim.value ? 0 : 1,
+      zIndex: currentIndexAnim.value === activeIndexAnim.value ? 999 : 0,
       transform: [
         horizontalAnim.value
           ? { translateX: translate.value }
@@ -73,7 +73,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
 
     const onFail = () => {
-      if (propsRef.current.debug) {
+      if (propsRef.current?.debug) {
         console.log(`## on measure fail, index: ${index}`);
       }
     };

@@ -7,6 +7,7 @@ type StaticContextValue<T> = {
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   activeIndexAnim: Animated.SharedValue<number>;
   spacerIndexAnim: Animated.SharedValue<number>;
+  hoverComponentTranslate: Animated.SharedValue<number>;
   hoverOffset: Animated.SharedValue<number>;
   activeCellSize: Animated.SharedValue<number>;
   activeCellOffset: Animated.SharedValue<number>;
@@ -63,6 +64,7 @@ function DraggableFlatListProviderBase<T>({
   animationConfigRef,
   placeholderOffset,
   placeholderScreenOffset,
+  hoverComponentTranslate,
   flatlistRef,
   activeKey,
   keyExtractor,
@@ -89,6 +91,7 @@ function DraggableFlatListProviderBase<T>({
       placeholderScreenOffset,
       flatlistRef,
       keyExtractor,
+      hoverComponentTranslate,
       propsRef,
     };
   }, [
@@ -108,6 +111,7 @@ function DraggableFlatListProviderBase<T>({
     keyExtractor,
     cellDataRef,
     keyToIndexRef,
+    hoverComponentTranslate,
   ]);
 
   const activeKeyValue = useMemo(

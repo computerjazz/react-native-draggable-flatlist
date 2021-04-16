@@ -1,10 +1,10 @@
 import React, { useCallback, useRef } from "react";
-import { useStaticValues } from "./DraggableFlatListContext";
+import { useActiveKey, useStaticValues } from "./DraggableFlatListContext";
 import { RenderItem } from "./types";
 
 type Props<T> = {
   extraData?: any;
-  drag: (hoverComponent: React.ReactNode, itemKey: string) => void;
+  drag: (itemKey: string) => void;
   item: T;
   renderItem: RenderItem<T>;
   itemKey: string;
@@ -15,30 +15,47 @@ function RowItem<T>(props: Props<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
+  const { activeKey } = useActiveKey();
+  const activeKeyRef = useRef(activeKey);
+  activeKeyRef.current = activeKey;
   const { keyToIndexRef } = useStaticValues();
 
   const drag = useCallback(() => {
-    const { drag, renderItem, item, itemKey, debug } = propsRef.current;
-    const hoverComponent = renderItem({
-      isActive: true,
-      item,
-      index: keyToIndexRef.current.get(itemKey),
-      drag: () => {
-        if (debug) {
-          console.log("## attempt to call drag() on hovering component");
-        }
-      },
-    });
-    drag(hoverComponent, itemKey);
-  }, [keyToIndexRef]);
+    const { drag, itemKey, debug } = propsRef.current;
+    if (activeKeyRef.current) {
+      // already dragging an item, noop
+      if (debug)
+        console.log(
+          "## attempt to drag item while another item is already active, noop"
+        );
+    }
+    drag(itemKey);
+  }, []);
 
   const { renderItem, item, itemKey } = props;
-  return renderItem({
-    isActive: false,
-    item,
-    drag,
-    index: keyToIndexRef.current.get(itemKey),
-  }) as JSX.Element;
+  return (
+    <MemoizedInner
+      isActive={activeKey === itemKey}
+      drag={drag}
+      renderItem={renderItem}
+      item={item}
+      index={keyToIndexRef.current.get(itemKey)}
+    />
+  );
 }
 
 export default React.memo(RowItem);
+
+type InnerProps<T> = {
+  isActive: boolean;
+  item: T;
+  index: number;
+  drag: () => void;
+  renderItem: RenderItem<T>;
+};
+
+function Inner<T>({ isActive, item, drag, index, renderItem }: InnerProps<T>) {
+  return renderItem({ isActive, item, drag, index }) as JSX.Element;
+}
+
+const MemoizedInner = React.memo(Inner);

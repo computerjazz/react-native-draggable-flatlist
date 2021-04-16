@@ -20,7 +20,13 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     spacerIndexAnim,
     placeholderOffset,
     animationConfigRef,
+    hoverComponentTranslate,
+    scrollOffset,
   } = useStaticValues();
+
+  const isActiveCell = useDerivedValue(() => {
+    return cellIndex.value === activeIndexAnim.value;
+  });
 
   useDerivedValue(() => {
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
@@ -91,7 +97,10 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
 
   const translate = useDerivedValue(() => {
     // No need to translate the active cell (it's not visible in the list)
-    if (cellIndex.value === activeIndexAnim.value) return 0;
+    if (isActiveCell.value)
+      return (
+        hoverComponentTranslate.value - cellOffset.value + scrollOffset.value
+      );
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
@@ -107,6 +116,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   });
 
   const springTranslate = useDerivedValue(() => {
+    if (isActiveCell.value) return translate.value;
     return isHovering.value
       ? withSpring(translate.value, animationConfigRef.current)
       : 0;

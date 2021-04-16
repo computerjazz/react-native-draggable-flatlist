@@ -24,7 +24,6 @@ import Animated, {
 import CellRendererComponent from "./CellRendererComponent";
 import { DEFAULT_PROPS } from "./constants";
 import { DraggableFlatListProvider } from "./DraggableFlatListContext";
-import HoverComponent from "./HoverComponent";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";
@@ -42,7 +41,6 @@ function onNextFrame(callback: () => void) {
 }
 
 type ActiveItem = {
-  component: React.ReactNode | null;
   key: string | null;
 };
 
@@ -74,14 +72,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const [activeItem, setActiveItem] = useState<ActiveItem>({
     key: null,
-    component: null,
   });
   const { key: activeKey } = activeItem;
   const activeKeyAnim = useSharedValue(activeKey);
   activeKeyAnim.value = activeKey;
-
-  const hoverComponentRef = useRef(activeItem.component);
-  hoverComponentRef.current = activeItem.component;
 
   const containerRef = useRef<Animated.View>(null);
   const flatlistRef = useAnimatedRef();
@@ -169,36 +163,27 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   }, [props.data, keyExtractor]);
 
   const drag = useCallback(
-    (hoverComponent: React.ReactNode, activeKey: string) => {
-      if (hoverComponentRef.current !== null) {
-        // We can't drag more than one row at a time
-        // TODO: Put action on queue?
-        if (propsRef.current.debug) {
-          console.log("## Can't set multiple active items");
-        }
-      } else {
-        const index = keyToIndexRef.current.get(activeKey);
-        const cellData = cellDataRef.current.get(activeKey);
-        if (cellData) {
-          activeCellOffset.value =
-            cellData.measurements.offset - scrollOffset.value;
-          activeCellSize.value = cellData.measurements.size;
-        }
+    (activeKey: string) => {
+      const index = keyToIndexRef.current.get(activeKey);
+      const cellData = cellDataRef.current.get(activeKey);
+      if (cellData) {
+        activeCellOffset.value =
+          cellData.measurements.offset - scrollOffset.value;
+        activeCellSize.value = cellData.measurements.size;
+      }
 
-        const { onDragBegin } = propsRef.current;
-        if (index !== undefined) {
-          // TODO: The order of operations between animated value state setting and setActiveItem callback
-          // is very fickle. Rearranging the order causes a white flashe when the item becomes active.
-          // Figure out a more robust way to sync JS and animated values.
-          spacerIndexAnim.value = index;
-          activeIndexAnim.value = index;
-          isPressedIn.value = true;
-          setActiveItem({
-            key: activeKey,
-            component: hoverComponent,
-          });
-          onDragBegin?.(index);
-        }
+      const { onDragBegin } = propsRef.current;
+      if (index !== undefined) {
+        // TODO: The order of operations between animated value state setting and setActiveItem callback
+        // is very fickle. Rearranging the order causes a white flashe when the item becomes active.
+        // Figure out a more robust way to sync JS and animated values.
+        spacerIndexAnim.value = index;
+        activeIndexAnim.value = index;
+        isPressedIn.value = true;
+        setActiveItem({
+          key: activeKey,
+        });
+        onDragBegin?.(index);
       }
     },
     [
@@ -410,6 +395,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       placeholderOffset={placeholderOffset}
       placeholderScreenOffset={placeholderScreenOffset}
       animationConfigRef={animationConfigRef}
+      hoverComponentTranslate={hoverComponentTranslate}
       keyExtractor={keyExtractor}
       flatlistRef={flatlistRef}
       activeKey={activeKey}
@@ -440,17 +426,13 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             CellRendererComponent={CellRendererComponent}
             ref={flatlistRef}
             onContentSizeChange={onListContentSizeChange}
-            scrollEnabled={!activeItem.component && scrollEnabled}
+            scrollEnabled={!activeItem.key && scrollEnabled}
             renderItem={renderItem}
             extraData={extraData}
             keyExtractor={keyExtractor}
             onScroll={scrollHandler}
             scrollEventThrottle={1}
             simultaneousHandlers={props.simultaneousHandlers}
-          />
-          <HoverComponent
-            component={activeItem.component}
-            translate={hoverComponentTranslate}
           />
         </Animated.View>
       </PanGestureHandler>
