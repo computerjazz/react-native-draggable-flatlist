@@ -428,10 +428,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           onLayout={onContainerLayout}
           onTouchEnd={onContainerTouchEnd}
         >
-          <PlaceholderItem
-            activeKey={activeKey}
-            renderPlaceholder={props.renderPlaceholder}
-          />
+          <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
           <AnimatedFlatList
             {...props}
             CellRendererComponent={CellRendererComponent}

@@ -1,19 +1,18 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { StyleSheet } from "react-native";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
   useDerivedValue,
 } from "react-native-reanimated";
-import { useStaticValues } from "./DraggableFlatListContext";
+import { useActiveKey, useStaticValues } from "./DraggableFlatListContext";
 import { RenderPlaceholder } from "./types";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
-  activeKey: string | null;
 };
 
-function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
+function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const {
     horizontalAnim,
     activeCellSize,
@@ -21,9 +20,27 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
     placeholderScreenOffset,
     isHovering,
     propsRef,
+    spacerIndexAnim,
   } = useStaticValues<T>();
+  const { activeKey } = useActiveKey();
 
   const [active, setActive] = useState(false);
+
+  const onPlaceholderIndexChange = useCallback(
+    ({ placeholderIndex }: { placeholderIndex: number }) => {
+      if (placeholderIndex !== -1) {
+        propsRef.current?.onPlaceholderIndexChange?.(placeholderIndex);
+      }
+    },
+    [propsRef]
+  );
+
+  useDerivedValue(() => {
+    runOnJS(onPlaceholderIndexChange)({
+      placeholderIndex: spacerIndexAnim.value,
+    });
+  });
+
   useDerivedValue(() => {
     // Tracking active in JS solves for the case where the placeholder renders before
     // animated values update, and does not expand to fill available space
