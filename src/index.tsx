@@ -560,7 +560,7 @@ class DraggableFlatList<T> extends React.Component<
       };
 
       const ref = this.cellRefs.get(key);
-      const viewNode = ref && ref.current && ref.current.getNode();
+      const viewNode = ref && ref.current;
       const flatListNode = this.flatlistRef.current;
 
       if (viewNode && flatListNode) {
@@ -591,7 +591,7 @@ class DraggableFlatList<T> extends React.Component<
     const { horizontal } = this.props;
     const containerRef = this.containerRef.current;
     if (containerRef) {
-      containerRef.getNode().measure((_x, _y, w, h) => {
+      containerRef.measure((_x, _y, w, h) => {
         this.containerSize.setValue(horizontal ? w : h);
       });
     }
