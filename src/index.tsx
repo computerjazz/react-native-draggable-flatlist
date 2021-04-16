@@ -395,14 +395,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     },
   });
 
-  useDerivedValue(() => {
-    console.log(`spacer index! ${spacerIndexAnim.value}`);
-  });
-
-  useDerivedValue(() => {
-    console.log(`placeholderOffset! ${placeholderOffset.value}`);
-  });
-
   return (
     <DraggableFlatListProvider
       horizontalAnim={horizontalAnim}

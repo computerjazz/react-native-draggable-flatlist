@@ -40,7 +40,7 @@ export type DraggableFlatListProps<T> = Modify<
 export type RenderPlaceholder<T> = (params: {
   item: T;
   index: number;
-}) => React.ReactNode;
+}) => JSX.Element;
 
 export type RenderItemParams<T> = {
   item: T;
