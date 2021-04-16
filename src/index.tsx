@@ -27,6 +27,7 @@ import { DraggableFlatListProvider } from "./DraggableFlatListContext";
 import HoverComponent from "./HoverComponent";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
+import ScrollOffsetListener from "./ScrollOffsetListener";
 import { AnimatedFlatListType, DraggableFlatListProps } from "./types";
 import { useAutoScroll } from "./useAutoScroll";
 
@@ -428,6 +429,12 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           onLayout={onContainerLayout}
           onTouchEnd={onContainerTouchEnd}
         >
+          {props.onScrollOffsetChange && (
+            <ScrollOffsetListener
+              scrollOffset={scrollOffset}
+              onScrollOffsetChange={props.onScrollOffsetChange}
+            />
+          )}
           <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
           <AnimatedFlatList
             {...props}
