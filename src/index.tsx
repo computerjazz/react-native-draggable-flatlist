@@ -140,7 +140,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     const dragVal = dragItemOverflow
       ? hoverAnimConstrained.value
       : hoverAnimUnconstrained.value;
-    return snapInProgress.value ? snapTo.value : dragVal;
+    return snapInProgress.value ? snapTo.value - scrollOffset.value : dragVal;
   }, [dragItemOverflow]);
   const hoverOffset = useDerivedValue(
     () => hoverAnim.value + scrollOffset.value
@@ -366,20 +366,19 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       }
       const from = activeIndexAnim.value;
       const to = spacerIndexAnim.value;
-      console.log(
-        `from ${from}, to ${to}, animate to: ${placeholderOffset.value}`
-      );
+
       disabled.value = true;
-      snapTo.value = hoverAnim.value;
+      snapTo.value = hoverAnim.value + scrollOffset.value;
       snapInProgress.value = true;
       hasMoved.value = false;
-      snapTo.value = withSpring(
-        placeholderScreenOffset.value,
+      const springAnim = withSpring(
+        placeholderOffset.value,
         animationConfigRef.current,
         () => {
           runOnJS(onDragEnd)({ from, to });
         }
       );
+      snapTo.value = springAnim;
     },
     onCancel: (evt, ctx) => {
       if (ctx.state !== evt.state) {
