@@ -57,7 +57,6 @@ export type RowItemProps<T> = {
   item: T;
   renderItem: RenderItem<T>;
   itemKey: string;
-  onUnmount?: () => void;
   debug?: boolean;
 };
 

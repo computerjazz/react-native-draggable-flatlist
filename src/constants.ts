@@ -1,9 +1,8 @@
-// Fire onScrollComplete when within this many
-
+import { Platform } from "react-native";
 import { PanGestureHandlerProperties } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 
-// px of target offset
+// Fire onScrollComplete when within this many px of target offset
 export const SCROLL_POSITION_TOLERANCE = 2;
 export const DEFAULT_ANIMATION_CONFIG: Animated.WithSpringConfig = {
   damping: 20,
@@ -23,3 +22,5 @@ export const DEFAULT_PROPS = {
   activationDistance: 0,
   dragItemOverflow: false,
 };
+
+export const isIOS = Platform.OS === "ios";

@@ -1,6 +1,5 @@
 import React, {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -20,9 +19,7 @@ import Animated, {
   useAnimatedScrollHandler,
   useDerivedValue,
   useSharedValue,
-  withDelay,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
 import { DEFAULT_PROPS } from "./constants";
@@ -66,6 +63,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
     animationConfig = DEFAULT_PROPS.animationConfig,
     scrollEnabled = DEFAULT_PROPS.scrollEnabled,
+    activationDistance: activationDistanceProp = DEFAULT_PROPS.activationDistance,
   } = props;
 
   const animConfig = {
@@ -102,6 +100,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const disabled = useSharedValue(false);
 
   const horizontalAnim = useSharedValue(!!props.horizontal);
+  horizontalAnim.value = !!props.horizontal;
 
   const activeIndexAnim = useSharedValue(-1); // Index of hovering cell
   const spacerIndexAnim = useSharedValue(-1); // Index of hovered-over cell
@@ -148,9 +147,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   );
   const hoverComponentTranslate = useDerivedValue(() => hoverAnim.value);
 
-  const placeholderScreenOffset = useSharedValue(0);
-  const placeholderOffset = useDerivedValue(() => {
-    return placeholderScreenOffset.value - scrollOffset.value;
+  const placeholderOffset = useSharedValue(0);
+  const placeholderScreenOffset = useDerivedValue(() => {
+    return placeholderOffset.value - scrollOffset.value;
   });
 
   const cellDataRef = useRef(new Map<string, CellData>());
@@ -186,12 +185,12 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       if (hoverComponentRef.current !== null) {
         // We can't drag more than one row at a time
         // TODO: Put action on queue?
-        if (propsRef.current.debug)
+        if (propsRef.current.debug) {
           console.log("## Can't set multiple active items");
+        }
       } else {
         isPressedIn.value = true;
         const index = keyToIndexRef.current.get(activeKey);
-
         const cellData = cellDataRef.current.get(activeKey);
         if (cellData) {
           activeCellOffset.value =
@@ -215,7 +214,14 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         }
       }
     },
-    []
+    [
+      activeCellOffset,
+      activeCellSize,
+      activeIndexAnim,
+      isPressedIn,
+      scrollOffset,
+      spacerIndexAnim,
+    ]
   );
 
   const onDragEnd = useCallback(
@@ -223,9 +229,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       // TODO: The order of operations between state setting, onDragEnd callback
       // and resetting the animated values is very fickle. Rearranging the order causes
       // white flashes when the list re-renders. Figure out a more robust way to sync JS and animated values.
-      setActiveItem({ key: null, component: null });
-      const { onDragEnd, data } = propsRef.current;
+      if (from !== to) setActiveItem({ key: null, component: null });
 
+      const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
         let newData = [...data];
         if (from !== to) {
@@ -234,6 +240,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         }
         onDragEnd({ from, to, data: newData });
       }
+
       activeIndexAnim.value = -1;
       activeCellSize.value = 0;
       activeCellOffset.value = 0;
@@ -243,8 +250,21 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       touchInit.value = 0;
       touchAbsolute.value = 0;
       spacerIndexAnim.value = 0;
+
+      // For some reason this prevents a white flash when from and to index are the same
+      if (from === to) setActiveItem({ key: null, component: null });
     },
-    []
+    [
+      activationDistance,
+      activeCellOffset,
+      activeCellSize,
+      activeIndexAnim,
+      disabled,
+      snapInProgress,
+      spacerIndexAnim,
+      touchAbsolute,
+      touchInit,
+    ]
   );
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -274,8 +294,8 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   };
 
   let dynamicProps = {};
-  if (props.activationDistance) {
-    const activeOffset = [-props.activationDistance, props.activationDistance];
+  if (activationDistanceProp) {
+    const activeOffset = [-activationDistanceProp, activationDistanceProp];
     dynamicProps = props.horizontal
       ? { activeOffsetX: activeOffset }
       : { activeOffsetY: activeOffset };
@@ -297,10 +317,11 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           itemKey={keyExtractor(item, index)}
           renderItem={props.renderItem}
           drag={drag}
+          extraData={props.extraData}
         />
       );
     },
-    [props.renderItem]
+    [props.renderItem, props.extraData, drag, keyExtractor]
   );
 
   useDerivedValue(() => {
@@ -309,6 +330,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     if (!isPressedIn.value && !hasMoved.value && isHovering.value) {
       const from = activeIndexAnim.value;
       const to = spacerIndexAnim.value;
+      disabled.value = true;
+      snapTo.value = hoverAnim.value;
+      snapInProgress.value = true;
+      hasMoved.value = false;
       runOnJS(onDragEnd)({ from, to });
     }
   });
@@ -341,12 +366,15 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       }
       const from = activeIndexAnim.value;
       const to = spacerIndexAnim.value;
+      console.log(
+        `from ${from}, to ${to}, animate to: ${placeholderOffset.value}`
+      );
       disabled.value = true;
       snapTo.value = hoverAnim.value;
       snapInProgress.value = true;
       hasMoved.value = false;
       snapTo.value = withSpring(
-        placeholderOffset.value,
+        placeholderScreenOffset.value,
         animationConfigRef.current,
         () => {
           runOnJS(onDragEnd)({ from, to });
@@ -356,13 +384,23 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     onCancel: (evt, ctx) => {
       if (ctx.state !== evt.state) {
         ctx.state = evt.state;
+        // TODO: copy onEnd
       }
     },
     onFinish: (evt, ctx) => {
       if (ctx.state !== evt.state) {
         ctx.state = evt.state;
+        // TODO: copy onEnd
       }
     },
+  });
+
+  useDerivedValue(() => {
+    console.log(`spacer index! ${spacerIndexAnim.value}`);
+  });
+
+  useDerivedValue(() => {
+    console.log(`placeholderOffset! ${placeholderOffset.value}`);
   });
 
   return (
@@ -379,6 +417,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       scrollOffset={scrollOffset}
       isHovering={isHovering}
       placeholderOffset={placeholderOffset}
+      placeholderScreenOffset={placeholderScreenOffset}
       animationConfigRef={animationConfigRef}
       keyExtractor={keyExtractor}
       flatlistRef={flatlistRef}

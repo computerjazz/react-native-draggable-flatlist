@@ -14,7 +14,7 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
     horizontalAnim,
     activeCellSize,
     keyToIndexRef,
-    placeholderOffset,
+    placeholderScreenOffset,
     isHovering,
     propsRef,
   } = useStaticValues<T>();
@@ -25,12 +25,12 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
       ? {
           opacity,
           width: activeCellSize.value,
-          transform: [{ translateX: placeholderOffset.value }],
+          transform: [{ translateX: placeholderScreenOffset.value }],
         }
       : {
           opacity,
           height: activeCellSize.value,
-          transform: [{ translateY: placeholderOffset.value }],
+          transform: [{ translateY: placeholderScreenOffset.value }],
         };
   });
 
@@ -40,8 +40,8 @@ function PlaceholderItem<T>({ renderPlaceholder, activeKey }: Props<T>) {
   const activeItem =
     activeIndex === undefined ? null : propsRef.current.data[activeIndex];
   const children =
-    activeIndex !== undefined &&
     activeItem &&
+    activeIndex !== undefined &&
     renderPlaceholder?.({ item: activeItem, index: activeIndex });
   const isActive = !!children;
   return (

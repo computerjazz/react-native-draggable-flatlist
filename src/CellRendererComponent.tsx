@@ -1,11 +1,8 @@
 import React, { useRef } from "react";
 import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
 import Animated, {
-  useAnimatedReaction,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
-  withSpring,
 } from "react-native-reanimated";
 import {
   useActiveKey,
@@ -51,6 +48,7 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const style = useAnimatedStyle(() => {
     return {
+      opacity: currentIndexAnim.value === activeIndexAnim.value ? 0 : 1,
       transform: [
         horizontalAnim.value
           ? { translateX: translate.value }
@@ -58,8 +56,6 @@ function CellRendererComponent<T>(props: Props<T>) {
       ],
     };
   });
-
-  const isActiveCell = activeKey === key;
 
   const onLayout = () => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
@@ -77,8 +73,9 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
 
     const onFail = () => {
-      if (propsRef.current.debug)
+      if (propsRef.current.debug) {
         console.log(`## on measure fail, index: ${index}`);
+      }
     };
 
     const viewNode = viewRef.current;
@@ -97,9 +94,7 @@ function CellRendererComponent<T>(props: Props<T>) {
         pointerEvents={activeKey ? "none" : "auto"}
         style={{ flexDirection: horizontal ? "row" : "column" }}
       >
-        <Animated.View style={isActiveCell ? { opacity: 0 } : undefined}>
-          {children}
-        </Animated.View>
+        {children}
       </Animated.View>
     </Animated.View>
   );

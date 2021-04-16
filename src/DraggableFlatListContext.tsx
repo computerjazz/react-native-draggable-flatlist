@@ -12,11 +12,12 @@ type StaticContextValue<T> = {
   activeCellOffset: Animated.SharedValue<number>;
   scrollOffset: Animated.SharedValue<number>;
   placeholderOffset: Animated.SharedValue<number>;
+  placeholderScreenOffset: Animated.SharedValue<number>;
   activeKeyAnim: Animated.SharedValue<string>;
   horizontalAnim: Animated.SharedValue<boolean>;
   isHovering: Animated.SharedValue<boolean>;
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
-  keyExtractor: DraggableFlatListProps<T>["keyExtractor"];
+  keyExtractor: (item: T, index: number) => string;
   flatlistRef: React.RefObject<AnimatedFlatListType>;
   propsRef: React.RefObject<DraggableFlatListProps<T>>;
 };
@@ -61,6 +62,7 @@ function DraggableFlatListProviderBase<T>({
   isHovering,
   animationConfigRef,
   placeholderOffset,
+  placeholderScreenOffset,
   flatlistRef,
   activeKey,
   keyExtractor,
@@ -84,6 +86,7 @@ function DraggableFlatListProviderBase<T>({
       isHovering,
       animationConfigRef,
       placeholderOffset,
+      placeholderScreenOffset,
       flatlistRef,
       keyExtractor,
       propsRef,
@@ -100,8 +103,11 @@ function DraggableFlatListProviderBase<T>({
     isHovering,
     animationConfigRef,
     placeholderOffset,
+    placeholderScreenOffset,
     flatlistRef,
     keyExtractor,
+    cellDataRef,
+    keyToIndexRef,
   ]);
 
   const activeKeyValue = useMemo(
@@ -113,7 +119,7 @@ function DraggableFlatListProviderBase<T>({
 
   const propsValue = useMemo(
     () => ({
-      horizontal: props.horizontal,
+      horizontal: !!props.horizontal,
     }),
     [props.horizontal]
   );
@@ -140,6 +146,8 @@ export function useStaticValues<T>() {
       "useStaticValues must be called within StaticContext.Provider"
     );
   }
+  value.propsRef.current;
+  value.hoverOffset;
   return value;
 }
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { useStaticValues } from "./DraggableFlatListContext";
 import { RowItemProps } from "./types";
 
@@ -21,14 +21,7 @@ function RowItem<T>(props: RowItemProps<T>) {
       },
     });
     drag(hoverComponent, itemKey);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      const { onUnmount } = propsRef.current;
-      onUnmount?.();
-    };
-  }, []);
+  }, [keyToIndexRef]);
 
   const { renderItem, item, itemKey } = props;
   return renderItem({

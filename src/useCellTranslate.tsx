@@ -1,11 +1,17 @@
-import {
+import Animated, {
   useAnimatedReaction,
   useDerivedValue,
   withSpring,
 } from "react-native-reanimated";
 import { useStaticValues } from "./DraggableFlatListContext";
 
-export function useCellTranslate({ cellIndex, cellSize, cellOffset }) {
+type Params = {
+  cellIndex: Animated.SharedValue<number>;
+  cellSize: Animated.SharedValue<number>;
+  cellOffset: Animated.SharedValue<number>;
+};
+
+export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const {
     activeIndexAnim,
     activeCellSize,
@@ -13,7 +19,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }) {
     isHovering,
     spacerIndexAnim,
     placeholderOffset,
-    scrollOffset,
     animationConfigRef,
   } = useStaticValues();
 
@@ -79,12 +84,14 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }) {
         const newPlaceholderOffset = isAfterActive
           ? cellSize.value + (cellOffset.value - activeCellSize.value)
           : cellOffset.value;
-        placeholderOffset.value = newPlaceholderOffset - scrollOffset.value;
+        placeholderOffset.value = newPlaceholderOffset;
       }
     }
   );
 
   const translate = useDerivedValue(() => {
+    // No need to translate the active cell (it's not visible in the list)
+    if (cellIndex.value === activeIndexAnim.value) return 0;
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
     const isAfterActive = cellIndex.value > activeIndexAnim.value;

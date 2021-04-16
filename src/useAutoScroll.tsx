@@ -1,11 +1,10 @@
-import { Platform } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, {
-  scrollTo,
+  runOnJS,
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
-import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "./constants";
+import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "./constants";
 
 type Params = {
   scrollOffset: Animated.SharedValue<number>;
@@ -15,7 +14,6 @@ type Params = {
   isHovering: Animated.SharedValue<boolean>;
   activeCellSize: Animated.SharedValue<number>;
   flatlistRef: React.RefObject<FlatList<any>>;
-  horizontal: boolean;
   autoscrollThreshold?: number;
   autoscrollSpeed?: number;
 };
@@ -28,7 +26,6 @@ export function useAutoScroll({
   isHovering,
   activeCellSize,
   flatlistRef,
-  horizontal,
   autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
   autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
 }: Params) {
@@ -53,9 +50,10 @@ export function useAutoScroll({
     );
   });
 
-  const prevScrollTarget = useSharedValue(0);
+  const scrollTarget = useSharedValue(0);
+  const isAutoscrolling = useSharedValue(false);
 
-  const scrollTarget = useDerivedValue(() => {
+  const nextScrollTarget = useDerivedValue(() => {
     const scrollUp = distToTopEdge.value < autoscrollThreshold!;
     const scrollDown = distToBottomEdge.value < autoscrollThreshold!;
     const attemptToScroll = scrollUp || scrollDown;
@@ -73,8 +71,7 @@ export function useAutoScroll({
       : distToBottomEdge.value;
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
     // Android scroll speed seems much faster than ios
-    const speed =
-      Platform.OS === "ios" ? autoscrollSpeed : autoscrollSpeed / 10;
+    const speed = isIOS ? autoscrollSpeed : autoscrollSpeed / 10;
     const offset = speedPct * speed;
     const targetOffset = scrollUp
       ? Math.max(0, scrollOffset.value - offset)
@@ -83,17 +80,30 @@ export function useAutoScroll({
   });
 
   useDerivedValue(() => {
+    const hasReachedTarget =
+      Math.abs(scrollOffset.value - scrollTarget.value) <
+      SCROLL_POSITION_TOLERANCE;
+    const hasReachedEdge = isScrolledUp.value || isScrolledDown.value;
+    if (hasReachedTarget || hasReachedEdge) {
+      isAutoscrolling.value = false;
+    }
+  });
+
+  const jsScrollTo = ({ target }: { target: number }) => {
+    flatlistRef.current?.scrollToOffset({ offset: target });
+  };
+
+  useDerivedValue(() => {
+    if (!isHovering.value) isAutoscrolling.value = false;
     if (
-      scrollTarget.value !== -1 &&
-      scrollTarget.value !== prevScrollTarget.value
+      nextScrollTarget.value !== -1 &&
+      nextScrollTarget.value !== scrollTarget.value &&
+      !isAutoscrolling.value
     ) {
-      prevScrollTarget.value = scrollTarget.value;
-      scrollTo(
-        flatlistRef,
-        horizontal ? scrollTarget.value : 0,
-        horizontal ? 0 : scrollTarget.value,
-        true
-      );
+      isAutoscrolling.value = true;
+      scrollTarget.value = nextScrollTarget.value;
+      // Reanimated scrollTo has been really unstable, use custom js scrollTo for the time being
+      runOnJS(jsScrollTo)({ target: scrollTarget.value });
     }
   });
 }
