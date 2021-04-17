@@ -1,6 +1,7 @@
 import React, { useContext, useMemo, useRef } from "react";
+import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { AnimatedFlatListType, DraggableFlatListProps } from "./types";
+import { DraggableFlatListProps } from "./types";
 
 type StaticContextValue<T> = {
   cellDataRef: React.MutableRefObject<Map<string, any>>;
@@ -19,7 +20,7 @@ type StaticContextValue<T> = {
   isHovering: Animated.SharedValue<boolean>;
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
   keyExtractor: (item: T, index: number) => string;
-  flatlistRef: React.RefObject<AnimatedFlatListType>;
+  flatlistRef: React.RefObject<FlatList<T>>;
   propsRef: React.RefObject<DraggableFlatListProps<T>>;
 };
 

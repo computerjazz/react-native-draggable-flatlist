@@ -6,14 +6,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "./constants";
 
-type Params = {
+type Params<T> = {
   scrollOffset: Animated.SharedValue<number>;
   scrollViewSize: Animated.SharedValue<number>;
   containerSize: Animated.SharedValue<number>;
   hoverAnim: Animated.SharedValue<number>;
   isPressedIn: Animated.SharedValue<boolean>;
   activeCellSize: Animated.SharedValue<number>;
-  flatlistRef: React.RefObject<FlatList<any>>;
+  flatlistRef: React.RefObject<FlatList<T>>;
   autoscrollThreshold?: number;
   autoscrollSpeed?: number;
 };
@@ -108,7 +108,6 @@ export function useAutoScroll({
       nextScrollTarget.value !== scrollTarget.value &&
       !isAutoscrolling.value
     ) {
-      console.log("autoscroll!!", nextScrollTarget.value);
       isAutoscrolling.value = true;
       scrollTarget.value = nextScrollTarget.value;
       // Reanimated scrollTo has been really unstable, use custom js scrollTo for the time being

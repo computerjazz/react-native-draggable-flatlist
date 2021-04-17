@@ -32,14 +32,6 @@ import { useAutoScroll } from "./useAutoScroll";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-// Run callback on next paint:
-// https://stackoverflow.com/questions/26556436/react-after-render-code
-function onNextFrame(callback: () => void) {
-  setTimeout(function () {
-    requestAnimationFrame(callback);
-  });
-}
-
 type ActiveItem = {
   key: string | null;
 };
@@ -70,15 +62,12 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const animationConfigRef = useRef(animConfig);
   animationConfigRef.current = animConfig;
 
-  const [activeItem, setActiveItem] = useState<ActiveItem>({
-    key: null,
-  });
-  const { key: activeKey } = activeItem;
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const activeKeyAnim = useSharedValue(activeKey);
   activeKeyAnim.value = activeKey;
 
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useAnimatedRef();
+  const flatlistRef = useAnimatedRef<FlatList<T>>();
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
 
   const containerSize = useSharedValue(0);
@@ -174,15 +163,13 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
       const { onDragBegin } = propsRef.current;
       if (index !== undefined) {
-        // TODO: The order of operations between animated value state setting and setActiveItem callback
+        // TODO: The order of operations between animated value state setting and setActiveKey callback
         // is very fickle. Rearranging the order causes a white flashe when the item becomes active.
         // Figure out a more robust way to sync JS and animated values.
         spacerIndexAnim.value = index;
         activeIndexAnim.value = index;
         isPressedIn.value = true;
-        setActiveItem({
-          key: activeKey,
-        });
+        setActiveKey(activeKey);
         onDragBegin?.(index);
       }
     },
@@ -201,11 +188,11 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       // TODO: The order of operations between state setting, onDragEnd callback
       // and resetting the animated values is very fickle. Rearranging the order causes
       // white flashes when the list re-renders. Figure out a more robust way to sync JS and animated values.
-      setActiveItem({ key: null });
+      setActiveKey(null);
 
       const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
-        let newData = [...data];
+        const newData = [...data];
         if (from !== to) {
           newData.splice(from, 1);
           newData.splice(to, 0, data[from]);
@@ -246,7 +233,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     isPressedIn,
     activeCellSize,
     flatlistRef,
-    horizontal: !!props.horizontal,
   });
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -285,10 +271,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const extraData = useMemo(
     () => ({
-      activeItem,
+      activeKey,
       extraData: props.extraData,
     }),
-    [activeItem, props.extraData]
+    [activeKey, props.extraData]
   );
 
   const renderItem: ListRenderItem<T> = useCallback(
@@ -423,7 +409,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             CellRendererComponent={CellRendererComponent}
             ref={flatlistRef}
             onContentSizeChange={onListContentSizeChange}
-            scrollEnabled={!activeItem.key && scrollEnabled}
+            scrollEnabled={!activeKey && scrollEnabled}
             renderItem={renderItem}
             extraData={extraData}
             keyExtractor={keyExtractor}
