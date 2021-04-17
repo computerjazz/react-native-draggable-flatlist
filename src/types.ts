@@ -28,7 +28,6 @@ export type DraggableFlatListProps<T> = Modify<
     animationConfig: Partial<Animated.WithSpringConfig>;
     activationDistance?: number;
     debug?: boolean;
-    layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
     onPlaceholderIndexChange?: (placeholderIndex: number) => void;
     containerStyle?: StyleProp<ViewStyle>;

@@ -6,14 +6,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "./constants";
 
-type Params<T> = {
+type Params = {
   scrollOffset: Animated.SharedValue<number>;
   scrollViewSize: Animated.SharedValue<number>;
   containerSize: Animated.SharedValue<number>;
   hoverAnim: Animated.SharedValue<number>;
   isPressedIn: Animated.SharedValue<boolean>;
   activeCellSize: Animated.SharedValue<number>;
-  flatlistRef: React.RefObject<FlatList<T>>;
+  flatlistRef: React.RefObject<FlatList<any>>;
   autoscrollThreshold?: number;
   autoscrollSpeed?: number;
 };

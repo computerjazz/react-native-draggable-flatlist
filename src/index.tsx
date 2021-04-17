@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { StyleSheet, ListRenderItem } from "react-native";
+import { StyleSheet, ListRenderItem, FlatListProps } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
@@ -30,11 +30,16 @@ import ScrollOffsetListener from "./ScrollOffsetListener";
 import { DraggableFlatListProps } from "./types";
 import { useAutoScroll } from "./useAutoScroll";
 
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+type RNGHFlatListProps<T> = Animated.AnimateProps<
+  FlatListProps<T> & {
+    ref: React.Ref<FlatList<T>>;
+    simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
+  }
+>;
 
-type ActiveItem = {
-  key: string | null;
-};
+const AnimatedFlatList = (Animated.createAnimatedComponent(
+  FlatList
+) as unknown) as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
 
 type CellData = {
   measurements: {
