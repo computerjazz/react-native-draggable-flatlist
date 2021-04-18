@@ -4,6 +4,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
+import { isAndroid, isIOS } from "./constants";
 import { useActiveKey, useProps, useStaticValues } from "./context";
 import { typedMemo } from "./types";
 import { useCellTranslate } from "./useCellTranslate";
@@ -45,7 +46,6 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const style = useAnimatedStyle(() => {
     return {
-      zIndex: currentIndexAnim.value === activeIndexAnim.value ? 999 : 0,
       transform: [
         horizontalAnim.value
           ? { translateX: translate.value }
@@ -85,8 +85,18 @@ function CellRendererComponent<T>(props: Props<T>) {
     }
   };
 
+  const isActive = activeKey === key;
+
   return (
-    <Animated.View ref={viewRef} onLayout={onLayout} style={style}>
+    <Animated.View
+      ref={viewRef}
+      onLayout={onLayout}
+      style={[
+        style,
+        isIOS && { zIndex: isActive ? 999 : 0 },
+        isAndroid && { elevation: isActive ? 1 : 0 },
+      ]}
+    >
       <Animated.View
         pointerEvents={activeKey ? "none" : "auto"}
         style={{ flexDirection: horizontal ? "row" : "column" }}

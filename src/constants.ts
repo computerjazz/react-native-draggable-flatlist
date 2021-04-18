@@ -24,3 +24,4 @@ export const DEFAULT_PROPS = {
 };
 
 export const isIOS = Platform.OS === "ios";
+export const isAndroid = Platform.OS === "android";
