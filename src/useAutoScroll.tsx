@@ -75,9 +75,7 @@ export function useAutoScroll({
       ? distToTopEdge.value
       : distToBottomEdge.value;
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
-    // Android scroll speed seems much faster than ios
-    const speed = isIOS ? autoscrollSpeed : autoscrollSpeed / 10;
-    const offset = speedPct * speed;
+    const offset = speedPct * autoscrollSpeed;
     const targetOffset = scrollUp
       ? Math.max(0, scrollOffset.value - offset)
       : scrollOffset.value + offset;

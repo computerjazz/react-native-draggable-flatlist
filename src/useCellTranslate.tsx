@@ -1,9 +1,12 @@
+import { useState } from "react";
 import Animated, {
+  runOnJS,
   useAnimatedReaction,
   useDerivedValue,
+  useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useStaticValues } from "./context";
+import { useActiveKey, useStaticValues } from "./context";
 
 type Params = {
   cellIndex: Animated.SharedValue<number>;
@@ -23,6 +26,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     hoverComponentTranslate,
     scrollOffset,
   } = useStaticValues();
+
+  const { isActiveVisible } = useActiveKey();
 
   const isActiveCell = useDerivedValue(() => {
     return cellIndex.value === activeIndexAnim.value;
@@ -96,7 +101,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   );
 
   const translate = useDerivedValue(() => {
-    // No need to translate the active cell (it's not visible in the list)
+    // Active cell follows touch
     if (isActiveCell.value)
       return (
         hoverComponentTranslate.value - cellOffset.value + scrollOffset.value
@@ -115,10 +120,18 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     }
   });
 
+  const lastKnownTranslate = useSharedValue(0);
+  useDerivedValue(() => {
+    if (!isActiveVisible) lastKnownTranslate.value = 0;
+  });
+
   const springTranslate = useDerivedValue(() => {
+    if (translate.value) lastKnownTranslate.value = translate.value;
     if (isActiveCell.value) return translate.value;
     return isHovering.value
       ? withSpring(translate.value, animationConfigRef.current)
+      : isActiveVisible
+      ? lastKnownTranslate.value
       : 0;
   });
 

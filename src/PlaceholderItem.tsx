@@ -18,13 +18,10 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeCellSize,
     keyToIndexRef,
     placeholderScreenOffset,
-    isHovering,
     propsRef,
     spacerIndexAnim,
   } = useStaticValues<T>();
-  const { activeKey } = useActiveKey();
-
-  const [active, setActive] = useState(false);
+  const { activeKey, isActiveVisible } = useActiveKey();
 
   const onPlaceholderIndexChange = useCallback(
     ({ placeholderIndex }: { placeholderIndex: number }) => {
@@ -41,12 +38,6 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     });
   });
 
-  useDerivedValue(() => {
-    // Tracking active in JS solves for the case where the placeholder renders before
-    // animated values update, and does not expand to fill available space
-    runOnJS(setActive)(isHovering.value);
-  });
-
   const style = useAnimatedStyle(() => {
     return horizontalAnim.value
       ? {
@@ -60,13 +51,15 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   });
 
   const activeIndex =
-    active && activeKey ? keyToIndexRef.current.get(activeKey) : undefined;
+    isActiveVisible && activeKey
+      ? keyToIndexRef.current.get(activeKey)
+      : undefined;
   const activeItem =
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
   return (
     <Animated.View
-      pointerEvents={active ? "auto" : "none"}
+      pointerEvents={isActiveVisible ? "auto" : "none"}
       style={[StyleSheet.absoluteFill, style]}
     >
       {!activeItem || activeIndex === undefined

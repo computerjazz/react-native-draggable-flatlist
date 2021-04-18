@@ -15,7 +15,6 @@ type StaticContextValue<T> = {
   scrollOffset: Animated.SharedValue<number>;
   placeholderOffset: Animated.SharedValue<number>;
   placeholderScreenOffset: Animated.SharedValue<number>;
-  activeKeyAnim: Animated.SharedValue<string | null>;
   horizontalAnim: Animated.SharedValue<boolean>;
   isHovering: Animated.SharedValue<boolean>;
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
@@ -25,6 +24,7 @@ type StaticContextValue<T> = {
 
 type ActiveKeyContextValue = {
   activeKey: string | null;
+  isActiveVisible: boolean;
 };
 
 type PropsContextValue = {
@@ -53,7 +53,6 @@ function DraggableFlatListProviderBase<T>({
   activeIndexAnim,
   spacerIndexAnim,
   hoverOffset,
-  activeKeyAnim,
   horizontalAnim,
   keyToIndexRef,
   cellDataRef,
@@ -67,6 +66,7 @@ function DraggableFlatListProviderBase<T>({
   hoverComponentTranslate,
   flatlistRef,
   activeKey,
+  isActiveVisible,
   keyExtractor,
   props,
 }: Props<T>) {
@@ -78,7 +78,6 @@ function DraggableFlatListProviderBase<T>({
       activeIndexAnim,
       spacerIndexAnim,
       hoverOffset,
-      activeKeyAnim,
       horizontalAnim,
       keyToIndexRef,
       cellDataRef,
@@ -96,7 +95,6 @@ function DraggableFlatListProviderBase<T>({
     };
   }, [
     activeIndexAnim,
-    activeKeyAnim,
     horizontalAnim,
     spacerIndexAnim,
     hoverOffset,
@@ -117,8 +115,9 @@ function DraggableFlatListProviderBase<T>({
   const activeKeyValue = useMemo(
     () => ({
       activeKey,
+      isActiveVisible,
     }),
-    [activeKey]
+    [activeKey, isActiveVisible]
   );
 
   const propsValue = useMemo(

@@ -97,6 +97,7 @@ function CellRendererComponent<T>(props: Props<T>) {
         style,
         isIOS && { zIndex: isActive ? 999 : 0 },
         isAndroid && { elevation: isActive ? 1 : 0 },
+        !activeKey && { transform: [] },
       ]}
     >
       <Animated.View
