@@ -32,7 +32,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     propsRef,
   } = useStaticValues<T>();
 
-  const { activeKey } = useActiveKey();
+  const { activeKey, isActiveVisible } = useActiveKey();
   const { horizontal } = useProps();
 
   const key = keyExtractor(item, index);

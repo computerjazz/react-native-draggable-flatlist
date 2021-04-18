@@ -126,7 +126,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   });
 
   const springTranslate = useDerivedValue(() => {
-    if (translate.value) lastKnownTranslate.value = translate.value;
+    if (isHovering.value) lastKnownTranslate.value = translate.value;
     if (isActiveCell.value) return translate.value;
     return isHovering.value
       ? withSpring(translate.value, animationConfigRef.current)
