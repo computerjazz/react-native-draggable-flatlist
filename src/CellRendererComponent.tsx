@@ -87,6 +87,8 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const isActive = activeKey === key;
 
+  // changing zIndex crashes android:
+  // https://github.com/facebook/react-native/issues/28751
   return (
     <Animated.View
       ref={viewRef}
