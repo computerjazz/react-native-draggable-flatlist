@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from "react";
-import { useActiveKey, useStaticValues } from "./DraggableFlatListContext";
-import { RenderItem } from "./types";
+import { useActiveKey, useStaticValues } from "./context";
+import { RenderItem, typedMemo } from "./types";
 
 type Props<T> = {
   extraData?: any;
@@ -44,12 +44,12 @@ function RowItem<T>(props: Props<T>) {
   );
 }
 
-export default React.memo(RowItem);
+export default typedMemo(RowItem);
 
 type InnerProps<T> = {
   isActive: boolean;
   item: T;
-  index: number;
+  index?: number;
   drag: () => void;
   renderItem: RenderItem<T>;
 };
@@ -57,5 +57,4 @@ type InnerProps<T> = {
 function Inner<T>({ isActive, item, drag, index, renderItem }: InnerProps<T>) {
   return renderItem({ isActive, item, drag, index }) as JSX.Element;
 }
-
-const MemoizedInner = React.memo(Inner);
+const MemoizedInner = typedMemo(Inner);

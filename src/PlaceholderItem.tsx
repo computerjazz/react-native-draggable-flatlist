@@ -5,8 +5,8 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
 } from "react-native-reanimated";
-import { useActiveKey, useStaticValues } from "./DraggableFlatListContext";
-import { RenderPlaceholder } from "./types";
+import { useActiveKey, useStaticValues } from "./context";
+import { RenderPlaceholder, typedMemo } from "./types";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
@@ -76,4 +76,4 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   );
 }
 
-export default PlaceholderItem;
+export default typedMemo(PlaceholderItem);

@@ -4,11 +4,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import {
-  useActiveKey,
-  useProps,
-  useStaticValues,
-} from "./DraggableFlatListContext";
+import { useActiveKey, useProps, useStaticValues } from "./context";
+import { typedMemo } from "./types";
 import { useCellTranslate } from "./useCellTranslate";
 
 type Props<T> = {
@@ -100,4 +97,4 @@ function CellRendererComponent<T>(props: Props<T>) {
   );
 }
 
-export default React.memo(CellRendererComponent);
+export default typedMemo(CellRendererComponent);

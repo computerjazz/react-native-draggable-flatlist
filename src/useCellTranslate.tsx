@@ -3,7 +3,7 @@ import Animated, {
   useDerivedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useStaticValues } from "./DraggableFlatListContext";
+import { useStaticValues } from "./context";
 
 type Params = {
   cellIndex: Animated.SharedValue<number>;

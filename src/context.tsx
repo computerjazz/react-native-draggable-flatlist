@@ -1,7 +1,7 @@
 import React, { useContext, useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { DraggableFlatListProps } from "./types";
+import { DraggableFlatListProps, typedMemo } from "./types";
 
 type StaticContextValue<T> = {
   cellDataRef: React.MutableRefObject<Map<string, any>>;
@@ -21,7 +21,6 @@ type StaticContextValue<T> = {
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
   keyExtractor: (item: T, index: number) => string;
   flatlistRef: React.RefObject<FlatList<T>>;
-  propsRef: React.RefObject<DraggableFlatListProps<T>>;
 };
 
 type ActiveKeyContextValue = {
@@ -140,7 +139,7 @@ function DraggableFlatListProviderBase<T>({
   );
 }
 
-export const DraggableFlatListProvider = React.memo(
+export const DraggableFlatListProvider = typedMemo(
   DraggableFlatListProviderBase
 );
 
@@ -151,8 +150,6 @@ export function useStaticValues<T>() {
       "useStaticValues must be called within StaticContext.Provider"
     );
   }
-  value.propsRef.current;
-  value.hoverOffset;
   return value;
 }
 
