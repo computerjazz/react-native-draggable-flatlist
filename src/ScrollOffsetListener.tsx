@@ -1,19 +1,20 @@
-import React from "react";
-import Animated, { runOnJS, useDerivedValue } from "react-native-reanimated";
+import Animated, { call, onChange, useCode } from "react-native-reanimated";
+import { typedMemo } from "../DraggableFlatListV2/types";
 
 type Props = {
-  scrollOffset: Animated.SharedValue<number>;
-  onScrollOffsetChange: (offset: number) => void;
+  scrollOffset: Animated.Value<number>;
+  onScrollOffsetChange: (offset: readonly number[]) => void;
 };
 
 const ScrollOffsetListener = ({
   scrollOffset,
   onScrollOffsetChange,
 }: Props) => {
-  useDerivedValue(() => {
-    runOnJS(onScrollOffsetChange)(scrollOffset.value);
-  });
+  useCode(
+    () => onChange(scrollOffset, call([scrollOffset], onScrollOffsetChange)),
+    []
+  );
   return null;
 };
 
-export default React.memo(ScrollOffsetListener);
+export default typedMemo(ScrollOffsetListener);

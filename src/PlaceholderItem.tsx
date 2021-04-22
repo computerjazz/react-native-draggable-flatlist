@@ -1,12 +1,9 @@
-import React, { useCallback, useState } from "react";
+import React from "react";
 import { StyleSheet } from "react-native";
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useDerivedValue,
-} from "react-native-reanimated";
-import { useActiveKey, useStaticValues } from "./context";
-import { RenderPlaceholder, typedMemo } from "./types";
+import Animated from "react-native-reanimated";
+import { useActiveKey, useStaticValues, useProps } from "./context";
+import { RenderPlaceholder } from "./types";
+import { typedMemo } from "./utils";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
@@ -14,53 +11,34 @@ type Props<T> = {
 
 function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const {
-    horizontalAnim,
     activeCellSize,
     keyToIndexRef,
     placeholderScreenOffset,
     propsRef,
-    spacerIndexAnim,
   } = useStaticValues<T>();
-  const { activeKey, isActiveVisible } = useActiveKey();
+  const { activeKey } = useActiveKey();
+  const { horizontal } = useProps();
 
-  const onPlaceholderIndexChange = useCallback(
-    ({ placeholderIndex }: { placeholderIndex: number }) => {
-      if (placeholderIndex !== -1) {
-        propsRef.current?.onPlaceholderIndexChange?.(placeholderIndex);
-      }
-    },
-    [propsRef]
-  );
+  const translateKey = horizontal ? "translateX" : "translateY";
+  const sizeKey = horizontal ? "width" : "height";
 
-  useDerivedValue(() => {
-    runOnJS(onPlaceholderIndexChange)({
-      placeholderIndex: spacerIndexAnim.value,
-    });
-  });
-
-  const style = useAnimatedStyle(() => {
-    return horizontalAnim.value
-      ? {
-          width: activeCellSize.value,
-          transform: [{ translateX: placeholderScreenOffset.value }],
-        }
-      : {
-          height: activeCellSize.value,
-          transform: [{ translateY: placeholderScreenOffset.value }],
-        };
-  });
-
-  const activeIndex =
-    isActiveVisible && activeKey
-      ? keyToIndexRef.current.get(activeKey)
-      : undefined;
+  const activeIndex = activeKey
+    ? keyToIndexRef.current.get(activeKey)
+    : undefined;
   const activeItem =
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
+  const animStyle = {
+    [sizeKey]: activeCellSize,
+    transform: ([
+      { [translateKey]: placeholderScreenOffset },
+    ] as unknown) as Animated.AnimatedTransform,
+  };
+
   return (
     <Animated.View
-      pointerEvents={isActiveVisible ? "auto" : "none"}
-      style={[StyleSheet.absoluteFill, style]}
+      pointerEvents={activeKey ? "auto" : "none"}
+      style={[StyleSheet.absoluteFill, animStyle]}
     >
       {!activeItem || activeIndex === undefined
         ? null

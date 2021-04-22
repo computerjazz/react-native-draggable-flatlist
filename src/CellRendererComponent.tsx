@@ -1,13 +1,10 @@
-import React, { useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
+import Animated, { cond, useValue } from "react-native-reanimated";
 import { isAndroid, isIOS } from "./constants";
 import { useActiveKey, useProps, useStaticValues } from "./context";
-import { typedMemo } from "./types";
 import { useCellTranslate } from "./useCellTranslate";
+import { typedMemo } from "./utils";
 
 type Props<T> = {
   item: T;
@@ -19,8 +16,12 @@ type Props<T> = {
 function CellRendererComponent<T>(props: Props<T>) {
   const { item, index, children } = props;
 
-  const currentIndexAnim = useSharedValue(index);
-  currentIndexAnim.value = index;
+  const currentIndexAnim = useValue(index);
+
+  useEffect(() => {
+    currentIndexAnim.setValue(index);
+  }, [index, currentIndexAnim]);
+
   const viewRef = useRef<Animated.View>(null);
   const {
     cellDataRef,
@@ -32,41 +33,37 @@ function CellRendererComponent<T>(props: Props<T>) {
     propsRef,
   } = useStaticValues<T>();
 
-  const { activeKey, isActiveVisible } = useActiveKey();
+  const { activeKey } = useActiveKey();
   const { horizontal } = useProps();
 
   const key = keyExtractor(item, index);
-  const offset = useSharedValue(-1);
-  const size = useSharedValue(-1);
+  const offset = useValue<number>(-1);
+  const size = useValue<number>(-1);
   const translate = useCellTranslate({
     cellOffset: offset,
     cellSize: size,
     cellIndex: currentIndexAnim,
   });
 
-  const style = useAnimatedStyle(() => {
-    return {
-      transform: [
-        horizontalAnim.value
-          ? { translateX: translate.value }
-          : { translateY: translate.value },
-      ],
-    };
-  });
+  const style = {
+    transform: [
+      {
+        translateX: cond(horizontalAnim, translate, 0),
+      },
+      { translateY: cond(horizontalAnim, 0, translate) },
+    ],
+  };
 
   const onLayout = () => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
       const cellOffset = horizontal ? x : y;
       const cellSize = horizontal ? w : h;
-      if (isHovering.value && activeIndexAnim.value === index) {
-        // Skip measurement for active item -- it will be incorrect
-        return;
-      }
       cellDataRef.current.set(key, {
         measurements: { size: cellSize, offset: cellOffset },
       });
-      size.value = cellSize;
-      offset.value = cellOffset;
+
+      size.setValue(cellSize);
+      offset.setValue(cellOffset);
     };
 
     const onFail = () => {

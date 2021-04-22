@@ -1,21 +1,39 @@
+import { useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, {
-  runOnJS,
-  useDerivedValue,
-  useSharedValue,
+  abs,
+  add,
+  and,
+  block,
+  call,
+  cond,
+  eq,
+  greaterOrEq,
+  lessOrEq,
+  max,
+  not,
+  onChange,
+  or,
+  set,
+  sub,
+  useCode,
+  useValue,
 } from "react-native-reanimated";
+import { State as GestureState } from "react-native-gesture-handler";
 import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "./constants";
+import { useNode } from "./utils";
 
 type Params = {
-  scrollOffset: Animated.SharedValue<number>;
-  scrollViewSize: Animated.SharedValue<number>;
-  containerSize: Animated.SharedValue<number>;
-  hoverAnim: Animated.SharedValue<number>;
-  isPressedIn: Animated.SharedValue<boolean>;
-  activeCellSize: Animated.SharedValue<number>;
+  scrollOffset: Animated.Value<number>;
+  scrollViewSize: Animated.Value<number>;
+  containerSize: Animated.Value<number>;
+  hoverAnim: Animated.Value<number>;
+  isPressedIn: Animated.Value<boolean>;
+  activeCellSize: Animated.Value<number>;
   flatlistRef: React.RefObject<FlatList<any>>;
   autoscrollThreshold?: number;
   autoscrollSpeed?: number;
+  panGestureState: Animated.Value<GestureState>;
 };
 
 export function useAutoScroll({
@@ -28,88 +46,187 @@ export function useAutoScroll({
   flatlistRef,
   autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
   autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
+  panGestureState,
 }: Params) {
-  const isScrolledUp = useDerivedValue(() => {
-    return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
-  });
-  const isScrolledDown = useDerivedValue(() => {
-    return (
-      scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
-      scrollViewSize.value
-    );
-  });
+  const isScrolledUp = useNode(
+    lessOrEq(sub(scrollOffset, SCROLL_POSITION_TOLERANCE), 0)
+  );
+  const isScrolledDown = useNode(
+    greaterOrEq(
+      add(scrollOffset, containerSize, SCROLL_POSITION_TOLERANCE),
+      scrollViewSize
+    )
+  );
 
-  const distToTopEdge = useDerivedValue(() => {
-    return Math.max(0, hoverAnim.value);
-  });
+  const distToTopEdge = useNode(max(0, hoverAnim));
+  const distToBottomEdge = useNode(
+    max(0, sub(containerSize, add(hoverAnim, activeCellSize)))
+  );
 
-  const distToBottomEdge = useDerivedValue(() => {
-    return Math.max(
-      0,
-      containerSize.value - (hoverAnim.value + activeCellSize.value)
-    );
-  });
+  const isAtTopEdge = useNode(lessOrEq(distToTopEdge, autoscrollThreshold));
+  const isAtBottomEdge = useNode(
+    lessOrEq(distToBottomEdge, autoscrollThreshold!)
+  );
 
-  const scrollTarget = useSharedValue(0);
-  const isAutoscrolling = useSharedValue(false);
+  const isAtEdge = useNode(or(isAtBottomEdge, isAtTopEdge));
+  const autoscrollParams = [
+    distToTopEdge,
+    distToBottomEdge,
+    scrollOffset,
+    isScrolledUp,
+    isScrolledDown,
+  ];
 
-  const nextScrollTarget = useDerivedValue(() => {
-    const scrollUp =
-      isPressedIn.value && distToTopEdge.value < autoscrollThreshold;
-    const scrollDown =
-      isPressedIn.value && (distToBottomEdge.value < autoscrollThreshold)!;
-    const attemptToScroll = scrollUp || scrollDown;
-    // console.log("SCROLL UP?", scrollUp)
-    // console.log("SCROLL DOWN?", scrollDown)
-    // console.log("PRESSED IN???", isPressedIn.value)
-    if (
-      !isPressedIn.value ||
-      !attemptToScroll ||
-      (scrollUp && isScrolledUp.value) ||
-      (scrollDown && isScrolledDown.value)
-    ) {
-      return -1;
-    }
+  const targetScrollOffset = useValue<number>(0);
+  const resolveAutoscroll = useRef<(params: readonly number[]) => void>();
 
-    const distFromEdge = scrollUp
-      ? distToTopEdge.value
-      : distToBottomEdge.value;
-    const speedPct = 1 - distFromEdge / autoscrollThreshold!;
-    const offset = speedPct * autoscrollSpeed;
-    const targetOffset = scrollUp
-      ? Math.max(0, scrollOffset.value - offset)
-      : scrollOffset.value + offset;
-    return targetOffset;
+  const isAutoScrollInProgressNative = useValue(0);
+
+  const isAutoScrollInProgress = useRef({
+    js: false,
+    native: isAutoScrollInProgressNative,
   });
 
-  useDerivedValue(() => {
-    const hasReachedTarget =
-      Math.abs(scrollOffset.value - scrollTarget.value) <
-      SCROLL_POSITION_TOLERANCE;
-    const hasReachedEdge = isScrolledUp.value || isScrolledDown.value;
-    if (hasReachedTarget || hasReachedEdge) {
-      isAutoscrolling.value = false;
-    }
-  });
+  const isPressedInJs = useRef(false);
+  useCode(
+    () =>
+      block([
+        onChange(
+          isPressedIn,
+          call([isPressedIn], ([v]) => {
+            isPressedInJs.current = !!v;
+          })
+        ),
+      ]),
+    []
+  );
 
-  const jsScrollTo = ({ target }: { target: number }) => {
-    flatlistRef.current?.scrollToOffset({ offset: target });
+  // Ensure that only 1 call to autoscroll is active at a time
+  const autoscrollLooping = useRef(false);
+
+  const onAutoscrollComplete = (params: readonly number[]) => {
+    isAutoScrollInProgress.current.js = false;
+    resolveAutoscroll.current?.(params);
   };
 
-  useDerivedValue(() => {
-    if (!isPressedIn.value) {
-      isAutoscrolling.value = false;
+  const scrollToAsync = (offset: number): Promise<readonly number[]> =>
+    new Promise((resolve) => {
+      resolveAutoscroll.current = resolve;
+      targetScrollOffset.setValue(offset);
+      isAutoScrollInProgress.current.native.setValue(1);
+      isAutoScrollInProgress.current.js = true;
+      flatlistRef.current?.scrollToOffset({ offset });
+    });
+
+  const getScrollTargetOffset = (
+    distFromTop: number,
+    distFromBottom: number,
+    scrollOffset: number,
+    isScrolledUp: boolean,
+    isScrolledDown: boolean
+  ) => {
+    if (isAutoScrollInProgress.current.js) return -1;
+    const scrollUp = distFromTop < autoscrollThreshold!;
+    const scrollDown = distFromBottom < autoscrollThreshold!;
+    if (
+      !(scrollUp || scrollDown) ||
+      (scrollUp && isScrolledUp) ||
+      (scrollDown && isScrolledDown)
+    )
+      return -1;
+    const distFromEdge = scrollUp ? distFromTop : distFromBottom;
+    const speedPct = 1 - distFromEdge / autoscrollThreshold!;
+    // Android scroll speed seems much faster than ios
+    const speed = isIOS ? autoscrollSpeed! : autoscrollSpeed! / 10;
+    const offset = speedPct * speed;
+    const targetOffset = scrollUp
+      ? Math.max(0, scrollOffset - offset)
+      : scrollOffset + offset;
+    return targetOffset;
+  };
+
+  const autoscroll = async (params: readonly number[]) => {
+    if (autoscrollLooping.current) {
       return;
     }
-    if (
-      nextScrollTarget.value !== -1 &&
-      nextScrollTarget.value !== scrollTarget.value &&
-      !isAutoscrolling.value
-    ) {
-      isAutoscrolling.value = true;
-      scrollTarget.value = nextScrollTarget.value;
-      // Reanimated scrollTo has been really unstable, use custom js scrollTo for the time being
-      runOnJS(jsScrollTo)({ target: scrollTarget.value });
+    autoscrollLooping.current = true;
+    try {
+      let shouldScroll = true;
+      let curParams = params;
+      while (shouldScroll) {
+        const [
+          distFromTop,
+          distFromBottom,
+          scrollOffset,
+          isScrolledUp,
+          isScrolledDown,
+        ] = curParams;
+        const targetOffset = getScrollTargetOffset(
+          distFromTop,
+          distFromBottom,
+          scrollOffset,
+          !!isScrolledUp,
+          !!isScrolledDown
+        );
+        const scrollingUpAtTop = !!(
+          isScrolledUp && targetOffset <= scrollOffset
+        );
+        const scrollingDownAtBottom = !!(
+          isScrolledDown && targetOffset >= scrollOffset
+        );
+        shouldScroll =
+          targetOffset >= 0 &&
+          isPressedInJs.current &&
+          !scrollingUpAtTop &&
+          !scrollingDownAtBottom;
+
+        if (shouldScroll) {
+          curParams = await scrollToAsync(targetOffset);
+        }
+      }
+    } finally {
+      autoscrollLooping.current = false;
     }
-  });
+  };
+
+  const checkAutoscroll = useNode(
+    cond(
+      and(
+        isAtEdge,
+        not(and(isAtTopEdge, isScrolledUp)),
+        not(and(isAtBottomEdge, isScrolledDown)),
+        eq(panGestureState, GestureState.ACTIVE),
+        not(isAutoScrollInProgress.current.native)
+      ),
+      call(autoscrollParams, autoscroll)
+    )
+  );
+
+  useCode(() => checkAutoscroll, []);
+
+  const onScrollNode = useNode(
+    cond(
+      and(
+        isAutoScrollInProgress.current.native,
+        or(
+          // We've scrolled to where we want to be
+          lessOrEq(
+            abs(sub(targetScrollOffset, scrollOffset)),
+            SCROLL_POSITION_TOLERANCE
+          ),
+          // We're at the start, but still want to scroll farther up
+          and(isScrolledUp, lessOrEq(targetScrollOffset, scrollOffset)),
+          // We're at the end, but still want to scroll further down
+          and(isScrolledDown, greaterOrEq(targetScrollOffset, scrollOffset))
+        )
+      ),
+      [
+        // Finish scrolling
+        set(isAutoScrollInProgress.current.native, 0),
+        call(autoscrollParams, onAutoscrollComplete),
+      ]
+    )
+  );
+
+  return onScrollNode;
 }

@@ -5,22 +5,47 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { StyleSheet, ListRenderItem, FlatListProps } from "react-native";
+import {
+  StyleSheet,
+  ListRenderItem,
+  FlatListProps,
+  NativeScrollEvent,
+} from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
   FlatList,
   PanGestureHandlerGestureEvent,
+  PanGestureHandlerStateChangeEvent,
 } from "react-native-gesture-handler";
 import Animated, {
-  runOnJS,
-  useAnimatedGestureHandler,
+  add,
+  and,
+  block,
+  call,
+  Clock,
+  clockRunning,
+  cond,
+  defined,
+  eq,
+  event,
+  greaterThan,
+  max,
+  min,
+  neq,
+  not,
+  onChange,
+  or,
+  set,
+  spring,
+  startClock,
+  stopClock,
+  sub,
   useAnimatedRef,
-  useAnimatedScrollHandler,
-  useDerivedValue,
-  useSharedValue,
-  withSpring,
+  useCode,
+  useValue,
 } from "react-native-reanimated";
+import { DEFAULT_ANIMATION_CONFIG } from "../DraggableFlatListV2/constants";
 import CellRendererComponent from "./CellRendererComponent";
 import { DEFAULT_PROPS } from "./constants";
 import { DraggableFlatListProvider } from "./context";
@@ -29,6 +54,8 @@ import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";
 import { DraggableFlatListProps } from "./types";
 import { useAutoScroll } from "./useAutoScroll";
+import { useSpring } from "./useSpring";
+import { useNode } from "./utils";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
@@ -73,77 +100,53 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const flatlistRef = useAnimatedRef<FlatList<T>>();
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
 
-  const containerSize = useSharedValue(0);
+  const containerSize = useValue<number>(0);
 
-  const touchInit = useSharedValue(0); // Position of initial touch
-  const activationDistance = useSharedValue(0); // Distance finger travels from initial touch to when dragging begins
-  const touchAbsolute = useSharedValue(0); // Finger position on screen, relative to container
+  const touchInit = useValue<number>(0); // Position of initial touch
+  const activationDistance = useValue<number>(0); // Distance finger travels from initial touch to when dragging begins
+  const touchAbsolute = useValue<number>(0); // Finger position on screen, relative to container
+  const panGestureState = useValue<GestureState>(GestureState.UNDETERMINED);
 
-  const isPressedIn = useSharedValue(false);
+  const isPressedIn = useValue<number>(0);
 
-  const hasMoved = useSharedValue(false);
-  const disabled = useSharedValue(false);
+  const hasMoved = useValue<number>(0);
+  const disabled = useValue<number>(0);
 
-  const horizontalAnim = useSharedValue(!!props.horizontal);
-  horizontalAnim.value = !!props.horizontal;
+  const horizontalAnim = useValue(props.horizontal ? 1 : 0);
 
-  const activeIndexAnim = useSharedValue(-1); // Index of hovering cell
-  const spacerIndexAnim = useSharedValue(-1); // Index of hovered-over cell
+  const activeIndexAnim = useValue<number>(-1); // Index of hovering cell
+  const spacerIndexAnim = useValue<number>(-1); // Index of hovered-over cell
 
-  const isHovering = useDerivedValue(() => {
-    return activeIndexAnim.value > -1;
-  });
+  const activeCellSize = useValue<number>(0); // Height or width of acctive cell
+  const activeCellOffset = useValue<number>(0); // Distance between active cell and edge of container
 
-  const [isActiveVisible, setIsActiveVisible] = useState(false);
-  useDerivedValue(() => {
-    // Tracking active in JS solves for the case where the placeholder renders before
-    // animated values update, and does not expand to fill available space
-    runOnJS(setIsActiveVisible)(isHovering.value);
-  });
+  const isHovering = useNode(greaterThan(activeIndexAnim, -1));
 
-  const activeCellSize = useSharedValue(0); // Height or width of acctive cell
-  const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
+  const scrollOffset = useValue<number>(0);
+  const scrollOffsetRef = useRef(0);
 
-  const scrollOffset = useSharedValue(0);
-  const scrollViewSize = useSharedValue(0);
+  const scrollViewSize = useValue<number>(0);
 
-  const touchCellOffset = useDerivedValue(() => {
-    // Distance between touch point and edge of cell
-    return touchInit.value - activeCellOffset.value;
-  });
+  const touchCellOffset = useNode(sub(touchInit, activeCellOffset));
 
-  const snapInProgress = useSharedValue(false);
-  const snapTo = useSharedValue(0);
-  const hoverAnimUnconstrained = useDerivedValue(() => {
-    return (
-      touchAbsolute.value - activationDistance.value - touchCellOffset.value
-    );
-  });
-
-  const hoverAnimConstrained = useDerivedValue(() => {
-    const containerMinusCell = containerSize.value - activeCellSize.value;
-    return Math.min(
-      containerMinusCell,
-      Math.max(0, hoverAnimUnconstrained.value)
-    );
-  });
-
-  const hoverAnim = useDerivedValue(() => {
-    const dragVal = dragItemOverflow
-      ? hoverAnimConstrained.value
-      : hoverAnimUnconstrained.value;
-    const hoverSnapVal = snapTo.value - scrollOffset.value;
-    return snapInProgress.value ? hoverSnapVal : dragVal;
-  }, [dragItemOverflow]);
-  const hoverOffset = useDerivedValue(
-    () => hoverAnim.value + scrollOffset.value
+  const hoverAnimUnconstrained = useNode(
+    sub(sub(touchAbsolute, activationDistance), touchCellOffset)
   );
-  const hoverComponentTranslate = useDerivedValue(() => hoverAnim.value);
 
-  const placeholderOffset = useSharedValue(0);
-  const placeholderScreenOffset = useDerivedValue(() => {
-    return placeholderOffset.value - scrollOffset.value;
-  });
+  const hoverAnimConstrained = useNode(
+    min(sub(containerSize, activeCellSize), max(0, hoverAnimUnconstrained))
+  );
+
+  const hoverAnim = props.dragItemOverflow
+    ? hoverAnimUnconstrained
+    : hoverAnimConstrained;
+
+  const hoverOffset = useNode(add(hoverAnim, scrollOffset));
+
+  const hoverComponentTranslate = hoverAnim;
+
+  const placeholderOffset = useValue<number>(0);
+  const placeholderScreenOffset = useNode(sub(placeholderOffset, scrollOffset));
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
@@ -154,6 +157,17 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     else
       throw new Error("You must provide a keyExtractor to DraggableFlatList");
   }, []);
+
+  // Note: this could use a refactor as it combines touch state + cell animation
+  const resetTouchedCell = useNode(
+    block([
+      set(touchAbsolute, 0),
+      set(touchInit, 0),
+      set(activeCellOffset, 0),
+      set(activationDistance, 0),
+      set(hasMoved, 0),
+    ])
+  );
 
   useLayoutEffect(() => {
     props.data.forEach((d, i) => {
@@ -167,34 +181,31 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       const index = keyToIndexRef.current.get(activeKey);
       const cellData = cellDataRef.current.get(activeKey);
       if (cellData) {
-        activeCellOffset.value =
-          cellData.measurements.offset - scrollOffset.value;
-        activeCellSize.value = cellData.measurements.size;
+        activeCellOffset.setValue(
+          cellData.measurements.offset - scrollOffsetRef.current
+        );
+        activeCellSize.setValue(cellData.measurements.size);
       }
 
       const { onDragBegin } = propsRef.current;
       if (index !== undefined) {
-        // TODO: The order of operations between animated value state setting and setActiveKey callback
-        // is very fickle. Rearranging the order causes a white flashe when the item becomes active.
-        // Figure out a more robust way to sync JS and animated values.
-        spacerIndexAnim.value = index;
-        activeIndexAnim.value = index;
-        isPressedIn.value = true;
+        spacerIndexAnim.setValue(index);
+        activeIndexAnim.setValue(index);
+        isPressedIn.setValue(1);
         setActiveKey(activeKey);
         onDragBegin?.(index);
       }
     },
     [
-      activeCellOffset,
       activeCellSize,
+      activeCellOffset,
       activeIndexAnim,
       isPressedIn,
-      scrollOffset,
       spacerIndexAnim,
     ]
   );
 
-  useAutoScroll({
+  const autoScrollNode = useAutoScroll({
     scrollOffset,
     scrollViewSize,
     containerSize,
@@ -202,32 +213,25 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     isPressedIn,
     activeCellSize,
     flatlistRef,
-  });
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (evt) => {
-      scrollOffset.value = horizontalAnim.value
-        ? evt.contentOffset.x
-        : evt.contentOffset.y;
-    },
+    panGestureState,
   });
 
   const onContainerLayout = () => {
     if (containerRef.current) {
       //@ts-ignore
       containerRef.current.measure((_x, _y, w, h) => {
-        containerSize.value = props.horizontal ? w : h;
+        containerSize.setValue(props.horizontal ? w : h);
       });
     }
   };
 
   const onListContentSizeChange = (w: number, h: number) => {
-    scrollViewSize.value = props.horizontal ? w : h;
+    scrollViewSize.setValue(props.horizontal ? w : h);
     if (props.onContentSizeChange) props.onContentSizeChange(w, h);
   };
 
   const onContainerTouchEnd = () => {
-    isPressedIn.value = false;
+    isPressedIn.setValue(0);
   };
 
   let dynamicProps = {};
@@ -261,17 +265,21 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     [props.renderItem, props.extraData, drag, keyExtractor]
   );
 
-  useMemo(() => {
-    if (!activeKey) {
-    }
-  }, [activeKey]);
-
-  const resetHoverState = () => {
+  const resetHoverState = useCallback(() => {
     setActiveKey(null);
+    activeIndexAnim.setValue(-1);
+    spacerIndexAnim.setValue(-1);
+    touchAbsolute.setValue(0);
+    disabled.setValue(0);
+  }, [activeIndexAnim, spacerIndexAnim, touchAbsolute, disabled]);
+
+  const onRelease = ([index]: readonly number[]) => {
+    props.onRelease?.(index);
   };
 
   const onDragEnd = useCallback(
-    ({ from, to }: { from: number; to: number }) => {
+    ([from, to]: readonly number[]) => {
+      console.log(`on drag end ${from} -> ${to}`);
       const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
         const newData = [...data];
@@ -283,117 +291,121 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       }
       resetHoverState();
     },
-    []
+    [resetHoverState]
   );
 
-  useDerivedValue(() => {
-    // The gesture handler will not activate if the user activates a cell and then releases without dragging.
-    // This resets state in that case.
-    if (!isPressedIn.value && !hasMoved.value && isHovering.value) {
-      const from = activeIndexAnim.value;
-      const to = spacerIndexAnim.value;
-      disabled.value = true;
-      snapTo.value = hoverAnim.value;
-      snapInProgress.value = true;
-      hasMoved.value = false;
-      runOnJS(onDragEnd)({ from, to });
-      runOnJS(resetHoverState)();
-    }
-  });
+  const onGestureRelease = useNode(
+    cond(
+      isHovering,
+      [
+        set(disabled, 1),
+        set(isPressedIn, 0),
+        call([activeIndexAnim], onRelease),
+        cond(not(hasMoved), call([activeIndexAnim], resetHoverState)),
+      ],
+      [call([activeIndexAnim], resetHoverState), resetTouchedCell]
+    )
+  );
 
-  const onGestureEvent = useAnimatedGestureHandler<
-    PanGestureHandlerGestureEvent,
-    { state: GestureState }
-  >({
-    onStart: (evt, ctx) => {
-      if (disabled.value) return;
-      if (ctx.state !== evt.state) {
-        ctx.state = evt.state;
-        touchAbsolute.value = horizontalAnim.value ? evt.x : evt.y;
-        touchInit.value = horizontalAnim.value ? evt.x : evt.y;
-        hasMoved.value = true;
-      }
+  const onPanStateChange = event([
+    {
+      nativeEvent: ({
+        state,
+        x,
+        y,
+      }: PanGestureHandlerStateChangeEvent["nativeEvent"]) =>
+        cond(and(neq(state, panGestureState), not(disabled)), [
+          cond(
+            or(
+              eq(state, GestureState.BEGAN), // Called on press in on Android, NOT on ios!
+              // GestureState.BEGAN may be skipped on fast swipes
+              and(
+                eq(state, GestureState.ACTIVE),
+                neq(panGestureState, GestureState.BEGAN)
+              )
+            ),
+            [
+              set(touchAbsolute, props.horizontal ? x : y),
+              set(touchInit, touchAbsolute),
+            ]
+          ),
+          cond(eq(state, GestureState.ACTIVE), [
+            set(activationDistance, sub(props.horizontal ? x : y, touchInit)),
+            set(touchAbsolute, props.horizontal ? x : y),
+          ]),
+          cond(neq(panGestureState, state), set(panGestureState, state)),
+          cond(
+            or(
+              eq(state, GestureState.END),
+              eq(state, GestureState.CANCELLED),
+              eq(state, GestureState.FAILED)
+            ),
+            onGestureRelease
+          ),
+        ]),
     },
-    onActive: (evt, ctx) => {
-      if (disabled.value) return;
-      if (ctx.state !== evt.state) {
-        ctx.state = evt.state;
-        const reference = horizontalAnim.value ? evt.x : evt.y;
-        activationDistance.value = reference - touchInit.value;
-      }
-      touchAbsolute.value = horizontalAnim.value ? evt.x : evt.y;
-    },
-    onEnd: (evt, ctx) => {
-      if (ctx.state !== evt.state) {
-        ctx.state = evt.state;
-      }
-      const from = activeIndexAnim.value;
-      const to = spacerIndexAnim.value;
+  ]);
 
-      disabled.value = true;
-      snapTo.value = hoverAnim.value + scrollOffset.value;
-      snapInProgress.value = true;
-      hasMoved.value = false;
-      const springAnim = withSpring(
-        placeholderOffset.value,
-        animationConfigRef.current,
-        () => {
-          runOnJS(onDragEnd)({ from, to });
-          snapInProgress.value = false;
-          activeIndexAnim.value = -1;
-          activeCellSize.value = 0;
-          activeCellOffset.value = 0;
-          activationDistance.value = 0;
-          touchInit.value = 0;
+  const onPanGestureEvent = event([
+    {
+      nativeEvent: ({ x, y }: PanGestureHandlerGestureEvent["nativeEvent"]) =>
+        cond(
+          and(
+            isHovering,
+            eq(panGestureState, GestureState.ACTIVE),
+            not(disabled)
+          ),
+          [
+            cond(not(hasMoved), set(hasMoved, 1)),
+            set(touchAbsolute, props.horizontal ? x : y),
+          ]
+        ),
+    },
+  ]);
 
-          disabled.value = false;
-          isPressedIn.value = false;
-          touchAbsolute.value = 0;
-          spacerIndexAnim.value = 0;
-        }
-      );
-      snapTo.value = springAnim;
+  const scrollHandler = event([
+    {
+      nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
+        block([
+          set(
+            scrollOffset,
+            props.horizontal ? contentOffset.x : contentOffset.y
+          ),
+          autoScrollNode,
+        ]),
     },
-    onCancel: (evt, ctx) => {
-      if (ctx.state !== evt.state) {
-        ctx.state = evt.state;
-        // TODO: copy onEnd
-      }
-    },
-    onFinish: (evt, ctx) => {
-      if (ctx.state !== evt.state) {
-        ctx.state = evt.state;
-        // TODO: copy onEnd
-      }
-    },
-  });
+  ]);
 
   return (
     <DraggableFlatListProvider
-      horizontalAnim={horizontalAnim}
-      activeIndexAnim={activeIndexAnim}
-      spacerIndexAnim={spacerIndexAnim}
-      cellDataRef={cellDataRef}
-      keyToIndexRef={keyToIndexRef}
-      hoverOffset={hoverOffset}
-      activeCellSize={activeCellSize}
       activeCellOffset={activeCellOffset}
-      scrollOffset={scrollOffset}
+      activeCellSize={activeCellSize}
+      activeIndexAnim={activeIndexAnim}
+      activeKey={activeKey}
+      animationConfigRef={animationConfigRef}
+      cellDataRef={cellDataRef}
+      flatlistRef={flatlistRef}
+      hasMoved={hasMoved}
+      horizontalAnim={horizontalAnim}
+      hoverComponentTranslate={hoverComponentTranslate}
+      hoverOffset={hoverOffset}
       isHovering={isHovering}
+      isPressedIn={isPressedIn}
+      keyExtractor={keyExtractor}
+      keyToIndexRef={keyToIndexRef}
+      onDragEnd={onDragEnd}
       placeholderOffset={placeholderOffset}
       placeholderScreenOffset={placeholderScreenOffset}
-      animationConfigRef={animationConfigRef}
-      hoverComponentTranslate={hoverComponentTranslate}
-      keyExtractor={keyExtractor}
-      flatlistRef={flatlistRef}
-      activeKey={activeKey}
-      isActiveVisible={!!activeKey || isActiveVisible}
       props={props}
+      resetTouchedCell={resetTouchedCell}
+      scrollOffset={scrollOffset}
+      spacerIndexAnim={spacerIndexAnim}
     >
       <PanGestureHandler
         ref={panGestureHandlerRef}
         hitSlop={dragHitSlop}
-        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onPanStateChange}
+        onGestureEvent={onPanGestureEvent}
         simultaneousHandlers={props.simultaneousHandlers}
         {...dynamicProps}
       >
@@ -403,12 +415,13 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           onLayout={onContainerLayout}
           onTouchEnd={onContainerTouchEnd}
         >
-          {props.onScrollOffsetChange && (
-            <ScrollOffsetListener
-              scrollOffset={scrollOffset}
-              onScrollOffsetChange={props.onScrollOffsetChange}
-            />
-          )}
+          <ScrollOffsetListener
+            scrollOffset={scrollOffset}
+            onScrollOffsetChange={([offset]) => {
+              scrollOffsetRef.current = offset;
+              props.onScrollOffsetChange?.(offset);
+            }}
+          />
           <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
           <AnimatedFlatList
             {...props}
@@ -424,6 +437,21 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
           />
+          <Animated.Code dependencies={[]}>
+            {() =>
+              block([
+                onChange(isPressedIn, cond(not(isPressedIn), onGestureRelease)),
+                onChange(placeholderOffset, [
+                  call([placeholderScreenOffset], ([v]) =>
+                    console.log(`CHANGE PO: placeholderScreenOffset val:`, v)
+                  ),
+                ]),
+                // This onChange handles autoscroll checking BUT it also ensures that
+                // hover translation is continually evaluated. Removing it causes a flicker.
+                // onChange(hoverComponentTranslate, checkAutoscroll),
+              ])
+            }
+          </Animated.Code>
         </Animated.View>
       </PanGestureHandler>
     </DraggableFlatListProvider>

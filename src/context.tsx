@@ -1,25 +1,33 @@
 import React, { useContext, useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { DraggableFlatListProps, typedMemo } from "./types";
+import { DraggableFlatListProps } from "./types";
+import { useSpring } from "./useSpring";
+import { typedMemo } from "./utils";
 
 type StaticContextValue<T> = {
+  activeCellOffset: Animated.Value<number>;
+  activeCellSize: Animated.Value<number>;
+  activeIndexAnim: Animated.Value<number>;
+  animationConfigRef: React.MutableRefObject<Animated.SpringConfig>;
   cellDataRef: React.MutableRefObject<Map<string, any>>;
-  keyToIndexRef: React.MutableRefObject<Map<string, number>>;
-  activeIndexAnim: Animated.SharedValue<number>;
-  spacerIndexAnim: Animated.SharedValue<number>;
-  hoverComponentTranslate: Animated.SharedValue<number>;
-  hoverOffset: Animated.SharedValue<number>;
-  activeCellSize: Animated.SharedValue<number>;
-  activeCellOffset: Animated.SharedValue<number>;
-  scrollOffset: Animated.SharedValue<number>;
-  placeholderOffset: Animated.SharedValue<number>;
-  placeholderScreenOffset: Animated.SharedValue<number>;
-  horizontalAnim: Animated.SharedValue<boolean>;
-  isHovering: Animated.SharedValue<boolean>;
-  animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
-  keyExtractor: (item: T, index: number) => string;
   flatlistRef: React.RefObject<FlatList<T>>;
+  hasMoved: Animated.Value<number>;
+  horizontalAnim: Animated.Value<boolean>;
+  hoverComponentTranslate: Animated.Value<number>;
+  hoverOffset: Animated.Value<number>;
+  hoverTo: Animated.Value<number>;
+  isHovering: Animated.Value<boolean>;
+  keyExtractor: (item: T, index: number) => string;
+  keyToIndexRef: React.MutableRefObject<Map<string, number>>;
+  placeholderOffset: Animated.Value<number>;
+  placeholderScreenOffset: Animated.Value<number>;
+  scrollOffset: Animated.Value<number>;
+  spacerIndexAnim: Animated.Value<number>;
+  isPressedIn: Animated.Value<number>;
+  hoverSpring: ReturnType<typeof useSpring>;
+  onDragEnd: (params: readonly number[]) => void;
+  resetTouchedCell: Animated.Node<number>;
 };
 
 type ActiveKeyContextValue = {
@@ -49,67 +57,79 @@ type Props<T> = StaticContextValue<T> &
   };
 
 function DraggableFlatListProviderBase<T>({
-  children,
-  activeIndexAnim,
-  spacerIndexAnim,
-  hoverOffset,
-  horizontalAnim,
-  keyToIndexRef,
-  cellDataRef,
-  activeCellSize,
   activeCellOffset,
-  scrollOffset,
-  isHovering,
+  activeCellSize,
+  activeIndexAnim,
+  activeKey,
   animationConfigRef,
+  cellDataRef,
+  children,
+  flatlistRef,
+  hasMoved,
+  horizontalAnim,
+  hoverComponentTranslate,
+  hoverOffset,
+  isActiveVisible,
+  isHovering,
+  keyExtractor,
+  keyToIndexRef,
   placeholderOffset,
   placeholderScreenOffset,
-  hoverComponentTranslate,
-  flatlistRef,
-  activeKey,
-  isActiveVisible,
-  keyExtractor,
   props,
+  scrollOffset,
+  spacerIndexAnim,
+  isPressedIn,
+  onDragEnd,
+  resetTouchedCell,
 }: Props<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
   const staticValue = useMemo(() => {
     return {
-      activeIndexAnim,
-      spacerIndexAnim,
-      hoverOffset,
-      horizontalAnim,
-      keyToIndexRef,
-      cellDataRef,
-      activeCellSize,
       activeCellOffset,
-      scrollOffset,
-      isHovering,
+      activeCellSize,
+      activeIndexAnim,
       animationConfigRef,
+      cellDataRef,
+      flatlistRef,
+      hasMoved,
+      horizontalAnim,
+      hoverComponentTranslate,
+      hoverOffset,
+      isHovering,
+      keyExtractor,
+      keyToIndexRef,
       placeholderOffset,
       placeholderScreenOffset,
-      flatlistRef,
-      keyExtractor,
-      hoverComponentTranslate,
       propsRef,
+      scrollOffset,
+      spacerIndexAnim,
+      isPressedIn,
+      onDragEnd,
+      resetTouchedCell,
     };
   }, [
-    activeIndexAnim,
-    horizontalAnim,
-    spacerIndexAnim,
-    hoverOffset,
-    activeCellSize,
     activeCellOffset,
-    scrollOffset,
-    isHovering,
+    activeCellSize,
+    activeIndexAnim,
     animationConfigRef,
+    cellDataRef,
+    flatlistRef,
+    hasMoved,
+    horizontalAnim,
+    hoverComponentTranslate,
+    hoverOffset,
+    isHovering,
+    keyExtractor,
+    keyToIndexRef,
     placeholderOffset,
     placeholderScreenOffset,
-    flatlistRef,
-    keyExtractor,
-    cellDataRef,
-    keyToIndexRef,
-    hoverComponentTranslate,
+    scrollOffset,
+    spacerIndexAnim,
+    isPressedIn,
+    onDragEnd,
+    resetTouchedCell,
   ]);
 
   const activeKeyValue = useMemo(

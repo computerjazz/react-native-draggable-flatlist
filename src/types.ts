@@ -25,7 +25,7 @@ export type DraggableFlatListProps<T> = Modify<
     onDragEnd?: (params: DragEndParams<T>) => void;
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
-    animationConfig: Partial<Animated.WithSpringConfig>;
+    animationConfig: Partial<Animated.SpringConfig>;
     activationDistance?: number;
     debug?: boolean;
     onScrollOffsetChange?: (scrollOffset: number) => void;
@@ -58,7 +58,3 @@ export type AnimatedFlatListType = <T>(
     }
   >
 ) => React.ReactElement;
-
-// Fixes bug with useMemo + generic types:
-// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/37087#issuecomment-542793243
-export const typedMemo: <T>(c: T) => T = React.memo;
