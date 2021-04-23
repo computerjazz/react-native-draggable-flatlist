@@ -2,7 +2,6 @@ import React, { useContext, useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DraggableFlatListProps } from "./types";
-import { useSpring } from "./useSpring";
 import { typedMemo } from "./utils";
 
 type StaticContextValue<T> = {
@@ -13,26 +12,23 @@ type StaticContextValue<T> = {
   cellDataRef: React.MutableRefObject<Map<string, any>>;
   flatlistRef: React.RefObject<FlatList<T>>;
   hasMoved: Animated.Value<number>;
-  horizontalAnim: Animated.Value<boolean>;
-  hoverComponentTranslate: Animated.Value<number>;
-  hoverOffset: Animated.Value<number>;
-  hoverTo: Animated.Value<number>;
-  isHovering: Animated.Value<boolean>;
+  horizontalAnim: Animated.Node<0 | 1>;
+  hoverOffset: Animated.Node<number>;
+  isHovering: Animated.Node<0 | 1>;
+  isPressedIn: Animated.Value<number>;
   keyExtractor: (item: T, index: number) => string;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
+  onDragEnd: (params: readonly number[]) => void;
   placeholderOffset: Animated.Value<number>;
-  placeholderScreenOffset: Animated.Value<number>;
+  placeholderScreenOffset: Animated.Node<number>;
+  propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
+  resetTouchedCell: Animated.Node<number>;
   scrollOffset: Animated.Value<number>;
   spacerIndexAnim: Animated.Value<number>;
-  isPressedIn: Animated.Value<number>;
-  hoverSpring: ReturnType<typeof useSpring>;
-  onDragEnd: (params: readonly number[]) => void;
-  resetTouchedCell: Animated.Node<number>;
 };
 
 type ActiveKeyContextValue = {
   activeKey: string | null;
-  isActiveVisible: boolean;
 };
 
 type PropsContextValue = {
@@ -50,7 +46,7 @@ const PropsContext = React.createContext<PropsContextValue | undefined>(
   undefined
 );
 
-type Props<T> = StaticContextValue<T> &
+type Props<T> = Omit<StaticContextValue<T>, "propsRef"> &
   ActiveKeyContextValue & {
     props: DraggableFlatListProps<T>;
     children: React.ReactNode;
@@ -67,20 +63,18 @@ function DraggableFlatListProviderBase<T>({
   flatlistRef,
   hasMoved,
   horizontalAnim,
-  hoverComponentTranslate,
   hoverOffset,
-  isActiveVisible,
   isHovering,
+  isPressedIn,
   keyExtractor,
   keyToIndexRef,
+  onDragEnd,
   placeholderOffset,
   placeholderScreenOffset,
   props,
+  resetTouchedCell,
   scrollOffset,
   spacerIndexAnim,
-  isPressedIn,
-  onDragEnd,
-  resetTouchedCell,
 }: Props<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -95,19 +89,18 @@ function DraggableFlatListProviderBase<T>({
       flatlistRef,
       hasMoved,
       horizontalAnim,
-      hoverComponentTranslate,
       hoverOffset,
       isHovering,
+      isPressedIn,
       keyExtractor,
       keyToIndexRef,
+      onDragEnd,
       placeholderOffset,
       placeholderScreenOffset,
       propsRef,
+      resetTouchedCell,
       scrollOffset,
       spacerIndexAnim,
-      isPressedIn,
-      onDragEnd,
-      resetTouchedCell,
     };
   }, [
     activeCellOffset,
@@ -118,26 +111,24 @@ function DraggableFlatListProviderBase<T>({
     flatlistRef,
     hasMoved,
     horizontalAnim,
-    hoverComponentTranslate,
     hoverOffset,
     isHovering,
+    isPressedIn,
     keyExtractor,
     keyToIndexRef,
+    onDragEnd,
     placeholderOffset,
     placeholderScreenOffset,
+    resetTouchedCell,
     scrollOffset,
     spacerIndexAnim,
-    isPressedIn,
-    onDragEnd,
-    resetTouchedCell,
   ]);
 
   const activeKeyValue = useMemo(
     () => ({
       activeKey,
-      isActiveVisible,
     }),
-    [activeKey, isActiveVisible]
+    [activeKey]
   );
 
   const propsValue = useMemo(

@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  call,
+  set,
+  useCode,
+  useValue,
+  onChange,
+} from "react-native-reanimated";
 import { useActiveKey, useStaticValues, useProps } from "./context";
 import { RenderPlaceholder } from "./types";
 import { typedMemo } from "./utils";
@@ -14,10 +20,33 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeCellSize,
     keyToIndexRef,
     placeholderScreenOffset,
+    spacerIndexAnim,
     propsRef,
   } = useStaticValues<T>();
+
   const { activeKey } = useActiveKey();
   const { horizontal } = useProps();
+
+  // for some reason using placeholderScreenOffset directly is buggy
+  const translate = useValue(0);
+
+  const onPlaceholderIndexChange = useCallback(
+    (index: number) => {
+      propsRef.current.onPlaceholderIndexChange?.(index);
+    },
+    [propsRef]
+  );
+
+  useCode(
+    () =>
+      onChange(
+        spacerIndexAnim,
+        call([spacerIndexAnim], ([i]) => {
+          onPlaceholderIndexChange(i);
+        })
+      ),
+    []
+  );
 
   const translateKey = horizontal ? "translateX" : "translateY";
   const sizeKey = horizontal ? "width" : "height";
@@ -31,7 +60,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const animStyle = {
     [sizeKey]: activeCellSize,
     transform: ([
-      { [translateKey]: placeholderScreenOffset },
+      { [translateKey]: translate },
     ] as unknown) as Animated.AnimatedTransform,
   };
 
@@ -43,6 +72,9 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
       {!activeItem || activeIndex === undefined
         ? null
         : renderPlaceholder?.({ item: activeItem, index: activeIndex })}
+      <Animated.Code>
+        {() => set(translate, placeholderScreenOffset)}
+      </Animated.Code>
     </Animated.View>
   );
 }

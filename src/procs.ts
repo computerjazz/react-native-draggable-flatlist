@@ -1,4 +1,4 @@
-import Animated, { call, onChange } from "react-native-reanimated";
+import Animated, { startClock } from "react-native-reanimated";
 
 const {
   or,
@@ -19,7 +19,6 @@ const {
   lessThan,
   lessOrEq,
   multiply,
-  debug,
 } = Animated;
 let { proc } = Animated;
 
@@ -88,8 +87,7 @@ export const setupCell = proc(
     activeIndex: Animated.Node<number>,
     activeCellSize: Animated.Node<number>,
     hoverOffset: Animated.Node<number>,
-    scrollOffset: Animated.Node<number>,
-    isHovering: Animated.Node<number>,
+    isHovering: Animated.Node<0 | 1>,
     hasMoved: Animated.Value<number>,
     spacerIndex: Animated.Value<number>,
     toValue: Animated.Value<number>,
@@ -97,16 +95,23 @@ export const setupCell = proc(
     time: Animated.Value<number>,
     finished: Animated.Value<number>,
     runSpring: Animated.Node<number>,
-    onHasMoved: Animated.Node<number>,
     onChangeSpacerIndex: Animated.Node<number>,
     onFinished: Animated.Node<number>,
     isPressedIn: Animated.Node<number>,
     placeholderOffset: Animated.Value<number>,
     prevIsPressedIn: Animated.Value<number>,
-    prevHasMoved: Animated.Value<number>
+    prevHasMoved: Animated.Value<number>,
+    clock: Animated.Clock
   ) =>
     block([
       set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
+      cond(eq(spacerIndex, currentIndex), [
+        set(
+          placeholderOffset,
+          cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
+        ),
+      ]),
+
       // Determining spacer index is hard to visualize.
       // see diagram here: https://i.imgur.com/jRPf5t3.jpg
       cond(
@@ -163,11 +168,11 @@ export const setupCell = proc(
               // Set its position to the drag position
               set(position, sub(hoverOffset, offset)),
               // Set value hovering element will snap to once released
-              set(toValue, sub(placeholderOffset, offset)),
             ],
             [
               // Active item, not pressed in
-              cond(prevIsPressedIn, onHasMoved),
+              set(toValue, sub(placeholderOffset, offset)),
+              cond(prevIsPressedIn, startClock(clock)),
             ]
           ),
         ],
@@ -206,7 +211,7 @@ export const setupCell = proc(
           toValue,
           isPressedIn
         ),
-        cond(hasMoved, onHasMoved, set(position, translate)),
+        cond(hasMoved, startClock(clock), set(position, translate)),
       ]),
       cond(neq(prevSpacerIndex, spacerIndex), [
         cond(eq(spacerIndex, -1), [
@@ -216,12 +221,6 @@ export const setupCell = proc(
         ]),
       ]),
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
-      cond(eq(spacerIndex, currentIndex), [
-        set(
-          placeholderOffset,
-          cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
-        ),
-      ]),
       set(prevSpacerIndex, spacerIndex),
       set(prevTrans, translate),
       set(prevIsPressedIn, isPressedIn),

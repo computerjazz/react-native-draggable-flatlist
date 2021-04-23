@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { isAndroid, isIOS } from "./constants";
@@ -25,8 +25,6 @@ function CellRendererComponent<T>(props: Props<T>) {
   const viewRef = useRef<Animated.View>(null);
   const {
     cellDataRef,
-    activeIndexAnim,
-    isHovering,
     horizontalAnim,
     keyExtractor,
     flatlistRef,

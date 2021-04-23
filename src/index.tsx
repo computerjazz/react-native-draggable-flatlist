@@ -5,12 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import {
-  StyleSheet,
-  ListRenderItem,
-  FlatListProps,
-  NativeScrollEvent,
-} from "react-native";
+import { ListRenderItem, FlatListProps, NativeScrollEvent } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
@@ -23,10 +18,7 @@ import Animated, {
   and,
   block,
   call,
-  Clock,
-  clockRunning,
   cond,
-  defined,
   eq,
   event,
   greaterThan,
@@ -37,15 +29,10 @@ import Animated, {
   onChange,
   or,
   set,
-  spring,
-  startClock,
-  stopClock,
   sub,
   useAnimatedRef,
-  useCode,
   useValue,
 } from "react-native-reanimated";
-import { DEFAULT_ANIMATION_CONFIG } from "../DraggableFlatListV2/constants";
 import CellRendererComponent from "./CellRendererComponent";
 import { DEFAULT_PROPS } from "./constants";
 import { DraggableFlatListProvider } from "./context";
@@ -54,7 +41,6 @@ import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";
 import { DraggableFlatListProps } from "./types";
 import { useAutoScroll } from "./useAutoScroll";
-import { useSpring } from "./useSpring";
 import { useNode } from "./utils";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
@@ -90,7 +76,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const animConfig = {
     ...DEFAULT_PROPS.animationConfig,
     ...animationConfig,
-  };
+  } as Animated.SpringConfig;
   const animationConfigRef = useRef(animConfig);
   animationConfigRef.current = animConfig;
 
@@ -137,13 +123,11 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     min(sub(containerSize, activeCellSize), max(0, hoverAnimUnconstrained))
   );
 
-  const hoverAnim = props.dragItemOverflow
+  const hoverAnim = dragItemOverflow
     ? hoverAnimUnconstrained
     : hoverAnimConstrained;
 
   const hoverOffset = useNode(add(hoverAnim, scrollOffset));
-
-  const hoverComponentTranslate = hoverAnim;
 
   const placeholderOffset = useValue<number>(0);
   const placeholderScreenOffset = useNode(sub(placeholderOffset, scrollOffset));
@@ -387,7 +371,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       flatlistRef={flatlistRef}
       hasMoved={hasMoved}
       horizontalAnim={horizontalAnim}
-      hoverComponentTranslate={hoverComponentTranslate}
       hoverOffset={hoverOffset}
       isHovering={isHovering}
       isPressedIn={isPressedIn}
@@ -410,7 +393,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         {...dynamicProps}
       >
         <Animated.View
-          style={[styles.flex, props.containerStyle]}
+          style={props.containerStyle}
           ref={containerRef}
           onLayout={onContainerLayout}
           onTouchEnd={onContainerTouchEnd}
@@ -441,14 +424,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             {() =>
               block([
                 onChange(isPressedIn, cond(not(isPressedIn), onGestureRelease)),
-                onChange(placeholderOffset, [
-                  call([placeholderScreenOffset], ([v]) =>
-                    console.log(`CHANGE PO: placeholderScreenOffset val:`, v)
-                  ),
-                ]),
-                // This onChange handles autoscroll checking BUT it also ensures that
-                // hover translation is continually evaluated. Removing it causes a flicker.
-                // onChange(hoverComponentTranslate, checkAutoscroll),
               ])
             }
           </Animated.Code>
@@ -457,9 +432,3 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     </DraggableFlatListProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-});

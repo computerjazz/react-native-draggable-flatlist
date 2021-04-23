@@ -5,7 +5,6 @@ import Animated, {
   cond,
   eq,
   onChange,
-  startClock,
   stopClock,
   useCode,
   useValue,
@@ -30,7 +29,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     spacerIndexAnim,
     placeholderOffset,
     animationConfigRef,
-    scrollOffset,
     hasMoved,
     isPressedIn,
     onDragEnd,
@@ -48,26 +46,14 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const runSpring = useNode(
     cond(isClockRunning, springFill(clock, state, config))
   );
-  const onHasMoved = useNode(
-    block([
-      startClock(clock),
-      call([state.position], ([v]) =>
-        console.log(`ON HAS MOVEDstate.position val:`, v)
-      ),
-    ])
-  );
+
   const onChangeSpacerIndex = useNode(cond(isClockRunning, stopClock(clock)));
   const onFinished = useNode(
-    block([
-      cond(isClockRunning, [
-        stopClock(clock),
-        cond(eq(cellIndex, activeIndexAnim), [
-          call([cellIndex, activeIndexAnim, spacerIndexAnim], ([v, from, to]) =>
-            console.log(`ACTIVE on fin! cellIndex val:${v} ${from} -> ${to}`)
-          ),
-          resetTouchedCell,
-          call([activeIndexAnim, spacerIndexAnim], onDragEnd),
-        ]),
+    cond(isClockRunning, [
+      stopClock(clock),
+      cond(eq(cellIndex, activeIndexAnim), [
+        resetTouchedCell,
+        call([activeIndexAnim, spacerIndexAnim], onDragEnd),
       ]),
     ])
   );
@@ -90,22 +76,22 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       activeIndexAnim,
       activeCellSize,
       hoverOffset,
-      scrollOffset,
       isHovering,
       hasMoved,
       spacerIndexAnim,
+      //@ts-ignore
       config.toValue,
       state.position,
       state.time,
       state.finished,
       runSpring,
-      onHasMoved,
       onChangeSpacerIndex,
       onFinished,
       isPressedIn,
       placeholderOffset,
       prevIsPressedIn,
-      prevHasMoved
+      prevHasMoved,
+      clock
     )
   );
 
@@ -116,8 +102,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
         onChange(cellTranslate, []),
         onChange(cellSize, []),
         onChange(cellOffset, []),
-        onChange(runSpring, []),
-        onChange(prevHasMoved, []),
+        onChange(prevTrans, []),
       ]),
     []
   );

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, {
   abs,
@@ -27,8 +27,8 @@ type Params = {
   scrollOffset: Animated.Value<number>;
   scrollViewSize: Animated.Value<number>;
   containerSize: Animated.Value<number>;
-  hoverAnim: Animated.Value<number>;
-  isPressedIn: Animated.Value<boolean>;
+  hoverAnim: Animated.Node<number>;
+  isPressedIn: Animated.Node<number>;
   activeCellSize: Animated.Value<number>;
   flatlistRef: React.RefObject<FlatList<any>>;
   autoscrollThreshold?: number;
@@ -80,7 +80,7 @@ export function useAutoScroll({
   const targetScrollOffset = useValue<number>(0);
   const resolveAutoscroll = useRef<(params: readonly number[]) => void>();
 
-  const isAutoScrollInProgressNative = useValue(0);
+  const isAutoScrollInProgressNative = useValue<number>(0);
 
   const isAutoScrollInProgress = useRef({
     js: false,

@@ -32,7 +32,7 @@ export function useSpring({
       toValue,
     }),
     [configParam, toValue]
-  );
+  ) as Animated.SpringConfig;
 
   return useMemo(
     () => ({
