@@ -25,11 +25,9 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     activeIndexAnim,
     activeCellSize,
     hoverOffset,
-    isHovering,
     spacerIndexAnim,
     placeholderOffset,
     animationConfigRef,
-    hasMoved,
     isPressedIn,
     onDragEnd,
     resetTouchedCell,
@@ -39,7 +37,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const { clock, state, config } = cellSpring;
 
   const isAfterActive = useValue(0);
-  const passiveCellTranslate = useValue(0);
   const isClockRunning = useNode(clockRunning(clock));
 
   const runSpring = useNode(springFill(clock, state, config));
@@ -65,14 +62,11 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       cellSize,
       cellOffset,
       isAfterActive,
-      passiveCellTranslate,
       prevTrans,
       prevSpacerIndex,
       activeIndexAnim,
       activeCellSize,
       hoverOffset,
-      isHovering,
-      hasMoved,
       spacerIndexAnim,
       //@ts-ignore
       config.toValue,
@@ -84,7 +78,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       isPressedIn,
       placeholderOffset,
       prevIsPressedIn,
-      prevHasMoved,
       clock
     )
   );

@@ -1,4 +1,5 @@
 import Animated, {
+  call,
   clockRunning,
   startClock,
   stopClock,
@@ -35,14 +36,6 @@ export const getIsAfterActive = proc(
     greaterThan(currentIndex, activeIndex)
 );
 
-export const getOnChangeTranslate = proc(
-  (
-    translate: Animated.Node<number>,
-    toValue: Animated.Value<number>,
-    isPressedIn: Animated.Node<number>
-  ) => cond(isPressedIn, set(toValue, translate))
-);
-
 export const hardReset = proc(
   (
     position: Animated.Value<number>,
@@ -66,14 +59,11 @@ export const setupCell = proc(
     size: Animated.Node<number>,
     offset: Animated.Node<number>,
     isAfterActive: Animated.Value<number>,
-    translate: Animated.Value<number>,
     prevTrans: Animated.Value<number>,
     prevSpacerIndex: Animated.Value<number>,
     activeIndex: Animated.Node<number>,
     activeCellSize: Animated.Node<number>,
     hoverOffset: Animated.Node<number>,
-    isHovering: Animated.Node<0 | 1>,
-    hasMoved: Animated.Value<number>,
     spacerIndex: Animated.Value<number>,
     toValue: Animated.Value<number>,
     position: Animated.Value<number>,
@@ -84,7 +74,6 @@ export const setupCell = proc(
     isPressedIn: Animated.Node<number>,
     placeholderOffset: Animated.Value<number>,
     prevIsPressedIn: Animated.Value<number>,
-    prevHasMoved: Animated.Value<number>,
     clock: Animated.Clock
   ) =>
     block([
@@ -164,39 +153,25 @@ export const setupCell = proc(
           // Translate cell down if it is before active index and active cell has passed it.
           // Translate cell up if it is after the active index and active cell has passed it.
           set(
-            translate,
+            toValue,
             cond(
               cond(
                 isAfterActive,
                 lessOrEq(currentIndex, spacerIndex),
                 greaterOrEq(currentIndex, spacerIndex)
               ),
-              cond(
-                isHovering,
-                cond(
-                  isAfterActive,
-                  multiply(activeCellSize, -1),
-                  activeCellSize
-                ),
-                0
-              ),
+              cond(isAfterActive, multiply(activeCellSize, -1), activeCellSize),
               0
             )
           ),
-          set(toValue, translate),
         ]
       ),
-      cond(
-        and(
-          isPressedIn,
-          neq(translate, prevTrans),
-          neq(currentIndex, activeIndex)
+      cond(and(isPressedIn, neq(toValue, prevTrans)), [
+        call([toValue, currentIndex], ([v, i]) =>
+          console.log(`${i}: translate val:`, v)
         ),
-        [
-          getOnChangeTranslate(translate, toValue, isPressedIn),
-          cond(hasMoved, startClock(clock), set(position, translate)),
-        ]
-      ),
+        startClock(clock),
+      ]),
       // Reset the spacer index when drag ends
       cond(eq(activeIndex, -1), set(spacerIndex, -1)),
       cond(neq(prevSpacerIndex, spacerIndex), [
@@ -208,9 +183,8 @@ export const setupCell = proc(
       ]),
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
       set(prevSpacerIndex, spacerIndex),
-      set(prevTrans, translate),
+      set(prevTrans, toValue),
       set(prevIsPressedIn, isPressedIn),
-      set(prevHasMoved, hasMoved),
       cond(clockRunning(clock), runSpring),
       position,
     ])
