@@ -6,10 +6,12 @@ import Animated, {
   useCode,
   useValue,
   onChange,
+  greaterThan,
+  cond,
 } from "react-native-reanimated";
 import { useActiveKey, useStaticValues, useProps } from "./context";
 import { RenderPlaceholder } from "./types";
-import { typedMemo } from "./utils";
+import { typedMemo, useNode } from "./utils";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
@@ -50,6 +52,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
 
   const translateKey = horizontal ? "translateX" : "translateY";
   const sizeKey = horizontal ? "width" : "height";
+  const opacity = useNode(cond(greaterThan(spacerIndexAnim, -1), 1, 0));
 
   const activeIndex = activeKey
     ? keyToIndexRef.current.get(activeKey)
@@ -58,6 +61,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
   const animStyle = {
+    opacity,
     [sizeKey]: activeCellSize,
     transform: ([
       { [translateKey]: translate },

@@ -1,7 +1,10 @@
-import Animated, { startClock } from "react-native-reanimated";
+import Animated, {
+  clockRunning,
+  startClock,
+  stopClock,
+} from "react-native-reanimated";
 
 const {
-  or,
   set,
   cond,
   add,
@@ -13,7 +16,6 @@ const {
   divide,
   greaterThan,
   greaterOrEq,
-  not,
   Value,
   spring,
   lessThan,
@@ -33,28 +35,12 @@ export const getIsAfterActive = proc(
     greaterThan(currentIndex, activeIndex)
 );
 
-export const getCellStart = proc(
-  (
-    isAfterActive: Animated.Node<number>,
-    offset: Animated.Node<number>,
-    activeCellSize: Animated.Node<number>,
-    scrollOffset: Animated.Node<number>
-  ) =>
-    sub(cond(isAfterActive, sub(offset, activeCellSize), offset), scrollOffset)
-);
-
 export const getOnChangeTranslate = proc(
   (
     translate: Animated.Node<number>,
-    isAfterActive: Animated.Node<number>,
-    initialized: Animated.Value<number>,
     toValue: Animated.Value<number>,
     isPressedIn: Animated.Node<number>
-  ) =>
-    block([
-      cond(or(not(isAfterActive), initialized), [], set(initialized, 1)),
-      cond(isPressedIn, set(toValue, translate)),
-    ])
+  ) => cond(isPressedIn, set(toValue, translate))
 );
 
 export const hardReset = proc(
@@ -77,7 +63,6 @@ type RetypedProc = (cb: (...params: any) => Animated.Node<number>) => typeof cb;
 export const setupCell = proc(
   (
     currentIndex: Animated.Value<number>,
-    initialized: Animated.Value<number>,
     size: Animated.Node<number>,
     offset: Animated.Node<number>,
     isAfterActive: Animated.Value<number>,
@@ -95,7 +80,6 @@ export const setupCell = proc(
     time: Animated.Value<number>,
     finished: Animated.Value<number>,
     runSpring: Animated.Node<number>,
-    onChangeSpacerIndex: Animated.Node<number>,
     onFinished: Animated.Node<number>,
     isPressedIn: Animated.Node<number>,
     placeholderOffset: Animated.Value<number>,
@@ -104,60 +88,58 @@ export const setupCell = proc(
     clock: Animated.Clock
   ) =>
     block([
+      // Determine whether this cell is after the active cell in the list
       set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
+
+      // Determining spacer index is hard to visualize, see diagram: https://i.imgur.com/jRPf5t3.jpg
+      cond(
+        isAfterActive,
+        [
+          cond(
+            and(
+              greaterOrEq(add(hoverOffset, activeCellSize), offset),
+              lessThan(
+                add(hoverOffset, activeCellSize),
+                add(offset, divide(size, 2))
+              )
+            ),
+            set(spacerIndex, sub(currentIndex, 1))
+          ),
+          cond(
+            and(
+              greaterOrEq(
+                add(hoverOffset, activeCellSize),
+                add(offset, divide(size, 2))
+              ),
+              lessThan(add(hoverOffset, activeCellSize), add(offset, size))
+            ),
+            set(spacerIndex, currentIndex)
+          ),
+        ],
+        cond(lessThan(currentIndex, activeIndex), [
+          cond(
+            and(
+              lessThan(hoverOffset, add(offset, size)),
+              greaterOrEq(hoverOffset, add(offset, divide(size, 2)))
+            ),
+            set(spacerIndex, add(currentIndex, 1))
+          ),
+          cond(
+            and(
+              greaterOrEq(hoverOffset, offset),
+              lessThan(hoverOffset, add(offset, divide(size, 2)))
+            ),
+            set(spacerIndex, currentIndex)
+          ),
+        ])
+      ),
+      // Set placeholder offset
       cond(eq(spacerIndex, currentIndex), [
         set(
           placeholderOffset,
           cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
         ),
       ]),
-
-      // Determining spacer index is hard to visualize.
-      // see diagram here: https://i.imgur.com/jRPf5t3.jpg
-      cond(
-        isPressedIn,
-        cond(
-          isAfterActive,
-          [
-            cond(
-              and(
-                greaterOrEq(add(hoverOffset, activeCellSize), offset),
-                lessThan(
-                  add(hoverOffset, activeCellSize),
-                  add(offset, divide(size, 2))
-                )
-              ),
-              set(spacerIndex, sub(currentIndex, 1))
-            ),
-            cond(
-              and(
-                greaterOrEq(
-                  add(hoverOffset, activeCellSize),
-                  add(offset, divide(size, 2))
-                ),
-                lessThan(add(hoverOffset, activeCellSize), add(offset, size))
-              ),
-              set(spacerIndex, currentIndex)
-            ),
-          ],
-          cond(lessThan(currentIndex, activeIndex), [
-            cond(
-              and(
-                lessThan(hoverOffset, add(offset, size)),
-                greaterOrEq(hoverOffset, add(offset, divide(size, 2)))
-              ),
-              set(spacerIndex, add(currentIndex, 1))
-            ),
-            cond(
-              and(
-                greaterOrEq(hoverOffset, offset),
-                lessThan(hoverOffset, add(offset, divide(size, 2)))
-              ),
-              set(spacerIndex, currentIndex)
-            ),
-          ])
-        )
-      ),
       cond(
         eq(currentIndex, activeIndex),
         [
@@ -167,10 +149,11 @@ export const setupCell = proc(
             [
               // Set its position to the drag position
               set(position, sub(hoverOffset, offset)),
-              // Set value hovering element will snap to once released
             ],
             [
               // Active item, not pressed in
+
+              // Set value hovering element will snap to once released
               set(toValue, sub(placeholderOffset, offset)),
               cond(prevIsPressedIn, startClock(clock)),
             ]
@@ -203,20 +186,23 @@ export const setupCell = proc(
           set(toValue, translate),
         ]
       ),
-      cond(and(isPressedIn, neq(translate, prevTrans)), [
-        getOnChangeTranslate(
-          translate,
-          isAfterActive,
-          initialized,
-          toValue,
-          isPressedIn
+      cond(
+        and(
+          isPressedIn,
+          neq(translate, prevTrans),
+          neq(currentIndex, activeIndex)
         ),
-        cond(hasMoved, startClock(clock), set(position, translate)),
-      ]),
+        [
+          getOnChangeTranslate(translate, toValue, isPressedIn),
+          cond(hasMoved, startClock(clock), set(position, translate)),
+        ]
+      ),
+      // Reset the spacer index when drag ends
+      cond(eq(activeIndex, -1), set(spacerIndex, -1)),
       cond(neq(prevSpacerIndex, spacerIndex), [
         cond(eq(spacerIndex, -1), [
           // Hard reset to prevent stale state bugs
-          onChangeSpacerIndex,
+          cond(clockRunning(clock), stopClock(clock)),
           hardReset(position, finished, time, toValue),
         ]),
       ]),
@@ -225,7 +211,7 @@ export const setupCell = proc(
       set(prevTrans, translate),
       set(prevIsPressedIn, isPressedIn),
       set(prevHasMoved, hasMoved),
-      runSpring,
+      cond(clockRunning(clock), runSpring),
       position,
     ])
 );

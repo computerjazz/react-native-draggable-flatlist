@@ -38,16 +38,12 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const cellSpring = useSpring({ config: animationConfigRef.current });
   const { clock, state, config } = cellSpring;
 
-  const initialized = useValue(0);
   const isAfterActive = useValue(0);
   const passiveCellTranslate = useValue(0);
   const isClockRunning = useNode(clockRunning(clock));
 
-  const runSpring = useNode(
-    cond(isClockRunning, springFill(clock, state, config))
-  );
+  const runSpring = useNode(springFill(clock, state, config));
 
-  const onChangeSpacerIndex = useNode(cond(isClockRunning, stopClock(clock)));
   const onFinished = useNode(
     cond(isClockRunning, [
       stopClock(clock),
@@ -66,7 +62,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const cellTranslate = useNode(
     setupCell(
       cellIndex,
-      initialized,
       cellSize,
       cellOffset,
       isAfterActive,
@@ -85,7 +80,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       state.time,
       state.finished,
       runSpring,
-      onChangeSpacerIndex,
       onFinished,
       isPressedIn,
       placeholderOffset,
@@ -100,9 +94,9 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     () =>
       block([
         onChange(cellTranslate, []),
+        onChange(prevTrans, []),
         onChange(cellSize, []),
         onChange(cellOffset, []),
-        onChange(prevTrans, []),
       ]),
     []
   );
