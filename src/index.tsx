@@ -93,7 +93,12 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const touchAbsolute = useValue<number>(0); // Finger position on screen, relative to container
   const panGestureState = useValue<GestureState>(GestureState.UNDETERMINED);
 
-  const isPressedIn = useValue<number>(0);
+  const isTouchActiveNative = useValue<number>(0);
+
+  const isTouchActive = useRef({
+    native: isTouchActiveNative,
+    js: false,
+  });
 
   const hasMoved = useValue<number>(0);
   const disabled = useValue<number>(0);
@@ -107,6 +112,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const activeCellOffset = useValue<number>(0); // Distance between active cell and edge of container
 
   const isHovering = useNode(greaterThan(activeIndexAnim, -1));
+  const isDraggingCell = useNode(and(isTouchActiveNative, isHovering));
 
   const scrollOffset = useValue<number>(0);
   const scrollOffsetRef = useRef(0);
@@ -162,6 +168,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const drag = useCallback(
     (activeKey: string) => {
+      if (!isTouchActive.current.js) return;
       const index = keyToIndexRef.current.get(activeKey);
       const cellData = cellDataRef.current.get(activeKey);
       if (cellData) {
@@ -175,18 +182,11 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       if (index !== undefined) {
         spacerIndexAnim.setValue(index);
         activeIndexAnim.setValue(index);
-        isPressedIn.setValue(1);
         setActiveKey(activeKey);
         onDragBegin?.(index);
       }
     },
-    [
-      activeCellSize,
-      activeCellOffset,
-      activeIndexAnim,
-      isPressedIn,
-      spacerIndexAnim,
-    ]
+    [activeCellSize, activeCellOffset, activeIndexAnim, spacerIndexAnim]
   );
 
   const autoScrollNode = useAutoScroll({
@@ -194,7 +194,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     scrollViewSize,
     containerSize,
     hoverAnim,
-    isPressedIn,
+    isDraggingCell,
     activeCellSize,
     flatlistRef,
     panGestureState,
@@ -214,8 +214,14 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     if (props.onContentSizeChange) props.onContentSizeChange(w, h);
   };
 
+  const onContainerTouchStart = () => {
+    isTouchActive.current.js = true;
+    isTouchActive.current.native.setValue(1);
+  };
+
   const onContainerTouchEnd = () => {
-    isPressedIn.setValue(0);
+    isTouchActive.current.js = false;
+    isTouchActive.current.native.setValue(0);
   };
 
   let dynamicProps = {};
@@ -263,7 +269,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onDragEnd = useCallback(
     ([from, to]: readonly number[]) => {
-      console.log(`on drag end ${from} -> ${to}`);
       const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
         const newData = [...data];
@@ -283,7 +288,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       isHovering,
       [
         set(disabled, 1),
-        set(isPressedIn, 0),
+        set(isTouchActiveNative, 0),
         call([activeIndexAnim], onRelease),
         cond(not(hasMoved), call([activeIndexAnim], resetHoverState)),
       ],
@@ -373,7 +378,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       horizontalAnim={horizontalAnim}
       hoverOffset={hoverOffset}
       isHovering={isHovering}
-      isPressedIn={isPressedIn}
+      isDraggingCell={isDraggingCell}
       keyExtractor={keyExtractor}
       keyToIndexRef={keyToIndexRef}
       onDragEnd={onDragEnd}
@@ -396,6 +401,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           style={props.containerStyle}
           ref={containerRef}
           onLayout={onContainerLayout}
+          onTouchStart={onContainerTouchStart}
           onTouchEnd={onContainerTouchEnd}
         >
           <ScrollOffsetListener
@@ -423,7 +429,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           <Animated.Code dependencies={[]}>
             {() =>
               block([
-                onChange(isPressedIn, cond(not(isPressedIn), onGestureRelease)),
+                onChange(
+                  isTouchActiveNative,
+                  cond(not(isTouchActiveNative), onGestureRelease)
+                ),
               ])
             }
           </Animated.Code>

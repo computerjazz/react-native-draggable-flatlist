@@ -28,7 +28,7 @@ type Params = {
   scrollViewSize: Animated.Value<number>;
   containerSize: Animated.Value<number>;
   hoverAnim: Animated.Node<number>;
-  isPressedIn: Animated.Node<number>;
+  isDraggingCell: Animated.Node<number>;
   activeCellSize: Animated.Value<number>;
   flatlistRef: React.RefObject<FlatList<any>>;
   autoscrollThreshold?: number;
@@ -41,7 +41,7 @@ export function useAutoScroll({
   scrollViewSize,
   containerSize,
   hoverAnim,
-  isPressedIn,
+  isDraggingCell,
   activeCellSize,
   flatlistRef,
   autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
@@ -87,14 +87,14 @@ export function useAutoScroll({
     native: isAutoScrollInProgressNative,
   });
 
-  const isPressedInJs = useRef(false);
+  const isDraggingCellJS = useRef(false);
   useCode(
     () =>
       block([
         onChange(
-          isPressedIn,
-          call([isPressedIn], ([v]) => {
-            isPressedInJs.current = !!v;
+          isDraggingCell,
+          call([isDraggingCell], ([v]) => {
+            isDraggingCellJS.current = !!v;
           })
         ),
       ]),
@@ -176,7 +176,7 @@ export function useAutoScroll({
         );
         shouldScroll =
           targetOffset >= 0 &&
-          isPressedInJs.current &&
+          isDraggingCellJS.current &&
           !scrollingUpAtTop &&
           !scrollingDownAtBottom;
 

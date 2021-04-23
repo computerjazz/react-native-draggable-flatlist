@@ -28,7 +28,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     spacerIndexAnim,
     placeholderOffset,
     animationConfigRef,
-    isPressedIn,
+    isDraggingCell,
     onDragEnd,
     resetTouchedCell,
   } = useStaticValues();
@@ -53,7 +53,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
 
   const prevTrans = useValue<number>(0);
   const prevSpacerIndex = useValue<number>(-1);
-  const prevIsPressedIn = useValue<number>(0);
+  const previsDraggingCell = useValue<number>(0);
   const prevHasMoved = useValue<number>(0);
 
   const cellTranslate = useNode(
@@ -75,9 +75,9 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       state.finished,
       runSpring,
       onFinished,
-      isPressedIn,
+      isDraggingCell,
       placeholderOffset,
-      prevIsPressedIn,
+      previsDraggingCell,
       clock
     )
   );

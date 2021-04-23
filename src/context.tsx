@@ -15,7 +15,7 @@ type StaticContextValue<T> = {
   horizontalAnim: Animated.Node<0 | 1>;
   hoverOffset: Animated.Node<number>;
   isHovering: Animated.Node<0 | 1>;
-  isPressedIn: Animated.Value<number>;
+  isDraggingCell: Animated.Node<number>;
   keyExtractor: (item: T, index: number) => string;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   onDragEnd: (params: readonly number[]) => void;
@@ -65,7 +65,7 @@ function DraggableFlatListProviderBase<T>({
   horizontalAnim,
   hoverOffset,
   isHovering,
-  isPressedIn,
+  isDraggingCell,
   keyExtractor,
   keyToIndexRef,
   onDragEnd,
@@ -91,7 +91,7 @@ function DraggableFlatListProviderBase<T>({
       horizontalAnim,
       hoverOffset,
       isHovering,
-      isPressedIn,
+      isDraggingCell,
       keyExtractor,
       keyToIndexRef,
       onDragEnd,
@@ -113,7 +113,7 @@ function DraggableFlatListProviderBase<T>({
     horizontalAnim,
     hoverOffset,
     isHovering,
-    isPressedIn,
+    isDraggingCell,
     keyExtractor,
     keyToIndexRef,
     onDragEnd,

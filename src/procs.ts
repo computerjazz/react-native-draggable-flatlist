@@ -1,5 +1,4 @@
 import Animated, {
-  call,
   clockRunning,
   startClock,
   stopClock,
@@ -71,9 +70,9 @@ export const setupCell = proc(
     finished: Animated.Value<number>,
     runSpring: Animated.Node<number>,
     onFinished: Animated.Node<number>,
-    isPressedIn: Animated.Node<number>,
+    isDraggingCell: Animated.Node<number>,
     placeholderOffset: Animated.Value<number>,
-    prevIsPressedIn: Animated.Value<number>,
+    previsDraggingCell: Animated.Value<number>,
     clock: Animated.Clock
   ) =>
     block([
@@ -134,7 +133,7 @@ export const setupCell = proc(
         [
           // If this cell is the active cell
           cond(
-            isPressedIn,
+            isDraggingCell,
             [
               // Set its position to the drag position
               set(position, sub(hoverOffset, offset)),
@@ -144,7 +143,7 @@ export const setupCell = proc(
 
               // Set value hovering element will snap to once released
               set(toValue, sub(placeholderOffset, offset)),
-              cond(prevIsPressedIn, startClock(clock)),
+              cond(previsDraggingCell, startClock(clock)),
             ]
           ),
         ],
@@ -166,12 +165,7 @@ export const setupCell = proc(
           ),
         ]
       ),
-      cond(and(isPressedIn, neq(toValue, prevTrans)), [
-        call([toValue, currentIndex], ([v, i]) =>
-          console.log(`${i}: translate val:`, v)
-        ),
-        startClock(clock),
-      ]),
+      cond(and(isDraggingCell, neq(toValue, prevTrans)), startClock(clock)),
       // Reset the spacer index when drag ends
       cond(eq(activeIndex, -1), set(spacerIndex, -1)),
       cond(neq(prevSpacerIndex, spacerIndex), [
@@ -184,7 +178,7 @@ export const setupCell = proc(
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
       set(prevSpacerIndex, spacerIndex),
       set(prevTrans, toValue),
-      set(prevIsPressedIn, isPressedIn),
+      set(previsDraggingCell, isDraggingCell),
       cond(clockRunning(clock), runSpring),
       position,
     ])
