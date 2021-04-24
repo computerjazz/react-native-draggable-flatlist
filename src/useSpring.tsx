@@ -2,11 +2,13 @@ import { useMemo } from "react";
 import Animated, { Clock, useValue } from "react-native-reanimated";
 import { DEFAULT_ANIMATION_CONFIG } from "./constants";
 
-export function useSpring({
-  config: configParam,
-}: {
+type Params = {
   config: Partial<Animated.SpringConfig>;
-}) {
+};
+
+export function useSpring(
+  { config: configParam }: Params = { config: DEFAULT_ANIMATION_CONFIG }
+) {
   const toValue = useValue<number>(0);
   const clock = useMemo(() => new Clock(), []);
 
