@@ -58,7 +58,7 @@ export const setupCell = proc(
     size: Animated.Node<number>,
     offset: Animated.Node<number>,
     isAfterActive: Animated.Value<number>,
-    prevTrans: Animated.Value<number>,
+    prevToValue: Animated.Value<number>,
     prevSpacerIndex: Animated.Value<number>,
     activeIndex: Animated.Node<number>,
     activeCellSize: Animated.Node<number>,
@@ -72,102 +72,123 @@ export const setupCell = proc(
     onFinished: Animated.Node<number>,
     isDraggingCell: Animated.Node<number>,
     placeholderOffset: Animated.Value<number>,
-    previsDraggingCell: Animated.Value<number>,
+    prevIsDraggingCell: Animated.Value<number>,
     clock: Animated.Clock
   ) =>
     block([
-      // Determine whether this cell is after the active cell in the list
-      set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
-
-      // Determining spacer index is hard to visualize, see diagram: https://i.imgur.com/jRPf5t3.jpg
       cond(
-        isAfterActive,
+        greaterThan(activeIndex, -1),
         [
+          // Determine whether this cell is after the active cell in the list
+          set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
+
+          // Determining spacer index is hard to visualize, see diagram: https://i.imgur.com/jRPf5t3.jpg
           cond(
-            and(
-              greaterOrEq(add(hoverOffset, activeCellSize), offset),
-              lessThan(
-                add(hoverOffset, activeCellSize),
-                add(offset, divide(size, 2))
-              )
-            ),
-            set(spacerIndex, sub(currentIndex, 1))
-          ),
-          cond(
-            and(
-              greaterOrEq(
-                add(hoverOffset, activeCellSize),
-                add(offset, divide(size, 2))
+            isAfterActive,
+            [
+              cond(
+                and(
+                  greaterOrEq(add(hoverOffset, activeCellSize), offset),
+                  lessThan(
+                    add(hoverOffset, activeCellSize),
+                    add(offset, divide(size, 2))
+                  )
+                ),
+                set(spacerIndex, sub(currentIndex, 1))
               ),
-              lessThan(add(hoverOffset, activeCellSize), add(offset, size))
-            ),
-            set(spacerIndex, currentIndex)
-          ),
-        ],
-        cond(lessThan(currentIndex, activeIndex), [
-          cond(
-            and(
-              lessThan(hoverOffset, add(offset, size)),
-              greaterOrEq(hoverOffset, add(offset, divide(size, 2)))
-            ),
-            set(spacerIndex, add(currentIndex, 1))
-          ),
-          cond(
-            and(
-              greaterOrEq(hoverOffset, offset),
-              lessThan(hoverOffset, add(offset, divide(size, 2)))
-            ),
-            set(spacerIndex, currentIndex)
-          ),
-        ])
-      ),
-      // Set placeholder offset
-      cond(eq(spacerIndex, currentIndex), [
-        set(
-          placeholderOffset,
-          cond(isAfterActive, add(sub(offset, activeCellSize), size), offset)
-        ),
-      ]),
-      cond(
-        eq(currentIndex, activeIndex),
-        [
-          // If this cell is the active cell
-          cond(
-            isDraggingCell,
-            [
-              // Set its position to the drag position
-              set(position, sub(hoverOffset, offset)),
+              cond(
+                and(
+                  greaterOrEq(
+                    add(hoverOffset, activeCellSize),
+                    add(offset, divide(size, 2))
+                  ),
+                  lessThan(add(hoverOffset, activeCellSize), add(offset, size))
+                ),
+                set(spacerIndex, currentIndex)
+              ),
             ],
-            [
-              // Active item, not pressed in
-
-              // Set value hovering element will snap to once released
-              set(toValue, sub(placeholderOffset, offset)),
-              cond(previsDraggingCell, startClock(clock)),
-            ]
+            cond(lessThan(currentIndex, activeIndex), [
+              cond(
+                and(
+                  lessThan(hoverOffset, add(offset, size)),
+                  greaterOrEq(hoverOffset, add(offset, divide(size, 2)))
+                ),
+                set(spacerIndex, add(currentIndex, 1))
+              ),
+              cond(
+                and(
+                  greaterOrEq(hoverOffset, offset),
+                  lessThan(hoverOffset, add(offset, divide(size, 2)))
+                ),
+                set(spacerIndex, currentIndex)
+              ),
+            ])
           ),
-        ],
-        [
-          // Not the active item
-          // Translate cell down if it is before active index and active cell has passed it.
-          // Translate cell up if it is after the active index and active cell has passed it.
-          set(
-            toValue,
-            cond(
+          // Set placeholder offset
+          cond(eq(spacerIndex, currentIndex), [
+            set(
+              placeholderOffset,
               cond(
                 isAfterActive,
-                lessOrEq(currentIndex, spacerIndex),
-                greaterOrEq(currentIndex, spacerIndex)
+                add(sub(offset, activeCellSize), size),
+                offset
+              )
+            ),
+          ]),
+          cond(
+            eq(currentIndex, activeIndex),
+            [
+              // If this cell is the active cell
+              cond(
+                isDraggingCell,
+                [
+                  // Set its position to the drag position
+                  set(position, sub(hoverOffset, offset)),
+                ],
+                [
+                  // Active item, not pressed in
+
+                  // Set value hovering element will snap to once released
+                  set(toValue, sub(placeholderOffset, offset)),
+                  cond(prevIsDraggingCell, startClock(clock)),
+                ]
               ),
-              cond(isAfterActive, multiply(activeCellSize, -1), activeCellSize),
-              0
-            )
+            ],
+            [
+              // Not the active item
+              // Translate cell down if it is before active index and active cell has passed it.
+              // Translate cell up if it is after the active index and active cell has passed it.
+              set(
+                toValue,
+                cond(
+                  cond(
+                    isAfterActive,
+                    lessOrEq(currentIndex, spacerIndex),
+                    greaterOrEq(currentIndex, spacerIndex)
+                  ),
+                  cond(
+                    isAfterActive,
+                    multiply(activeCellSize, -1),
+                    activeCellSize
+                  ),
+                  0
+                )
+              ),
+            ]
           ),
+          // If this cell should animate somewhere new, reset its state and start its clock
+          cond(neq(toValue, prevToValue), [
+            cond(clockRunning(clock), stopClock(clock)),
+            set(time, 0),
+            set(finished, 0),
+            startClock(clock),
+          ]),
+        ],
+        [
+          // Reset the spacer index when drag ends
+          set(spacerIndex, -1),
         ]
       ),
-      cond(and(isDraggingCell, neq(toValue, prevTrans)), startClock(clock)),
-      // Reset the spacer index when drag ends
-      cond(eq(activeIndex, -1), set(spacerIndex, -1)),
       cond(neq(prevSpacerIndex, spacerIndex), [
         cond(eq(spacerIndex, -1), [
           // Hard reset to prevent stale state bugs
@@ -177,8 +198,8 @@ export const setupCell = proc(
       ]),
       cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
       set(prevSpacerIndex, spacerIndex),
-      set(prevTrans, toValue),
-      set(previsDraggingCell, isDraggingCell),
+      set(prevToValue, toValue),
+      set(prevIsDraggingCell, isDraggingCell),
       cond(clockRunning(clock), runSpring),
       position,
     ])

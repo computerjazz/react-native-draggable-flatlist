@@ -53,8 +53,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
 
   const prevTrans = useValue<number>(0);
   const prevSpacerIndex = useValue<number>(-1);
-  const previsDraggingCell = useValue<number>(0);
-  const prevHasMoved = useValue<number>(0);
+  const prevIsDraggingCell = useValue<number>(0);
 
   const cellTranslate = useNode(
     setupCell(
@@ -77,7 +76,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       onFinished,
       isDraggingCell,
       placeholderOffset,
-      previsDraggingCell,
+      prevIsDraggingCell,
       clock
     )
   );

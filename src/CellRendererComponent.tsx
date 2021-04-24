@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { isAndroid, isIOS } from "./constants";
@@ -43,12 +43,15 @@ function CellRendererComponent<T>(props: Props<T>) {
     cellIndex: currentIndexAnim,
   });
 
-  const style = {
-    transform: [
-      { translateX: cond(horizontalAnim, translate, 0) },
-      { translateY: cond(horizontalAnim, 0, translate) },
-    ],
-  };
+  const style = useMemo(
+    () => ({
+      transform: [
+        { translateX: cond(horizontalAnim, translate, 0) },
+        { translateY: cond(horizontalAnim, 0, translate) },
+      ],
+    }),
+    [horizontalAnim, translate]
+  );
 
   const onLayout = () => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {

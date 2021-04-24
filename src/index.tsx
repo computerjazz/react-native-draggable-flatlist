@@ -111,8 +111,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const activeCellSize = useValue<number>(0); // Height or width of acctive cell
   const activeCellOffset = useValue<number>(0); // Distance between active cell and edge of container
 
-  const isHovering = useNode(greaterThan(activeIndexAnim, -1));
-  const isDraggingCell = useNode(and(isTouchActiveNative, isHovering));
+  const isDraggingCell = useNode(
+    and(isTouchActiveNative, greaterThan(activeIndexAnim, -1))
+  );
 
   const scrollOffset = useValue<number>(0);
   const scrollOffsetRef = useRef(0);
@@ -201,17 +202,15 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   });
 
   const onContainerLayout = () => {
-    if (containerRef.current) {
-      //@ts-ignore
-      containerRef.current.measure((_x, _y, w, h) => {
-        containerSize.setValue(props.horizontal ? w : h);
-      });
-    }
+    //@ts-ignore
+    containerRef.current?.measure((_x, _y, w, h) => {
+      containerSize.setValue(props.horizontal ? w : h);
+    });
   };
 
   const onListContentSizeChange = (w: number, h: number) => {
     scrollViewSize.setValue(props.horizontal ? w : h);
-    if (props.onContentSizeChange) props.onContentSizeChange(w, h);
+    props.onContentSizeChange?.(w, h);
   };
 
   const onContainerTouchStart = () => {
@@ -256,14 +255,19 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   );
 
   const resetHoverState = useCallback(() => {
-    setActiveKey(null);
     activeIndexAnim.setValue(-1);
     spacerIndexAnim.setValue(-1);
     touchAbsolute.setValue(0);
     disabled.setValue(0);
+    requestAnimationFrame(() => {
+      setActiveKey(null);
+    });
   }, [activeIndexAnim, spacerIndexAnim, touchAbsolute, disabled]);
 
   const onRelease = ([index]: readonly number[]) => {
+    // This shouldn't be necessary but seems to fix a bug where sometimes
+    // native values wouldn't update
+    isTouchActiveNative.setValue(0);
     props.onRelease?.(index);
   };
 
@@ -285,7 +289,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onGestureRelease = useNode(
     cond(
-      isHovering,
+      greaterThan(activeIndexAnim, -1),
       [
         set(disabled, 1),
         set(isTouchActiveNative, 0),
@@ -303,34 +307,38 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         x,
         y,
       }: PanGestureHandlerStateChangeEvent["nativeEvent"]) =>
-        cond(and(neq(state, panGestureState), not(disabled)), [
-          cond(
-            or(
-              eq(state, GestureState.BEGAN), // Called on press in on Android, NOT on ios!
-              // GestureState.BEGAN may be skipped on fast swipes
-              and(
-                eq(state, GestureState.ACTIVE),
-                neq(panGestureState, GestureState.BEGAN)
-              )
+        block([
+          cond(and(neq(state, panGestureState), not(disabled)), [
+            cond(
+              or(
+                eq(state, GestureState.BEGAN), // Called on press in on Android, NOT on ios!
+                // GestureState.BEGAN may be skipped on fast swipes
+                and(
+                  eq(state, GestureState.ACTIVE),
+                  neq(panGestureState, GestureState.BEGAN)
+                )
+              ),
+              [
+                set(touchAbsolute, props.horizontal ? x : y),
+                set(touchInit, touchAbsolute),
+              ]
             ),
-            [
+            cond(eq(state, GestureState.ACTIVE), [
+              set(activationDistance, sub(props.horizontal ? x : y, touchInit)),
               set(touchAbsolute, props.horizontal ? x : y),
-              set(touchInit, touchAbsolute),
-            ]
-          ),
-          cond(eq(state, GestureState.ACTIVE), [
-            set(activationDistance, sub(props.horizontal ? x : y, touchInit)),
-            set(touchAbsolute, props.horizontal ? x : y),
+            ]),
           ]),
-          cond(neq(panGestureState, state), set(panGestureState, state)),
-          cond(
-            or(
-              eq(state, GestureState.END),
-              eq(state, GestureState.CANCELLED),
-              eq(state, GestureState.FAILED)
+          cond(neq(panGestureState, state), [
+            set(panGestureState, state),
+            cond(
+              or(
+                eq(state, GestureState.END),
+                eq(state, GestureState.CANCELLED),
+                eq(state, GestureState.FAILED)
+              ),
+              onGestureRelease
             ),
-            onGestureRelease
-          ),
+          ]),
         ]),
     },
   ]);
@@ -340,7 +348,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       nativeEvent: ({ x, y }: PanGestureHandlerGestureEvent["nativeEvent"]) =>
         cond(
           and(
-            isHovering,
+            greaterThan(activeIndexAnim, -1),
             eq(panGestureState, GestureState.ACTIVE),
             not(disabled)
           ),
@@ -377,7 +385,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       hasMoved={hasMoved}
       horizontalAnim={horizontalAnim}
       hoverOffset={hoverOffset}
-      isHovering={isHovering}
       isDraggingCell={isDraggingCell}
       keyExtractor={keyExtractor}
       keyToIndexRef={keyToIndexRef}
