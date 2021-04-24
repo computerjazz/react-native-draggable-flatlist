@@ -8,6 +8,7 @@ import {
   FlatList as RNFlatList,
   NativeScrollEvent,
   StyleProp,
+  LogBox,
 } from "react-native";
 import {
   PanGestureHandler,
@@ -18,6 +19,10 @@ import {
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { springFill, setupCell } from "./procs";
+
+LogBox.ignoreLogs([
+  "ReactNativeFiberHostComponent: Calling getNode() on the ref of an Animated component is no longer necessary. You can now directly use the ref instead. This method will be removed in a future release.",
+]);
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as <T>(
   props: Animated.AnimateProps<
@@ -560,7 +565,7 @@ class DraggableFlatList<T> extends React.Component<
       };
 
       const ref = this.cellRefs.get(key);
-      const viewNode = ref && ref.current;
+      const viewNode = ref && ref.current && ref.current.getNode();
       const flatListNode = this.flatlistRef.current;
 
       if (viewNode && flatListNode) {
@@ -591,7 +596,7 @@ class DraggableFlatList<T> extends React.Component<
     const { horizontal } = this.props;
     const containerRef = this.containerRef.current;
     if (containerRef) {
-      containerRef.measure((_x, _y, w, h) => {
+      containerRef.getNode().measure((_x, _y, w, h) => {
         this.containerSize.setValue(horizontal ? w : h);
       });
     }
