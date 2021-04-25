@@ -9,10 +9,12 @@ import Animated, {
   useCode,
   useValue,
 } from "react-native-reanimated";
-import { useStaticValues } from "./context";
-import { setupCell, springFill } from "./procs";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useRefs } from "../context/refContext";
+import { setupCell, springFill } from "../procs";
 import { useSpring } from "./useSpring";
-import { useNode } from "./utils";
+import { useNode } from "../hooks/useNode";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 
 type Params = {
   cellIndex: Animated.Value<number>;
@@ -27,11 +29,11 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     hoverOffset,
     spacerIndexAnim,
     placeholderOffset,
-    animationConfigRef,
     isDraggingCell,
-    onDragEnd,
     resetTouchedCell,
-  } = useStaticValues();
+  } = useAnimatedValues();
+  const { animationConfigRef } = useRefs();
+  const { onDragEnd } = useDraggableFlatListContext();
 
   const cellSpring = useSpring({ config: animationConfigRef.current });
   const { clock, state, config } = cellSpring;

@@ -1,7 +1,8 @@
 import React, { useCallback, useRef } from "react";
-import { useActiveKey, useStaticValues } from "./context";
-import { RenderItem } from "./types";
-import { typedMemo } from "./utils";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
+import { useRefs } from "../context/refContext";
+import { RenderItem } from "../types";
+import { typedMemo } from "../utils";
 
 type Props<T> = {
   extraData?: any;
@@ -16,10 +17,10 @@ function RowItem<T>(props: Props<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
-  const { activeKey } = useActiveKey();
+  const { activeKey } = useDraggableFlatListContext();
   const activeKeyRef = useRef(activeKey);
   activeKeyRef.current = activeKey;
-  const { keyToIndexRef } = useStaticValues();
+  const { keyToIndexRef } = useRefs();
 
   const drag = useCallback(() => {
     const { drag, itemKey, debug } = propsRef.current;

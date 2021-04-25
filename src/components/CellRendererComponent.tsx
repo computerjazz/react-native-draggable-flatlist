@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
-import { isAndroid, isIOS } from "./constants";
-import { useActiveKey, useProps, useStaticValues } from "./context";
-import { useCellTranslate } from "./useCellTranslate";
-import { typedMemo } from "./utils";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
+import { isAndroid, isIOS } from "../constants";
+import { useCellTranslate } from "../hooks/useCellTranslate";
+import { typedMemo } from "../utils";
+import { useRefs } from "../context/refContext";
+import { useProps } from "../context/propsContext";
+import { useAnimatedValues } from "../context/animatedValueContext";
 
 type Props<T> = {
   item: T;
@@ -23,15 +26,10 @@ function CellRendererComponent<T>(props: Props<T>) {
   }, [index, currentIndexAnim]);
 
   const viewRef = useRef<Animated.View>(null);
-  const {
-    cellDataRef,
-    horizontalAnim,
-    keyExtractor,
-    flatlistRef,
-    propsRef,
-  } = useStaticValues<T>();
+  const { cellDataRef, flatlistRef, propsRef } = useRefs<T>();
 
-  const { activeKey } = useActiveKey();
+  const { horizontalAnim } = useAnimatedValues();
+  const { activeKey, keyExtractor } = useDraggableFlatListContext<T>();
   const { horizontal } = useProps();
 
   const key = keyExtractor(item, index);

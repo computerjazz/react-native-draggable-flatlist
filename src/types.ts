@@ -58,3 +58,10 @@ export type AnimatedFlatListType = <T>(
     }
   >
 ) => React.ReactElement;
+
+export type CellData = {
+  measurements: {
+    size: number;
+    offset: number;
+  };
+};

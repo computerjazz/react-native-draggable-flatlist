@@ -1,5 +1,5 @@
 import Animated, { call, onChange, useCode } from "react-native-reanimated";
-import { typedMemo } from "../DraggableFlatListV2/types";
+import { typedMemo } from "../utils";
 
 type Props = {
   scrollOffset: Animated.Value<number>;

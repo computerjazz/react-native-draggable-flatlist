@@ -13,9 +13,9 @@ import Animated, {
   useValue,
   sub,
 } from "react-native-reanimated";
-import { springFill } from "./procs";
-import { useSpring } from "./useSpring";
-import { useNode } from "./utils";
+import { springFill } from "../procs";
+import { useSpring } from "../hooks/useSpring";
+import { useNode } from "../hooks/useNode";
 
 type ScaleProps = {
   activeScale?: number;

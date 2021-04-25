@@ -1,6 +1,5 @@
 import { useRef } from "react";
-import { FlatList } from "react-native-gesture-handler";
-import Animated, {
+import {
   abs,
   add,
   and,
@@ -20,34 +19,29 @@ import Animated, {
   useValue,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
-import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "./constants";
-import { useNode } from "./utils";
+import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "../constants";
+import { useNode } from "../hooks/useNode";
+import { useProps } from "../context/propsContext";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useRefs } from "../context/refContext";
 
-type Params = {
-  scrollOffset: Animated.Value<number>;
-  scrollViewSize: Animated.Value<number>;
-  containerSize: Animated.Value<number>;
-  hoverAnim: Animated.Node<number>;
-  isDraggingCell: Animated.Node<number>;
-  activeCellSize: Animated.Value<number>;
-  flatlistRef: React.RefObject<FlatList<any>>;
-  autoscrollThreshold?: number;
-  autoscrollSpeed?: number;
-  panGestureState: Animated.Value<GestureState>;
-};
+export function useAutoScroll() {
+  const { flatlistRef } = useRefs();
+  const {
+    autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
+    autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
+  } = useProps();
 
-export function useAutoScroll({
-  scrollOffset,
-  scrollViewSize,
-  containerSize,
-  hoverAnim,
-  isDraggingCell,
-  activeCellSize,
-  flatlistRef,
-  autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
-  autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
-  panGestureState,
-}: Params) {
+  const {
+    scrollOffset,
+    scrollViewSize,
+    containerSize,
+    hoverAnim,
+    isDraggingCell,
+    activeCellSize,
+    panGestureState,
+  } = useAnimatedValues();
+
   const isScrolledUp = useNode(
     lessOrEq(sub(scrollOffset, SCROLL_POSITION_TOLERANCE), 0)
   );

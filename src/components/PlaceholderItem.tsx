@@ -9,9 +9,13 @@ import Animated, {
   greaterThan,
   cond,
 } from "react-native-reanimated";
-import { useActiveKey, useStaticValues, useProps } from "./context";
-import { RenderPlaceholder } from "./types";
-import { typedMemo, useNode } from "./utils";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
+import { useProps } from "../context/propsContext";
+import { useRefs } from "../context/refContext";
+import { useNode } from "../hooks/useNode";
+import { RenderPlaceholder } from "../types";
+import { typedMemo } from "../utils";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
@@ -20,13 +24,12 @@ type Props<T> = {
 function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const {
     activeCellSize,
-    keyToIndexRef,
     placeholderScreenOffset,
     spacerIndexAnim,
-    propsRef,
-  } = useStaticValues<T>();
+  } = useAnimatedValues();
+  const { keyToIndexRef, propsRef } = useRefs<T>();
 
-  const { activeKey } = useActiveKey();
+  const { activeKey } = useDraggableFlatListContext();
   const { horizontal } = useProps();
 
   // for some reason using placeholderScreenOffset directly is buggy

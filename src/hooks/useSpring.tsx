@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import Animated, { Clock, useValue } from "react-native-reanimated";
-import { DEFAULT_ANIMATION_CONFIG } from "./constants";
+import { DEFAULT_ANIMATION_CONFIG } from "../constants";
 
 type Params = {
   config: Partial<Animated.SpringConfig>;
