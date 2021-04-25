@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import { View } from "react-native";
 import Animated, {
   add,
@@ -10,36 +10,33 @@ import Animated, {
   startClock,
   stopClock,
   useCode,
-  useValue,
   sub,
 } from "react-native-reanimated";
 import { springFill } from "../procs";
 import { useSpring } from "../hooks/useSpring";
 import { useNode } from "../hooks/useNode";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useIsActive } from "../context/cellContext";
 
 type ScaleProps = {
   activeScale?: number;
-  isDragging: Animated.Value<number>;
-  isActive: boolean;
   children: React.ReactNode;
 };
 
-export const ScaleWrapper = ({
-  activeScale = 1.1,
-  isDragging,
-  isActive,
-  children,
-}: ScaleProps) => {
+export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
   const { clock, state, config } = useSpring({
     config: { mass: 0.1, restDisplacementThreshold: 0.0001 },
   });
 
+  const { isDraggingCell } = useAnimatedValues();
+  const isActive = useIsActive();
+
   useCode(
     () =>
       block([
-        onChange(isDragging, [
+        onChange(isDraggingCell, [
           //@ts-ignore
-          set(config.toValue, cond(isDragging, sub(activeScale, 1), 0)),
+          set(config.toValue, cond(isDraggingCell, sub(activeScale, 1), 0)),
           startClock(clock),
         ]),
         cond(clockRunning(clock), [
@@ -67,7 +64,6 @@ export const ScaleWrapper = ({
 };
 
 type ShadowProps = {
-  isActive: boolean;
   children: React.ReactNode;
   elevation?: number;
   radius?: number;
@@ -75,14 +71,14 @@ type ShadowProps = {
   opacity?: number;
 };
 
-export const ShadowWrapper = ({
-  isActive,
+export const ShadowDecorator = ({
   elevation = 10,
   color = "black",
   opacity = 0.25,
   radius = 5,
   children,
 }: ShadowProps) => {
+  const isActive = useIsActive();
   const style = {
     elevation: isActive ? elevation : 0,
     shadowRadius: isActive ? radius : 0,
@@ -91,25 +87,4 @@ export const ShadowWrapper = ({
   };
 
   return <View style={style}>{children}</View>;
-};
-
-export const useCellWrapperHelpers = () => {
-  const isDragging = useValue<number>(0);
-
-  const onDragBegin = useCallback(() => {
-    isDragging.setValue(1);
-  }, [isDragging]);
-
-  const onDragRelease = useCallback(() => {
-    isDragging.setValue(0);
-  }, [isDragging]);
-
-  return useMemo(
-    () => ({
-      isDragging,
-      onDragBegin,
-      onDragRelease,
-    }),
-    [isDragging, onDragBegin, onDragRelease]
-  );
 };

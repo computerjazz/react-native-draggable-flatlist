@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from "react";
 
 type DraggableFlatlistContextValue<T> = {
   activeKey: string | null;
-  keyExtractor: (item: T, index: number) => void;
+  keyExtractor: (item: T, index: number) => string;
   onDragEnd: ([from, to]: readonly number[]) => void;
 };
 

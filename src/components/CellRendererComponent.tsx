@@ -8,6 +8,7 @@ import { typedMemo } from "../utils";
 import { useRefs } from "../context/refContext";
 import { useProps } from "../context/propsContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
+import CellProvider from "../context/cellContext";
 
 type Props<T> = {
   item: T;
@@ -96,7 +97,7 @@ function CellRendererComponent<T>(props: Props<T>) {
         pointerEvents={activeKey ? "none" : "auto"}
         style={{ flexDirection: horizontal ? "row" : "column" }}
       >
-        {children}
+        <CellProvider isActive={isActive}>{children}</CellProvider>
       </Animated.View>
     </Animated.View>
   );
