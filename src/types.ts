@@ -16,22 +16,23 @@ type DefaultProps = Readonly<typeof DEFAULT_PROPS>;
 export type DraggableFlatListProps<T> = Modify<
   FlatListProps<T>,
   {
+    data: T[];
+    activationDistance?: number;
+    animationConfig?: Partial<Animated.SpringConfig>;
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
-    data: T[];
-    onRef?: (ref: React.RefObject<AnimatedFlatListType>) => void;
+    containerStyle?: StyleProp<ViewStyle>;
+    debug?: boolean;
+    dragItemOverflow?: boolean;
+    keyExtractor: (item: T, index: number) => string;
     onDragBegin?: (index: number) => void;
-    onRelease?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;
+    onPlaceholderIndexChange?: (placeholderIndex: number) => void;
+    onRef?: (ref: React.RefObject<AnimatedFlatListType>) => void;
+    onRelease?: (index: number) => void;
+    onScrollOffsetChange?: (scrollOffset: number) => void;
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
-    animationConfig: Partial<Animated.SpringConfig>;
-    activationDistance?: number;
-    debug?: boolean;
-    onScrollOffsetChange?: (scrollOffset: number) => void;
-    onPlaceholderIndexChange?: (placeholderIndex: number) => void;
-    containerStyle?: StyleProp<ViewStyle>;
-    dragItemOverflow?: boolean;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
   } & Partial<DefaultProps>
 >;
