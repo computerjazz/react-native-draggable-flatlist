@@ -17,7 +17,6 @@ import {
   sub,
   useCode,
   useValue,
-  Node,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
 import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "../constants";
@@ -26,7 +25,7 @@ import { useProps } from "../context/PropsContext";
 import { useAnimatedValues } from "../context/AnimatedValueContext";
 import { useRefs } from "../context/RefContext";
 
-export function useAutoScroll(): Node<number> {
+export function useAutoScroll() {
   const { flatlistRef } = useRefs();
   const {
     autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
