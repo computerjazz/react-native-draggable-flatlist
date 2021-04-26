@@ -1,11 +1,15 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./PropsContext";
 import { useAnimatedValues } from "./AnimatedValueContext";
-import { CellData, DraggableFlatListProps } from "../types";
+import {
+  AnimatedFlatListType,
+  CellData,
+  DraggableFlatListProps,
+} from "../types";
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
@@ -46,7 +50,7 @@ export function useRefs<T>() {
 
 function useSetupRefs<T>() {
   const props = useProps<T>();
-  const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
+  const { onRef, animationConfig = DEFAULT_PROPS.animationConfig } = props;
 
   const { isTouchActiveNative } = useAnimatedValues();
 
@@ -62,13 +66,17 @@ function useSetupRefs<T>() {
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useRef<FlatList<T>>(null);
+  const flatlistRef = useRef<AnimatedFlatListType>(null);
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
   const scrollOffsetRef = useRef(0);
   const isTouchActiveRef = useRef({
     native: isTouchActiveNative,
     js: false,
   });
+
+  useEffect(() => {
+    if (flatlistRef.current) onRef?.(flatlistRef.current);
+  }, [onRef]);
 
   const refs = useMemo(
     () => ({

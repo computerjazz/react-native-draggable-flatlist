@@ -28,7 +28,7 @@ export type DraggableFlatListProps<T> = Modify<
     onDragBegin?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;
     onPlaceholderIndexChange?: (placeholderIndex: number) => void;
-    onRef?: (ref: React.RefObject<AnimatedFlatListType>) => void;
+    onRef?: (ref: AnimatedFlatListType) => void;
     onRelease?: (index: number) => void;
     onScrollOffsetChange?: (scrollOffset: number) => void;
     renderItem: RenderItem<T>;
