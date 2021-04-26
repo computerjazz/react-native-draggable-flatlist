@@ -5,11 +5,7 @@ import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./PropsContext";
 import { useAnimatedValues } from "./AnimatedValueContext";
-import {
-  AnimatedFlatListType,
-  CellData,
-  DraggableFlatListProps,
-} from "../types";
+import { CellData, DraggableFlatListProps } from "../types";
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
@@ -66,7 +62,7 @@ function useSetupRefs<T>() {
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useRef<AnimatedFlatListType>(null);
+  const flatlistRef = useRef<FlatList<T>>(null);
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
   const scrollOffsetRef = useRef(0);
   const isTouchActiveRef = useRef({
