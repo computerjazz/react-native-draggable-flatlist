@@ -1,5 +1,6 @@
 import Animated, {
   clockRunning,
+  not,
   startClock,
   stopClock,
 } from "react-native-reanimated";
@@ -73,68 +74,77 @@ export const setupCell = proc(
     isDraggingCell: Animated.Node<number>,
     placeholderOffset: Animated.Value<number>,
     prevIsDraggingCell: Animated.Value<number>,
-    clock: Animated.Clock
+    clock: Animated.Clock,
+    disabled: Animated.Node<number>
   ) =>
     block([
       cond(
         greaterThan(activeIndex, -1),
         [
-          // Determine whether this cell is after the active cell in the list
-          set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
+          // Only update spacer if touch is not disabled.
+          // Fixes android bugs where state would update with invalid touch values on touch end.
+          cond(not(disabled), [
+            // Determine whether this cell is after the active cell in the list
+            set(isAfterActive, getIsAfterActive(currentIndex, activeIndex)),
 
-          // Determining spacer index is hard to visualize, see diagram: https://i.imgur.com/jRPf5t3.jpg
-          cond(
-            isAfterActive,
-            [
-              cond(
-                and(
-                  greaterOrEq(add(hoverOffset, activeCellSize), offset),
-                  lessThan(
-                    add(hoverOffset, activeCellSize),
-                    add(offset, divide(size, 2))
-                  )
-                ),
-                set(spacerIndex, sub(currentIndex, 1))
-              ),
-              cond(
-                and(
-                  greaterOrEq(
-                    add(hoverOffset, activeCellSize),
-                    add(offset, divide(size, 2))
+            // Determining spacer index is hard to visualize, see diagram: https://i.imgur.com/jRPf5t3.jpg
+            cond(
+              isAfterActive,
+              [
+                cond(
+                  and(
+                    greaterOrEq(add(hoverOffset, activeCellSize), offset),
+                    lessThan(
+                      add(hoverOffset, activeCellSize),
+                      add(offset, divide(size, 2))
+                    )
                   ),
-                  lessThan(add(hoverOffset, activeCellSize), add(offset, size))
+                  set(spacerIndex, sub(currentIndex, 1))
                 ),
-                set(spacerIndex, currentIndex)
-              ),
-            ],
-            cond(lessThan(currentIndex, activeIndex), [
-              cond(
-                and(
-                  lessThan(hoverOffset, add(offset, size)),
-                  greaterOrEq(hoverOffset, add(offset, divide(size, 2)))
+                cond(
+                  and(
+                    greaterOrEq(
+                      add(hoverOffset, activeCellSize),
+                      add(offset, divide(size, 2))
+                    ),
+                    lessThan(
+                      add(hoverOffset, activeCellSize),
+                      add(offset, size)
+                    )
+                  ),
+                  set(spacerIndex, currentIndex)
                 ),
-                set(spacerIndex, add(currentIndex, 1))
-              ),
-              cond(
-                and(
-                  greaterOrEq(hoverOffset, offset),
-                  lessThan(hoverOffset, add(offset, divide(size, 2)))
+              ],
+              cond(lessThan(currentIndex, activeIndex), [
+                cond(
+                  and(
+                    lessThan(hoverOffset, add(offset, size)),
+                    greaterOrEq(hoverOffset, add(offset, divide(size, 2)))
+                  ),
+                  set(spacerIndex, add(currentIndex, 1))
                 ),
-                set(spacerIndex, currentIndex)
-              ),
-            ])
-          ),
-          // Set placeholder offset
-          cond(eq(spacerIndex, currentIndex), [
-            set(
-              placeholderOffset,
-              cond(
-                isAfterActive,
-                add(sub(offset, activeCellSize), size),
-                offset
-              )
+                cond(
+                  and(
+                    greaterOrEq(hoverOffset, offset),
+                    lessThan(hoverOffset, add(offset, divide(size, 2)))
+                  ),
+                  set(spacerIndex, currentIndex)
+                ),
+              ])
             ),
+            // Set placeholder offset
+            cond(eq(spacerIndex, currentIndex), [
+              set(
+                placeholderOffset,
+                cond(
+                  isAfterActive,
+                  add(sub(offset, activeCellSize), size),
+                  offset
+                )
+              ),
+            ]),
           ]),
+
           cond(
             eq(currentIndex, activeIndex),
             [
@@ -149,8 +159,9 @@ export const setupCell = proc(
                   // Active item, not pressed in
 
                   // Set value hovering element will snap to once released
-                  set(toValue, sub(placeholderOffset, offset)),
-                  cond(prevIsDraggingCell, startClock(clock)),
+                  cond(prevIsDraggingCell, [
+                    set(toValue, sub(placeholderOffset, offset)),
+                  ]),
                 ]
               ),
             ],

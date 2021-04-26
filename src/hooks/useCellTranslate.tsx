@@ -31,6 +31,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     placeholderOffset,
     isDraggingCell,
     resetTouchedCell,
+    disabled,
   } = useAnimatedValues();
   const { animationConfigRef } = useRefs();
   const { onDragEnd } = useDraggableFlatListContext();
@@ -79,7 +80,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       isDraggingCell,
       placeholderOffset,
       prevIsDraggingCell,
-      clock
+      clock,
+      disabled
     )
   );
 
