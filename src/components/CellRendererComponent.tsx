@@ -6,7 +6,6 @@ import { isAndroid, isIOS } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";
 import { useRefs } from "../context/refContext";
-import { useProps } from "../context/propsContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import CellProvider from "../context/cellContext";
 
@@ -30,8 +29,11 @@ function CellRendererComponent<T>(props: Props<T>) {
   const { cellDataRef, flatlistRef, propsRef } = useRefs<T>();
 
   const { horizontalAnim } = useAnimatedValues();
-  const { activeKey, keyExtractor } = useDraggableFlatListContext<T>();
-  const { horizontal } = useProps();
+  const {
+    activeKey,
+    keyExtractor,
+    horizontal,
+  } = useDraggableFlatListContext<T>();
 
   const key = keyExtractor(item, index);
   const offset = useValue<number>(-1);

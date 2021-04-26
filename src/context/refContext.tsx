@@ -4,10 +4,23 @@ import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
-import { CellData } from "../types";
+import { CellData, DraggableFlatListProps } from "../types";
 import { useAnimatedValues } from "./animatedValueContext";
 
-type RefContextValue<T> = ReturnType<typeof useSetupRefs>;
+type RefContextValue<T> = {
+  propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
+  animationConfigRef: React.MutableRefObject<Animated.SpringConfig>;
+  cellDataRef: React.MutableRefObject<Map<string, CellData>>;
+  keyToIndexRef: React.MutableRefObject<Map<string, number>>;
+  containerRef: React.RefObject<Animated.View>;
+  flatlistRef: React.RefObject<FlatList<T>>;
+  panGestureHandlerRef: React.RefObject<PanGestureHandler>;
+  scrollOffsetRef: React.MutableRefObject<number>;
+  isTouchActiveRef: React.MutableRefObject<{
+    native: Animated.Value<number>;
+    js: boolean;
+  }>;
+};
 const RefContext = React.createContext<RefContextValue<any> | undefined>(
   undefined
 );
@@ -49,7 +62,7 @@ function useSetupRefs<T>() {
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useRef<FlatList<T>>();
+  const flatlistRef = useRef<FlatList<T>>(null);
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
   const scrollOffsetRef = useRef(0);
   const isTouchActiveRef = useRef({
@@ -59,15 +72,15 @@ function useSetupRefs<T>() {
 
   const refs = useMemo(
     () => ({
-      propsRef,
       animationConfigRef,
       cellDataRef,
-      keyToIndexRef,
       containerRef,
       flatlistRef,
-      panGestureHandlerRef,
-      scrollOffsetRef,
       isTouchActiveRef,
+      keyToIndexRef,
+      panGestureHandlerRef,
+      propsRef,
+      scrollOffsetRef,
     }),
     []
   );

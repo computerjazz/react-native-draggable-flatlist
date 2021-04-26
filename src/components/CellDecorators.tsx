@@ -1,58 +1,34 @@
 import React from "react";
-import { View } from "react-native";
 import Animated, {
-  add,
-  block,
-  clockRunning,
-  cond,
-  onChange,
-  set,
-  startClock,
-  stopClock,
-  useCode,
-  sub,
+  interpolate,
+  interpolateNode,
+  multiply,
 } from "react-native-reanimated";
-import { springFill } from "../procs";
-import { useSpring } from "../hooks/useSpring";
 import { useNode } from "../hooks/useNode";
-import { useAnimatedValues } from "../context/animatedValueContext";
-import { useIsActive } from "../context/cellContext";
+import { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 
 type ScaleProps = {
   activeScale?: number;
   children: React.ReactNode;
 };
 
+// support older versions of Reanimated v1 by using the old interpolate function
+// if interpolateNode not available.
+const interpolateFn = ((interpolateNode ||
+  interpolate) as unknown) as typeof interpolateNode;
+
 export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
-  const { clock, state, config } = useSpring({
-    config: { mass: 0.1, restDisplacementThreshold: 0.0001 },
+  const { isActive, onActiveAnim } = useOnCellActiveAnimation({
+    animationConfig: { mass: 0.1, restDisplacementThreshold: 0.0001 },
   });
 
-  const { isDraggingCell } = useAnimatedValues();
-  const isActive = useIsActive();
-
-  useCode(
-    () =>
-      block([
-        onChange(isDraggingCell, [
-          //@ts-ignore
-          set(config.toValue, cond(isDraggingCell, sub(activeScale, 1), 0)),
-          startClock(clock),
-        ]),
-        cond(clockRunning(clock), [
-          springFill(clock, state, config),
-          cond(state.finished, [
-            stopClock(clock),
-            set(state.finished, 0),
-            set(state.time, 0),
-            set(state.velocity, 0),
-          ]),
-        ]),
-      ]),
-    []
+  const animScale = useNode(
+    interpolateFn(onActiveAnim, {
+      inputRange: [0, 1],
+      outputRange: [1, activeScale],
+    })
   );
 
-  const animScale = useNode(add(state.position, 1));
   const scale = isActive ? animScale : 1;
   return (
     <Animated.View
@@ -78,13 +54,39 @@ export const ShadowDecorator = ({
   radius = 5,
   children,
 }: ShadowProps) => {
-  const isActive = useIsActive();
+  const { isActive, onActiveAnim } = useOnCellActiveAnimation();
+  const shadowOpacity = useNode(multiply(onActiveAnim, opacity));
+
   const style = {
     elevation: isActive ? elevation : 0,
     shadowRadius: isActive ? radius : 0,
     shadowColor: isActive ? color : "transparent",
-    shadowOpacity: isActive ? opacity : 0,
+    shadowOpacity: isActive ? shadowOpacity : 0,
   };
 
-  return <View style={style}>{children}</View>;
+  return <Animated.View style={style}>{children}</Animated.View>;
+};
+
+type OpacityProps = {
+  activeOpacity?: number;
+  children: React.ReactNode;
+};
+
+export const OpacityDecorator = ({
+  activeOpacity = 0.25,
+  children,
+}: OpacityProps) => {
+  const { isActive, onActiveAnim } = useOnCellActiveAnimation();
+  const opacity = useNode(
+    interpolateFn(onActiveAnim, {
+      inputRange: [0, 1],
+      outputRange: [1, activeOpacity],
+    })
+  );
+
+  const style = {
+    opacity: isActive ? opacity : 1,
+  };
+
+  return <Animated.View style={style}>{children}</Animated.View>;
 };

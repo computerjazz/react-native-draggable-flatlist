@@ -313,6 +313,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       activeKey={activeKey}
       onDragEnd={onDragEnd}
       keyExtractor={keyExtractor}
+      horizontal={!!props.horizontal}
     >
       <PanGestureHandler
         ref={panGestureHandlerRef}

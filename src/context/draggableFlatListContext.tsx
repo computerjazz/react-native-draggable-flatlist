@@ -1,26 +1,24 @@
 import React, { useContext, useMemo } from "react";
 
-type DraggableFlatlistContextValue<T> = {
+type Props<T> = {
   activeKey: string | null;
-  keyExtractor: (item: T, index: number) => string;
   onDragEnd: ([from, to]: readonly number[]) => void;
+  keyExtractor: (item: T, index: number) => string;
+  horizontal: boolean;
+  children: React.ReactNode;
 };
+
+type DraggableFlatlistContextValue<T> = Omit<Props<T>, "children">;
 
 const DraggableFlatListContext = React.createContext<
   DraggableFlatlistContextValue<any> | undefined
 >(undefined);
 
-type Props<T> = {
-  activeKey: string | null;
-  onDragEnd: ([from, to]: readonly number[]) => void;
-  keyExtractor: (item: T, index: number) => string;
-  children: React.ReactNode;
-};
-
 export default function DraggableFlatListProvider<T>({
   activeKey,
   onDragEnd,
   keyExtractor,
+  horizontal,
   children,
 }: Props<T>) {
   const value = useMemo(
@@ -28,8 +26,9 @@ export default function DraggableFlatListProvider<T>({
       activeKey,
       keyExtractor,
       onDragEnd,
+      horizontal,
     }),
-    [activeKey, onDragEnd, keyExtractor]
+    [activeKey, onDragEnd, keyExtractor, horizontal]
   );
 
   return (
