@@ -22,9 +22,9 @@ import {
 import { State as GestureState } from "react-native-gesture-handler";
 import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "../constants";
 import { useNode } from "../hooks/useNode";
-import { useProps } from "../context/propsContext";
-import { useAnimatedValues } from "../context/animatedValueContext";
-import { useRefs } from "../context/refContext";
+import { useProps } from "../context/PropsContext";
+import { useAnimatedValues } from "../context/AnimatedValueContext";
+import { useRefs } from "../context/RefContext";
 
 export function useAutoScroll(): Node<number> {
   const { flatlistRef } = useRefs();

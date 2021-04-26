@@ -8,10 +8,10 @@ type Props<T> = {
   children: React.ReactNode;
 };
 
-type DraggableFlatlistContextValue<T> = Omit<Props<T>, "children">;
+type DraggableFlatListContextValue<T> = Omit<Props<T>, "children">;
 
 const DraggableFlatListContext = React.createContext<
-  DraggableFlatlistContextValue<any> | undefined
+  DraggableFlatListContextValue<any> | undefined
 >(undefined);
 
 export default function DraggableFlatListProvider<T>({
@@ -45,5 +45,5 @@ export function useDraggableFlatListContext<T>() {
       "useDraggableFlatListContext must be called within DraggableFlatListProvider"
     );
   }
-  return value as DraggableFlatlistContextValue<T>;
+  return value as DraggableFlatListContextValue<T>;
 }

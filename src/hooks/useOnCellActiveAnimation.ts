@@ -8,8 +8,8 @@ import Animated, {
   stopClock,
   useCode,
 } from "react-native-reanimated";
-import { useAnimatedValues } from "../context/animatedValueContext";
-import { useIsActive } from "../context/cellContext";
+import { useAnimatedValues } from "../context/AnimatedValueContext";
+import { useIsActive } from "../context/CellContext";
 import { springFill } from "../procs";
 import { useSpring } from "./useSpring";
 

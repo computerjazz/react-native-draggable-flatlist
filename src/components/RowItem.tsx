@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from "react";
-import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { useRefs } from "../context/refContext";
+import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
+import { useRefs } from "../context/RefContext";
 import { RenderItem } from "../types";
 import { typedMemo } from "../utils";
 

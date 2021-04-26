@@ -3,9 +3,9 @@ import { useMemo, useRef } from "react";
 import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
-import { useProps } from "./propsContext";
+import { useProps } from "./PropsContext";
+import { useAnimatedValues } from "./AnimatedValueContext";
 import { CellData, DraggableFlatListProps } from "../types";
-import { useAnimatedValues } from "./animatedValueContext";
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;

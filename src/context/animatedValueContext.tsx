@@ -13,7 +13,7 @@ import {
 import { State as GestureState } from "react-native-gesture-handler";
 import { useNode } from "../hooks/useNode";
 import { useMemo } from "react";
-import { useProps } from "./propsContext";
+import { useProps } from "./PropsContext";
 
 const AnimatedValueContext = React.createContext<
   ReturnType<typeof useSetupAnimatedValues> | undefined

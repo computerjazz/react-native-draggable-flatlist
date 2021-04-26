@@ -9,12 +9,12 @@ import Animated, {
   useCode,
   useValue,
 } from "react-native-reanimated";
-import { useAnimatedValues } from "../context/animatedValueContext";
-import { useRefs } from "../context/refContext";
+import { useAnimatedValues } from "../context/AnimatedValueContext";
+import { useRefs } from "../context/RefContext";
 import { setupCell, springFill } from "../procs";
 import { useSpring } from "./useSpring";
 import { useNode } from "../hooks/useNode";
-import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
+import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
 
 type Params = {
   cellIndex: Animated.Value<number>;
