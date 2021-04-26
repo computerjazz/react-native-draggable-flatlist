@@ -5,6 +5,7 @@ import Animated, {
   multiply,
 } from "react-native-reanimated";
 import { useNode } from "../hooks/useNode";
+export { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 import { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 
 type ScaleProps = {
