@@ -4,6 +4,7 @@ import Animated, {
   startClock,
   stopClock,
 } from "react-native-reanimated";
+import { isWeb } from "./constants";
 
 const {
   set,
@@ -23,13 +24,9 @@ const {
   lessOrEq,
   multiply,
 } = Animated;
-let { proc } = Animated;
 
-if (!proc) {
-  console.warn("Use reanimated > 1.3 for optimal perf");
-  const procStub = <T>(cb: T) => cb;
-  proc = procStub;
-}
+// clock procs don't seem to work in web, not sure if there's a perf benefit to web procs anyway?
+const proc = isWeb ? <T>(cb: T) => cb : Animated.proc;
 
 export const getIsAfterActive = proc(
   (currentIndex: Animated.Node<number>, activeIndex: Animated.Node<number>) =>
@@ -161,6 +158,14 @@ export const setupCell = proc(
                   // Set value hovering element will snap to once released
                   cond(prevIsDraggingCell, [
                     set(toValue, sub(placeholderOffset, offset)),
+                    // The clock starts automatically when toValue changes, however, we need to handle the
+                    // case where the item should snap back to its original location and toValue doesn't change
+                    cond(eq(prevToValue, toValue), [
+                      cond(clockRunning(clock), stopClock(clock)),
+                      set(time, 0),
+                      set(finished, 0),
+                      startClock(clock),
+                    ]),
                   ]),
                 ]
               ),
@@ -198,6 +203,7 @@ export const setupCell = proc(
         [
           // Reset the spacer index when drag ends
           set(spacerIndex, -1),
+          set(position, 0),
         ]
       ),
       cond(neq(prevSpacerIndex, spacerIndex), [

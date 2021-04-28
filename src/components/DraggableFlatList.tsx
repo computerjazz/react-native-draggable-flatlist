@@ -151,6 +151,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const onContainerTouchStart = () => {
     isTouchActiveRef.current.js = true;
     isTouchActiveRef.current.native.setValue(1);
+    return false;
   };
 
   const onContainerTouchEnd = () => {
@@ -235,78 +236,111 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     )
   );
 
-  const onPanStateChange = event([
-    {
-      nativeEvent: ({
-        state,
-        x,
-        y,
-      }: PanGestureHandlerStateChangeEvent["nativeEvent"]) =>
-        block([
-          cond(and(neq(state, panGestureState), not(disabled)), [
+  const onPanStateChange = useMemo(
+    () =>
+      event([
+        {
+          nativeEvent: ({
+            state,
+            x,
+            y,
+          }: PanGestureHandlerStateChangeEvent["nativeEvent"]) =>
+            block([
+              cond(and(neq(state, panGestureState), not(disabled)), [
+                cond(
+                  or(
+                    eq(state, GestureState.BEGAN), // Called on press in on Android, NOT on ios!
+                    // GestureState.BEGAN may be skipped on fast swipes
+                    and(
+                      eq(state, GestureState.ACTIVE),
+                      neq(panGestureState, GestureState.BEGAN)
+                    )
+                  ),
+                  [
+                    set(touchAbsolute, props.horizontal ? x : y),
+                    set(touchInit, touchAbsolute),
+                  ]
+                ),
+                cond(eq(state, GestureState.ACTIVE), [
+                  set(
+                    activationDistance,
+                    sub(props.horizontal ? x : y, touchInit)
+                  ),
+                  set(touchAbsolute, props.horizontal ? x : y),
+                ]),
+              ]),
+              cond(neq(panGestureState, state), [
+                set(panGestureState, state),
+                cond(
+                  or(
+                    eq(state, GestureState.END),
+                    eq(state, GestureState.CANCELLED),
+                    eq(state, GestureState.FAILED)
+                  ),
+                  onGestureRelease
+                ),
+              ]),
+            ]),
+        },
+      ]),
+    [
+      activationDistance,
+      props.horizontal,
+      panGestureState,
+      disabled,
+      onGestureRelease,
+      touchAbsolute,
+      touchInit,
+    ]
+  );
+
+  const onPanGestureEvent = useMemo(
+    () =>
+      event([
+        {
+          nativeEvent: ({
+            x,
+            y,
+          }: PanGestureHandlerGestureEvent["nativeEvent"]) =>
             cond(
-              or(
-                eq(state, GestureState.BEGAN), // Called on press in on Android, NOT on ios!
-                // GestureState.BEGAN may be skipped on fast swipes
-                and(
-                  eq(state, GestureState.ACTIVE),
-                  neq(panGestureState, GestureState.BEGAN)
-                )
+              and(
+                greaterThan(activeIndexAnim, -1),
+                eq(panGestureState, GestureState.ACTIVE),
+                not(disabled)
               ),
               [
+                cond(not(hasMoved), set(hasMoved, 1)),
                 set(touchAbsolute, props.horizontal ? x : y),
-                set(touchInit, touchAbsolute),
               ]
             ),
-            cond(eq(state, GestureState.ACTIVE), [
-              set(activationDistance, sub(props.horizontal ? x : y, touchInit)),
-              set(touchAbsolute, props.horizontal ? x : y),
-            ]),
-          ]),
-          cond(neq(panGestureState, state), [
-            set(panGestureState, state),
-            cond(
-              or(
-                eq(state, GestureState.END),
-                eq(state, GestureState.CANCELLED),
-                eq(state, GestureState.FAILED)
+        },
+      ]),
+    [
+      activeIndexAnim,
+      disabled,
+      hasMoved,
+      panGestureState,
+      props.horizontal,
+      touchAbsolute,
+    ]
+  );
+
+  const scrollHandler = useMemo(
+    () =>
+      event([
+        {
+          nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
+            block([
+              set(
+                scrollOffset,
+                props.horizontal ? contentOffset.x : contentOffset.y
               ),
-              onGestureRelease
-            ),
-          ]),
-        ]),
-    },
-  ]);
-
-  const onPanGestureEvent = event([
-    {
-      nativeEvent: ({ x, y }: PanGestureHandlerGestureEvent["nativeEvent"]) =>
-        cond(
-          and(
-            greaterThan(activeIndexAnim, -1),
-            eq(panGestureState, GestureState.ACTIVE),
-            not(disabled)
-          ),
-          [
-            cond(not(hasMoved), set(hasMoved, 1)),
-            set(touchAbsolute, props.horizontal ? x : y),
-          ]
-        ),
-    },
-  ]);
-
-  const scrollHandler = event([
-    {
-      nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
-        block([
-          set(
-            scrollOffset,
-            props.horizontal ? contentOffset.x : contentOffset.y
-          ),
-          autoScrollNode,
-        ]),
-    },
-  ]);
+              autoScrollNode,
+            ]),
+        },
+      ]),
+    [autoScrollNode, props.horizontal, scrollOffset]
+  );
 
   return (
     <DraggableFlatListProvider
@@ -327,8 +361,10 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           style={props.containerStyle}
           ref={containerRef}
           onLayout={onContainerLayout}
-          onTouchStart={onContainerTouchStart}
           onTouchEnd={onContainerTouchEnd}
+          onStartShouldSetResponderCapture={onContainerTouchStart}
+          //@ts-ignore
+          onClick={onContainerTouchEnd}
         >
           <ScrollOffsetListener
             scrollOffset={scrollOffset}

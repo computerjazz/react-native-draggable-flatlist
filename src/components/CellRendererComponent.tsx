@@ -1,8 +1,14 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
+import { MeasureLayoutOnSuccessCallback } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
-import { isAndroid, isIOS } from "../constants";
+import { isAndroid, isIOS, isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";
 import { useRefs } from "../context/RefContext";
@@ -21,12 +27,12 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const currentIndexAnim = useValue(index);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     currentIndexAnim.setValue(index);
   }, [index, currentIndexAnim]);
 
   const viewRef = useRef<Animated.View>(null);
-  const { cellDataRef, flatlistRef, propsRef } = useRefs<T>();
+  const { cellDataRef, propsRef, containerRef } = useRefs<T>();
 
   const { horizontalAnim } = useAnimatedValues();
   const {
@@ -44,6 +50,8 @@ function CellRendererComponent<T>(props: Props<T>) {
     cellIndex: currentIndexAnim,
   });
 
+  const isActive = activeKey === key;
+
   const style = useMemo(
     () => ({
       transform: [
@@ -54,7 +62,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     [horizontalAnim, translate]
   );
 
-  const onLayout = () => {
+  const onLayout = useCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
       const cellOffset = horizontal ? x : y;
       const cellSize = horizontal ? w : h;
@@ -70,18 +78,27 @@ function CellRendererComponent<T>(props: Props<T>) {
         console.log(`## on measure fail, index: ${index}`);
       }
     };
+    //@ts-ignore
+    viewRef.current.measureLayout(containerRef.current, onSuccess, onFail);
+  }, [
+    cellDataRef,
+    horizontal,
+    index,
+    key,
+    offset,
+    propsRef,
+    size,
+    containerRef,
+  ]);
 
-    const viewNode = viewRef.current;
-    const flatListNode = flatlistRef.current;
-    if (viewNode && flatListNode) {
-      //@ts-ignore
-      const nodeHandle = findNodeHandle(flatListNode);
-      //@ts-ignore
-      if (nodeHandle) viewNode.measureLayout(nodeHandle, onSuccess, onFail);
+  useEffect(() => {
+    if (isWeb) {
+      setTimeout(() => {
+        onLayout();
+        setTimeout(onLayout);
+      }, 50);
     }
-  };
-
-  const isActive = activeKey === key;
+  }, [index, onLayout]);
 
   // changing zIndex crashes android:
   // https://github.com/facebook/react-native/issues/28751
@@ -91,16 +108,14 @@ function CellRendererComponent<T>(props: Props<T>) {
       onLayout={onLayout}
       style={[
         style,
-        isIOS && { zIndex: isActive ? 999 : 0 },
         isAndroid && { elevation: isActive ? 1 : 0 },
+        { flexDirection: horizontal ? "row" : "column" },
+        // web doesn't update zIndex if we use a ternary, it has to be completely added/removed from the DOM
+        (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
       ]}
+      pointerEvents={activeKey ? "none" : "auto"}
     >
-      <Animated.View
-        pointerEvents={activeKey ? "none" : "auto"}
-        style={{ flexDirection: horizontal ? "row" : "column" }}
-      >
-        <CellProvider isActive={isActive}>{children}</CellProvider>
-      </Animated.View>
+      <CellProvider isActive={isActive}>{children}</CellProvider>
     </Animated.View>
   );
 }
