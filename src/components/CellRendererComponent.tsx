@@ -5,7 +5,11 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { MeasureLayoutOnSuccessCallback } from "react-native";
+import {
+  LayoutChangeEvent,
+  MeasureLayoutOnSuccessCallback,
+  View,
+} from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
 import { isAndroid, isIOS, isWeb } from "../constants";
@@ -19,11 +23,11 @@ type Props<T> = {
   item: T;
   index: number;
   children: React.ReactNode;
-  onLayout: () => void;
+  onLayout: (e: LayoutChangeEvent) => void;
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
-  const { item, index, children } = props;
+  const { item, index, onLayout, children } = props;
 
   const currentIndexAnim = useValue(index);
 
@@ -31,7 +35,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     currentIndexAnim.setValue(index);
   }, [index, currentIndexAnim]);
 
-  const viewRef = useRef<Animated.View>(null);
+  const viewRef = useRef<View>(null);
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
 
   const { horizontalAnim } = useAnimatedValues();
@@ -62,7 +66,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     [horizontalAnim, translate]
   );
 
-  const onLayout = useCallback(() => {
+  const updateCellMeasurements = useCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
       const cellOffset = horizontal ? x : y;
       const cellSize = horizontal ? w : h;
@@ -93,30 +97,40 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   useEffect(() => {
     if (isWeb) {
-      setTimeout(() => {
-        onLayout();
-        setTimeout(onLayout);
-      }, 50);
+      updateCellMeasurements();
     }
-  }, [index, onLayout]);
+  }, [index, updateCellMeasurements]);
+
+  const onCellLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      updateCellMeasurements();
+      onLayout(e);
+    },
+    [updateCellMeasurements, onLayout]
+  );
 
   // changing zIndex crashes android:
   // https://github.com/facebook/react-native/issues/28751
   return (
-    <Animated.View
+    <View
+      {...props}
       ref={viewRef}
-      onLayout={onLayout}
+      onLayout={onCellLayout}
       style={[
-        style,
         isAndroid && { elevation: isActive ? 1 : 0 },
         { flexDirection: horizontal ? "row" : "column" },
-        // web doesn't update zIndex if we use a ternary, it has to be completely added/removed from the DOM
         (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
       ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
-      <CellProvider isActive={isActive}>{children}</CellProvider>
-    </Animated.View>
+      <Animated.View
+        // Including both animated styles and non-animated styles causes react-native-web
+        // to ignore updates in non-animated styles. Solution is to separate anima
+        style={style}
+      >
+        <CellProvider isActive={isActive}>{children}</CellProvider>
+      </Animated.View>
+    </View>
   );
 }
 
