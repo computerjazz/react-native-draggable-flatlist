@@ -97,5 +97,5 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     []
   );
 
-  return cellTranslate;
+  return state.position;
 }

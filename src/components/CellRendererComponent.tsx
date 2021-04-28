@@ -54,6 +54,11 @@ function CellRendererComponent<T>(props: Props<T>) {
     cellIndex: currentIndexAnim,
   });
 
+  useMemo(() => {
+    // prevent flicker on web
+    if (isWeb) translate.setValue(0);
+  }, [index]); //eslint-disable-line react-hooks/exhaustive-deps
+
   const isActive = activeKey === key;
 
   const style = useMemo(
