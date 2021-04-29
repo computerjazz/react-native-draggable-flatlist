@@ -19,7 +19,11 @@ import {
   useValue,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
-import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "../constants";
+import {
+  DEFAULT_PROPS,
+  SCROLL_POSITION_TOLERANCE,
+  isReanimatedV2,
+} from "../constants";
 import { useNode } from "../hooks/useNode";
 import { useProps } from "../context/PropsContext";
 import { useAnimatedValues } from "../context/AnimatedValueContext";
@@ -109,7 +113,11 @@ export function useAutoScroll() {
       targetScrollOffset.setValue(offset);
       isAutoScrollInProgress.current.native.setValue(1);
       isAutoScrollInProgress.current.js = true;
-      flatlistRef.current?.scrollToOffset({ offset });
+      const flatlistNode = isReanimatedV2
+        ? flatlistRef.current
+        : //@ts-ignore reanimated v1 backwards compatibility
+          flatlistRef.current?.getNode();
+      flatlistNode?.scrollToOffset({ offset });
     });
 
   const getScrollTargetOffset = (
@@ -174,7 +182,9 @@ export function useAutoScroll() {
           !scrollingDownAtBottom;
 
         if (shouldScroll) {
-          curParams = await scrollToAsync(targetOffset);
+          try {
+            curParams = await scrollToAsync(targetOffset);
+          } catch (err) {}
         }
       }
     } finally {

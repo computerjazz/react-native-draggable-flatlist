@@ -28,7 +28,7 @@ import Animated, {
   sub,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isWeb } from "../constants";
+import { DEFAULT_PROPS, isReanimatedV2, isWeb } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";
@@ -142,8 +142,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const autoScrollNode = useAutoScroll();
 
   const onContainerLayout = () => {
+    const containerNode = isReanimatedV2
+      ? containerRef.current
+      : containerRef.current?.getNode();
+
     //@ts-ignore
-    containerRef.current?.measure((_x, _y, w, h) => {
+    containerNode?.measure((_x, _y, w, h) => {
       containerSize.setValue(props.horizontal ? w : h);
     });
   };
@@ -343,11 +347,13 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     const mobileOnScroll = event([
       {
         nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
-          set(
-            scrollOffset,
-            props.horizontal ? contentOffset.x : contentOffset.y
-          ),
-        autoScrollNode,
+          block([
+            set(
+              scrollOffset,
+              props.horizontal ? contentOffset.x : contentOffset.y
+            ),
+            autoScrollNode,
+          ]),
       },
     ]);
 

@@ -6,12 +6,13 @@ import React, {
   useRef,
 } from "react";
 import {
+  findNodeHandle,
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
 } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
-import { isAndroid, isIOS, isWeb } from "../constants";
+import { isAndroid, isIOS, isReanimatedV2, isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";
 import { useRefs } from "../context/RefContext";
@@ -35,7 +36,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   }, [index, currentIndexAnim]);
 
   const viewRef = useRef<Animated.View>(null);
-  const { cellDataRef, propsRef, containerRef, scrollOffsetRef } = useRefs<T>();
+  const { cellDataRef, propsRef, scrollOffsetRef, flatlistRef } = useRefs<T>();
 
   const { horizontalAnim } = useAnimatedValues();
   const {
@@ -87,9 +88,22 @@ function CellRendererComponent<T>(props: Props<T>) {
         console.log(`## on measure fail, index: ${index}`);
       }
     };
-    if (containerRef.current && viewRef.current) {
+
+    // findNodeHandle is being deprecated. This is no longer necessary if using reanimated v2
+    // remove once v1 is no longer supported
+    const flatlistNode = flatlistRef.current;
+    const viewNode = isReanimatedV2
+      ? viewRef.current
+      : viewRef.current?.getNode();
+
+    const nodeHandle = isReanimatedV2
+      ? flatlistNode
+      : //@ts-ignore
+        findNodeHandle(flatlistNode);
+
+    if (viewNode && nodeHandle) {
       //@ts-ignore
-      viewRef.current.measureLayout(containerRef.current, onSuccess, onFail);
+      viewNode.measureLayout(nodeHandle, onSuccess, onFail);
     }
   }, [
     cellDataRef,
@@ -99,12 +113,13 @@ function CellRendererComponent<T>(props: Props<T>) {
     offset,
     propsRef,
     size,
-    containerRef,
     scrollOffsetRef,
+    flatlistRef,
   ]);
 
   useEffect(() => {
     if (isWeb) {
+      // onLayout isn't called on web when the cell index changes, so we manually re-measure
       updateCellMeasurements();
     }
   }, [index, updateCellMeasurements]);
