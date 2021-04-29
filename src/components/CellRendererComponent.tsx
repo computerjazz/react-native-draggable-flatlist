@@ -36,7 +36,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   }, [index, currentIndexAnim]);
 
   const viewRef = useRef<Animated.View>(null);
-  const { cellDataRef, propsRef, scrollOffsetRef, flatlistRef } = useRefs<T>();
+  const { cellDataRef, propsRef, scrollOffsetRef, containerRef } = useRefs<T>();
 
   const { horizontalAnim } = useAnimatedValues();
   const {
@@ -91,15 +91,14 @@ function CellRendererComponent<T>(props: Props<T>) {
 
     // findNodeHandle is being deprecated. This is no longer necessary if using reanimated v2
     // remove once v1 is no longer supported
-    const flatlistNode = flatlistRef.current;
+    const containerNode = containerRef.current;
     const viewNode = isReanimatedV2
       ? viewRef.current
       : viewRef.current?.getNode();
-
+    //@ts-ignore
     const nodeHandle = isReanimatedV2
-      ? flatlistNode
-      : //@ts-ignore
-        findNodeHandle(flatlistNode);
+      ? containerNode
+      : findNodeHandle(containerNode);
 
     if (viewNode && nodeHandle) {
       //@ts-ignore
@@ -114,7 +113,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     propsRef,
     size,
     scrollOffsetRef,
-    flatlistRef,
+    containerRef,
   ]);
 
   useEffect(() => {
