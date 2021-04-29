@@ -1,5 +1,10 @@
 import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
-import { ListRenderItem, FlatListProps, NativeScrollEvent } from "react-native";
+import {
+  ListRenderItem,
+  FlatListProps,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
@@ -23,7 +28,7 @@ import Animated, {
   sub,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS } from "../constants";
+import { DEFAULT_PROPS, isWeb } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";
@@ -325,22 +330,29 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     ]
   );
 
-  const scrollHandler = useMemo(
-    () =>
-      event([
-        {
-          nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
-            block([
-              set(
-                scrollOffset,
-                props.horizontal ? contentOffset.x : contentOffset.y
-              ),
-              autoScrollNode,
-            ]),
-        },
-      ]),
-    [autoScrollNode, props.horizontal, scrollOffset]
-  );
+  const scrollHandler = useMemo(() => {
+    // Web doesn't seem to like animated events
+    const webOnScroll = ({
+      nativeEvent: {
+        contentOffset: { x, y },
+      },
+    }: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollOffset.setValue(props.horizontal ? x : y);
+    };
+
+    const mobileOnScroll = event([
+      {
+        nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
+          set(
+            scrollOffset,
+            props.horizontal ? contentOffset.x : contentOffset.y
+          ),
+        autoScrollNode,
+      },
+    ]);
+
+    return isWeb ? webOnScroll : mobileOnScroll;
+  }, [autoScrollNode, props.horizontal, scrollOffset]);
 
   return (
     <DraggableFlatListProvider

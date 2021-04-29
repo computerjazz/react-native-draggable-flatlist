@@ -8,7 +8,6 @@ import React, {
 import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
-  View,
 } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
@@ -35,8 +34,8 @@ function CellRendererComponent<T>(props: Props<T>) {
     currentIndexAnim.setValue(index);
   }, [index, currentIndexAnim]);
 
-  const viewRef = useRef<View>(null);
-  const { cellDataRef, propsRef, containerRef } = useRefs<T>();
+  const viewRef = useRef<Animated.View>(null);
+  const { cellDataRef, propsRef, containerRef, scrollOffsetRef } = useRefs<T>();
 
   const { horizontalAnim } = useAnimatedValues();
   const {
@@ -73,6 +72,7 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const updateCellMeasurements = useCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
+      if (isWeb && horizontal) x += scrollOffsetRef.current;
       const cellOffset = horizontal ? x : y;
       const cellSize = horizontal ? w : h;
       cellDataRef.current.set(key, {
@@ -87,8 +87,10 @@ function CellRendererComponent<T>(props: Props<T>) {
         console.log(`## on measure fail, index: ${index}`);
       }
     };
-    //@ts-ignore
-    viewRef.current.measureLayout(containerRef.current, onSuccess, onFail);
+    if (containerRef.current && viewRef.current) {
+      //@ts-ignore
+      viewRef.current.measureLayout(containerRef.current, onSuccess, onFail);
+    }
   }, [
     cellDataRef,
     horizontal,
@@ -98,6 +100,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     propsRef,
     size,
     containerRef,
+    scrollOffsetRef,
   ]);
 
   useEffect(() => {
@@ -117,7 +120,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   // changing zIndex crashes android:
   // https://github.com/facebook/react-native/issues/28751
   return (
-    <View
+    <Animated.View
       {...props}
       ref={viewRef}
       onLayout={onCellLayout}
@@ -135,7 +138,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       >
         <CellProvider isActive={isActive}>{children}</CellProvider>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
