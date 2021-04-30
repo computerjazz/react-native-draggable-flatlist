@@ -56,7 +56,9 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 
 ## Cell Decorators
 
-You may want to apply additional style animations to the dragged item, such as scaling it up slightly when it's hovering, or applying a shadow to it. This can be achieved with minimal extra code using "cell decorators", which are components that wrap the component returned from `renderItem` and apply customizable animated styles on hover begin and end. `ScaleDecorator`, `ShadowDecorator`, and `OpacityDecorator` are exported. Developers may create their own using the `useOnCellActiveAnimation` hook.
+Cell Decorators are an easy way to add common hover animations. For example, wrapping `renderItem` in the `<ScaleDecorator>` component will automatically scale up the active item while hovering (see example below).
+
+`ScaleDecorator`, `ShadowDecorator`, and `OpacityDecorator` are currently exported. Developers may create their own custom decorators using the animated values provided by the `useOnCellActiveAnimation` hook.
 
 ## Example
 
