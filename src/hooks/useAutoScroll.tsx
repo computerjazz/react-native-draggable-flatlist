@@ -23,6 +23,7 @@ import {
   DEFAULT_PROPS,
   SCROLL_POSITION_TOLERANCE,
   isReanimatedV2,
+  isAndroid,
 } from "../constants";
 import { useNode } from "../hooks/useNode";
 import { useProps } from "../context/PropsContext";
@@ -139,7 +140,8 @@ export function useAutoScroll() {
     const distFromEdge = scrollUp ? distFromTop : distFromBottom;
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
     // Android scroll speed seems much faster than ios
-    const offset = speedPct * autoscrollSpeed;
+    const speed = isAndroid ? autoscrollSpeed / 10 : autoscrollSpeed;
+    const offset = speedPct * speed;
     const targetOffset = scrollUp
       ? Math.max(0, scrollOffset - offset)
       : scrollOffset + offset;
