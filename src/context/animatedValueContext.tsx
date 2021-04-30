@@ -15,6 +15,10 @@ import { useNode } from "../hooks/useNode";
 import { useMemo } from "react";
 import { useProps } from "./PropsContext";
 
+if (!useValue) {
+  throw new Error("Incompatible Reanimated version (useValue not found)");
+}
+
 const AnimatedValueContext = React.createContext<
   ReturnType<typeof useSetupAnimatedValues> | undefined
 >(undefined);

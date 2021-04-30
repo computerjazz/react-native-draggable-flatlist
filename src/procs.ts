@@ -25,6 +25,10 @@ const {
   multiply,
 } = Animated;
 
+if (!Animated.proc) {
+  throw new Error("Incompatible Reanimated version (proc not found)");
+}
+
 // clock procs don't seem to work in web, not sure if there's a perf benefit to web procs anyway?
 const proc = isWeb ? <T>(cb: T) => cb : Animated.proc;
 
