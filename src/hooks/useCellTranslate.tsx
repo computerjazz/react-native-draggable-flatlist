@@ -1,4 +1,5 @@
 import Animated, {
+  add,
   block,
   call,
   clockRunning,
@@ -26,7 +27,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const {
     activeIndexAnim,
     activeCellSize,
-    hoverOffset,
+    hoverAnim,
+    scrollOffset,
     spacerIndexAnim,
     placeholderOffset,
     isDraggingCell,
@@ -43,6 +45,10 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const isClockRunning = useNode(clockRunning(clock));
 
   const runSpring = useNode(springFill(clock, state, config));
+
+  // Even though this is the same value as hoverOffset passed via context
+  // the android context value lags behind the actual value on autoscroll
+  const cellHoverOffset = useNode(add(hoverAnim, scrollOffset));
 
   const onFinished = useNode(
     cond(isClockRunning, [
@@ -68,7 +74,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       prevSpacerIndex,
       activeIndexAnim,
       activeCellSize,
-      hoverOffset,
+      cellHoverOffset,
       spacerIndexAnim,
       //@ts-ignore
       config.toValue,
