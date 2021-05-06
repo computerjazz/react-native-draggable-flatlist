@@ -104,12 +104,12 @@ export default function App() {
     return (
       <ScaleDecorator>
         <TouchableOpacity
-          activeOpacity={1}
+          onLongPress={drag}
+          disabled={isActive}
           style={[
             styles.rowItem,
             { backgroundColor: isActive ? "red" : item.backgroundColor },
           ]}
-          onLongPress={drag}
         >
           <Text style={styles.text}>{item.label}</Text>
         </TouchableOpacity>
