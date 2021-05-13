@@ -15,6 +15,7 @@ import {
   FlatList,
   PanGestureHandlerStateChangeEvent,
   PanGestureHandlerGestureEvent,
+  PanGestureHandlerProperties,
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { springFill, setupCell } from "./procs";
@@ -75,7 +76,7 @@ const defaultProps = {
   autoscrollSpeed: 100,
   animationConfig: defaultAnimationConfig,
   scrollEnabled: true,
-  dragHitSlop: 0,
+  dragHitSlop: 0 as PanGestureHandlerProperties["hitSlop"],
   activationDistance: 0,
   dragItemOverflow: false,
 };
@@ -617,7 +618,16 @@ class DraggableFlatList<T> extends React.Component<
       this.isAutoScrollInProgress.native.setValue(1);
       this.isAutoScrollInProgress.js = true;
       const flatlistRef = this.flatlistRef.current;
-      if (flatlistRef) flatlistRef.scrollToOffset({ offset });
+      if (flatlistRef) {
+        const flatlistNode: FlatList<T> | null =
+          "scrollToOffset" in flatlistRef
+            ? flatlistRef
+            : "getNode" in flatlistRef
+            ? //@ts-ignore backwards compat
+              flatlistRef.getNode()
+            : null;
+        flatlistNode?.scrollToOffset?.({ offset });
+      }
     });
 
   getScrollTargetOffset = (
