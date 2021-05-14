@@ -28,6 +28,11 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as <T>(
   >
 ) => React.ReactElement;
 
+//@ts-ignore
+const RNAnimatedFlatList = Animated.createAnimatedComponent(
+  RNFlatList
+) as typeof AnimatedFlatList;
+
 const {
   Value,
   abs,
@@ -110,6 +115,7 @@ export type DraggableFlatListProps<T> = Modify<
     renderPlaceholder?: (params: { item: T; index: number }) => React.ReactNode;
     animationConfig: Partial<Animated.SpringConfig>;
     activationDistance?: number;
+    useReactNativeFlatList?: boolean;
     debug?: boolean;
     layoutInvalidationKey?: string;
     onScrollOffsetChange?: (scrollOffset: number) => void;
@@ -1011,7 +1017,10 @@ class DraggableFlatList<T> extends React.Component<
       onPlaceholderIndexChange,
       containerStyle,
       simultaneousHandlers,
+      useReactNativeFlatList,
     } = this.props;
+
+    const List = useReactNativeFlatList ? RNAnimatedFlatList : AnimatedFlatList;
 
     const { hoverComponent } = this.state;
     let dynamicProps = {};
@@ -1038,7 +1047,7 @@ class DraggableFlatList<T> extends React.Component<
         >
           {!!onPlaceholderIndexChange && this.renderOnPlaceholderIndexChange()}
           {!!renderPlaceholder && this.renderPlaceholder()}
-          <AnimatedFlatList
+          <List
             {...this.props}
             CellRendererComponent={this.CellRendererComponent}
             ref={this.flatlistRef}
