@@ -8,6 +8,7 @@ import {
   FlatList as RNFlatList,
   NativeScrollEvent,
   StyleProp,
+  LayoutChangeEvent,
 } from "react-native";
 import {
   PanGestureHandler,
@@ -588,14 +589,13 @@ class DraggableFlatList<T> extends React.Component<
       throw new Error("You must provide a keyExtractor to DraggableFlatList");
   };
 
-  onContainerLayout = () => {
+  onContainerLayout: (event: LayoutChangeEvent) => void = ({
+    nativeEvent: {
+      layout: { width, height },
+    },
+  }) => {
     const { horizontal } = this.props;
-    const containerRef = this.containerRef.current;
-    if (containerRef) {
-      containerRef.getNode().measure((_x, _y, w, h) => {
-        this.containerSize.setValue(horizontal ? w : h);
-      });
-    }
+    this.containerSize.setValue(horizontal ? width : height);
   };
 
   onListContentSizeChange = (w: number, h: number) => {
