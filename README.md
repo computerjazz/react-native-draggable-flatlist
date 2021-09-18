@@ -69,10 +69,10 @@ import DraggableFlatList, {
 
 const NUM_ITEMS = 10;
 
-function getColor(i: number) {
+function getColor(i: number, alpha: number) {
   const multiplier = 255 / (NUM_ITEMS - 1);
   const colorVal = i * multiplier;
-  return `rgb(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal})`;
+  return `rgba(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal}, ${alpha})`;
 }
 
 const exampleData: Item[] = [...Array(20)].map((d, index) => {
@@ -95,11 +95,13 @@ function Example() {
 
   const renderItem = useCallback(
     ({ item, index, drag, isActive }: RenderItemParams<Item>) => {
+      const activeColor = getColor(index, 0.7);
       return (
         <TouchableOpacity
+          activeOpacity={0.7}
           style={{
             height: 100,
-            backgroundColor: isActive ? "red" : item.backgroundColor,
+            backgroundColor: isActive ? activeColor : item.backgroundColor,
             alignItems: "center",
             justifyContent: "center",
           }}
