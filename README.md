@@ -32,7 +32,7 @@ yarn add react-native-draggable-flatlist
 All props are spread onto underlying [FlatList](https://facebook.github.io/react-native/docs/flatlist)
 
 | Name                       | Type                                                                                      | Description                                                                                                                                                                                                        |
-| :------------------------- | :---------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| :------------------------- | :---------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `data`                     | `T[]`                                                                                     | Items to be rendered.                                                                                                                                                                                              |
 | `horizontal`               | `boolean`                                                                                 | Orientation of list.                                                                                                                                                                                               |
 | `renderItem`               | `(params: { item: T, index: number, drag: () => void, isActive: boolean}) => JSX.Element` | Call `drag` when the row should become active (i.e. in an `onLongPress` or `onPressIn`).                                                                                                                           |
@@ -43,10 +43,9 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `onDragEnd`                | `(params: { data: T[], from: number, to: number }) => void`                               | Called after animation has completed. Returns updated ordering of `data`                                                                                                                                           |
 | `autoscrollThreshold`      | `number`                                                                                  | Distance from edge of container where list begins to autoscroll when dragging.                                                                                                                                     |
 | `autoscrollSpeed`          | `number`                                                                                  | Determines how fast the list autoscrolls.                                                                                                                                                                          |
-| `onRef`                    | `(ref: React.RefObject<DraggableFlatList<T>>) => void`                                    | Returns underlying Animated FlatList ref.                                                                                                                                                                          |
+| `onRef`                    | `(ref: DraggableFlatList<T>) => void`                                                     | Returns underlying Animated FlatList ref.                                                                                                                                                                          |
 | `animationConfig`          | `Partial<Animated.SpringConfig>`                                                          | Configure list animations. See [reanimated spring config](https://github.com/software-mansion/react-native-reanimated/blob/master/react-native-reanimated.d.ts#L112-L120)                                          |
-| `activationDistance`       | `number`                                                                                  | Distance a finger must travel before the gesture handler activates. Useful when using a draggable list within a TabNavigator so that the list does not capture navigator gestures.                                 |
-| `layoutInvalidationKey`    | `string`                                                                                  | Changing this value forces a remeasure of all item layouts. Useful if item size/ordering updates after initial mount.                                                                                              |
+| `activationDistance`       | `number`                                                                                  | Distance a finger must travel before the gesture handler activates. Useful when using a draggable list within a TabNavigator so that the list does not capture navigator gestures.                                 |     |
 | `onScrollOffsetChange`     | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                                                |
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                                                   |
 | `dragItemOverflow`         | `boolean`                                                                                 | If true, dragged item follows finger beyond list boundary.                                                                                                                                                         |
@@ -55,82 +54,91 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `containerStyle`           | `StyleProp<ViewStyle>`                                                                    | Style of the main component.                                                                                                                                                                                       |
 | `simultaneousHandlers`     | `React.Ref<any>` or `React.Ref<any>[]`                                                    | References to other gesture handlers, mainly useful when using this component within a `ScrollView`. See [Cross handler interactions](https://docs.swmansion.com/react-native-gesture-handler/docs/interactions/). |
 
+## Cell Decorators
+
+Cell Decorators are an easy way to add common hover animations. For example, wrapping `renderItem` in the `<ScaleDecorator>` component will automatically scale up the active item while hovering (see example below).
+
+`ScaleDecorator`, `ShadowDecorator`, and `OpacityDecorator` are currently exported. Developers may create their own custom decorators using the animated values provided by the `useOnCellActiveAnimation` hook.
+
 ## Example
 
-Example snack: https://snack.expo.io/@computerjazz/rndfl-example <br />
-Example snack with scale effect on hover: https://snack.expo.io/@computerjazz/rndfl-dragwithhovereffect
+Example snack: https://snack.expo.io/@computerjazz/rndfl3 <br />
 
 ```typescript
-import React, { useState, useCallback } from "react";
-import { View, TouchableOpacity, Text } from "react-native";
+import React, { useState } from "react";
+import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import DraggableFlatList, {
-  RenderItemParams,
+  ScaleDecorator,
 } from "react-native-draggable-flatlist";
 
 const NUM_ITEMS = 10;
-
 function getColor(i: number) {
   const multiplier = 255 / (NUM_ITEMS - 1);
   const colorVal = i * multiplier;
   return `rgb(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal})`;
 }
 
-const exampleData: Item[] = [...Array(20)].map((d, index) => {
-  const backgroundColor = getColor(index);
-  return {
-    key: `item-${backgroundColor}`,
-    label: String(index),
-    backgroundColor
-  };
-});
-
 type Item = {
   key: string;
   label: string;
+  height: number;
+  width: number;
   backgroundColor: string;
 };
 
-function Example() {
-  const [data, setData] = useState(exampleData);
+const initialData: Item[] = [...Array(NUM_ITEMS)].map((d, index) => {
+  const backgroundColor = getColor(index);
+  return {
+    key: `item-${index}`,
+    label: String(index) + "",
+    height: 100,
+    width: 60 + Math.random() * 40,
+    backgroundColor,
+  };
+});
 
-  const renderItem = useCallback(
-    ({ item, index, drag, isActive }: RenderItemParams<Item>) => {
-      return (
+export default function App() {
+  const [data, setData] = useState(initialData);
+
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<Item>) => {
+    return (
+      <ScaleDecorator>
         <TouchableOpacity
-          style={{
-            height: 100,
-            backgroundColor: isActive ? "red" : item.backgroundColor,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
           onLongPress={drag}
+          disabled={isActive}
+          style={[
+            styles.rowItem,
+            { backgroundColor: isActive ? "red" : item.backgroundColor },
+          ]}
         >
-          <Text
-            style={{
-              fontWeight: "bold",
-              color: "white",
-              fontSize: 32,
-            }}
-          >
-            {item.label}
-          </Text>
+          <Text style={styles.text}>{item.label}</Text>
         </TouchableOpacity>
-      );
-    },
-    []
-  );
+      </ScaleDecorator>
+    );
+  };
 
   return (
-    <View style={{ flex: 1 }}>
-      <DraggableFlatList
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => `draggable-item-${item.key}`}
-        onDragEnd={({ data }) => setData(data)}
-      />
-    </View>
+    <DraggableFlatList
+      data={data}
+      onDragEnd={({ data }) => setData(data)}
+      keyExtractor={(item) => item.key}
+      renderItem={renderItem}
+    />
   );
 }
 
-export default Example;
+const styles = StyleSheet.create({
+  rowItem: {
+    height: 100,
+    width: 100,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  text: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+});
 ```
