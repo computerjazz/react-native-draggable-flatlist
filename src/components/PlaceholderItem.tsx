@@ -8,12 +8,13 @@ import Animated, {
   onChange,
   greaterThan,
   cond,
+  useDerivedValue,
+  useAnimatedStyle,
 } from "react-native-reanimated";
-import { useAnimatedValues } from "../context/AnimatedValueContext";
-import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
-import { useProps } from "../context/PropsContext";
-import { useRefs } from "../context/RefContext";
-import { useNode } from "../hooks/useNode";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
+import { useProps } from "../context/propsContext";
+import { useRefs } from "../context/refContext";
 import { RenderPlaceholder } from "../types";
 import { typedMemo } from "../utils";
 
@@ -32,30 +33,26 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const { activeKey } = useDraggableFlatListContext();
   const { horizontal } = useProps();
 
-  // for some reason using placeholderScreenOffset directly is buggy
-  const translate = useValue(0);
+  // // for some reason using placeholderScreenOffset directly is buggy
+  // const translate = useValue(0);
 
-  const onPlaceholderIndexChange = useCallback(
-    (index: number) => {
-      propsRef.current.onPlaceholderIndexChange?.(index);
-    },
-    [propsRef]
-  );
+  // const onPlaceholderIndexChange = useCallback(
+  //   (index: number) => {
+  //     propsRef.current.onPlaceholderIndexChange?.(index);
+  //   },
+  //   [propsRef]
+  // );
 
-  useCode(
-    () =>
-      onChange(
-        spacerIndexAnim,
-        call([spacerIndexAnim], ([i]) => {
-          onPlaceholderIndexChange(i);
-        })
-      ),
-    []
-  );
-
-  const translateKey = horizontal ? "translateX" : "translateY";
-  const sizeKey = horizontal ? "width" : "height";
-  const opacity = useNode(cond(greaterThan(spacerIndexAnim, -1), 1, 0));
+  // useCode(
+  //   () =>
+  //     onChange(
+  //       spacerIndexAnim,
+  //       call([spacerIndexAnim], ([i]) => {
+  //         onPlaceholderIndexChange(i);
+  //       })
+  //     ),
+  //   []
+  // );
 
   const activeIndex = activeKey
     ? keyToIndexRef.current.get(activeKey)
@@ -63,13 +60,17 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const activeItem =
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
-  const animStyle = {
-    opacity,
-    [sizeKey]: activeCellSize,
-    transform: ([
-      { [translateKey]: translate },
-    ] as unknown) as Animated.AnimatedTransform,
-  };
+  const animStyle = useAnimatedStyle(() => {
+    const translateKey = horizontal ? "translateX" : "translateY";
+    const sizeKey = horizontal ? "width" : "height";
+    return {
+      opacity: spacerIndexAnim.value >= 0 ? 1 : 0,
+      [sizeKey]: activeCellSize.value,
+      transform: ([
+        { [translateKey]: placeholderScreenOffset.value },
+      ] as unknown) as Animated.AnimatedTransform,
+    };
+  }, [spacerIndexAnim, placeholderScreenOffset, horizontal]);
 
   return (
     <Animated.View
@@ -79,9 +80,9 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
       {!activeItem || activeIndex === undefined
         ? null
         : renderPlaceholder?.({ item: activeItem, index: activeIndex })}
-      <Animated.Code>
+      {/* <Animated.Code>
         {() => set(translate, placeholderScreenOffset)}
-      </Animated.Code>
+      </Animated.Code> */}
     </Animated.View>
   );
 }
