@@ -1,10 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { useMemo, useRef } from "react";
-import {
-  FlatList,
-  PanGestureHandler,
-  ScrollView,
-} from "react-native-gesture-handler";
+import { FlatList } from "react-native-gesture-handler";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";

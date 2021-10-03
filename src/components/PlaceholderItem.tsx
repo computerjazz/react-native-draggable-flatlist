@@ -1,16 +1,6 @@
-import React, { useCallback } from "react";
+import React from "react";
 import { StyleSheet } from "react-native";
-import Animated, {
-  call,
-  set,
-  useCode,
-  useValue,
-  onChange,
-  greaterThan,
-  cond,
-  useDerivedValue,
-  useAnimatedStyle,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useProps } from "../context/propsContext";
@@ -27,32 +17,11 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeCellSize,
     placeholderScreenOffset,
     spacerIndexAnim,
+    horizontalAnim,
   } = useAnimatedValues();
   const { keyToIndexRef, propsRef } = useRefs<T>();
 
   const { activeKey } = useDraggableFlatListContext();
-  const { horizontal } = useProps();
-
-  // // for some reason using placeholderScreenOffset directly is buggy
-  // const translate = useValue(0);
-
-  // const onPlaceholderIndexChange = useCallback(
-  //   (index: number) => {
-  //     propsRef.current.onPlaceholderIndexChange?.(index);
-  //   },
-  //   [propsRef]
-  // );
-
-  // useCode(
-  //   () =>
-  //     onChange(
-  //       spacerIndexAnim,
-  //       call([spacerIndexAnim], ([i]) => {
-  //         onPlaceholderIndexChange(i);
-  //       })
-  //     ),
-  //   []
-  // );
 
   const activeIndex = activeKey
     ? keyToIndexRef.current.get(activeKey)
@@ -61,16 +30,22 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
   const animStyle = useAnimatedStyle(() => {
-    const translateKey = horizontal ? "translateX" : "translateY";
-    const sizeKey = horizontal ? "width" : "height";
-    return {
+    const style: ReturnType<typeof useAnimatedStyle> = {
       opacity: spacerIndexAnim.value >= 0 ? 1 : 0,
-      [sizeKey]: activeCellSize.value,
-      transform: ([
-        { [translateKey]: placeholderScreenOffset.value },
-      ] as unknown) as Animated.AnimatedTransform,
+      transform: [
+        horizontalAnim.value
+          ? { translateX: placeholderScreenOffset.value }
+          : { translateY: placeholderScreenOffset.value },
+      ],
     };
-  }, [spacerIndexAnim, placeholderScreenOffset, horizontal]);
+    if (horizontalAnim.value) {
+      style.width = activeCellSize.value;
+    } else {
+      style.height = activeCellSize.value;
+    }
+
+    return style;
+  }, [spacerIndexAnim, placeholderScreenOffset, horizontalAnim]);
 
   return (
     <Animated.View
@@ -80,9 +55,6 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
       {!activeItem || activeIndex === undefined
         ? null
         : renderPlaceholder?.({ item: activeItem, index: activeIndex })}
-      {/* <Animated.Code>
-        {() => set(translate, placeholderScreenOffset)}
-      </Animated.Code> */}
     </Animated.View>
   );
 }

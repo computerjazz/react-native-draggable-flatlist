@@ -110,10 +110,15 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }, [activeIndexAnim, spacerIndexAnim, disabled]);
 
   // Reset hover state whenever keys/order changes
-  const keys = props.data.reduce(
-    (acc, cur, i) => acc + keyExtractor(cur, i),
-    ""
-  );
+  const keys = useMemo(() => {
+    const keyStr = props.data.reduce(
+      (acc, cur, i) => acc + keyExtractor(cur, i),
+      ""
+    );
+
+    return keyStr + Math.random();
+  }, [props.data]);
+
   useMemo(() => {
     resetHoverState();
   }, [resetHoverState, keys]);
@@ -226,7 +231,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         onDragEnd({ from, to, data: newData });
       }
     },
-    [propsRef, resetHoverState]
+    [propsRef]
   );
 
   useAnimatedReaction(
@@ -324,7 +329,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           //@ts-ignore
           onClick={onContainerTouchEnd}
         >
-          <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
+          {props.renderPlaceholder && (
+            <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
+          )}
           <AnimatedFlatList
             {...props}
             data={props.data}
@@ -339,9 +346,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             scrollEventThrottle={1}
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
-            renderScrollComponent={(props) => (
-              <Animated.ScrollView {...props} ref={scrollViewRef} />
-            )}
           />
         </Animated.View>
       </PanGestureHandler>
