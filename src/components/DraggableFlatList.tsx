@@ -1,30 +1,18 @@
-import React, {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { ListRenderItem, FlatListProps } from "react-native";
 import {
-  ListRenderItem,
-  FlatListProps,
   FlatList,
-  findNodeHandle,
-} from "react-native";
-import {
   PanGestureHandler,
   State as GestureState,
   GestureEvent,
   PanGestureHandlerEventPayload,
+  GestureEventPayload,
 } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
-  scrollTo,
   useAnimatedGestureHandler,
   useAnimatedReaction,
   useAnimatedScrollHandler,
-  useDerivedValue,
-  useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
@@ -56,25 +44,24 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     cellDataRef,
     containerRef,
     flatlistRef,
-    isTouchActiveRef,
     keyToIndexRef,
     propsRef,
-    scrollOffsetRef,
     animationConfigRef,
-    scrollViewRef,
   } = useRefs<T>();
   const {
     activeCellOffset,
     activeCellSize,
     activeIndexAnim,
     containerSize,
-    disabled,
     scrollOffset,
     scrollViewSize,
     spacerIndexAnim,
     horizontalAnim,
     placeholderOffset,
     touchTranslate,
+    autoScrollDistance,
+    panGestureState,
+    isTouchActiveNative,
   } = useAnimatedValues();
 
   const {
@@ -102,35 +89,21 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     });
   }, [props.data, keyExtractor, keyToIndexRef]);
 
-  const resetHoverState = useCallback(() => {
+  // Reset hover state whenever data changes
+  useMemo(() => {
     activeIndexAnim.value = -1;
     spacerIndexAnim.value = -1;
     touchTranslate.value = 0;
     setActiveKey(null);
-  }, [activeIndexAnim, spacerIndexAnim, disabled]);
-
-  // Reset hover state whenever keys/order changes
-  const keys = useMemo(() => {
-    const keyStr = props.data.reduce(
-      (acc, cur, i) => acc + keyExtractor(cur, i),
-      ""
-    );
-
-    return keyStr + Math.random();
   }, [props.data]);
-
-  useMemo(() => {
-    resetHoverState();
-  }, [resetHoverState, keys]);
 
   const drag = useCallback(
     (activeKey: string) => {
-      if (!isTouchActiveRef.current.js) return;
+      if (!isTouchActiveNative.value) return;
       const index = keyToIndexRef.current.get(activeKey);
       const cellData = cellDataRef.current.get(activeKey);
       if (cellData) {
-        activeCellOffset.value =
-          cellData.measurements.offset - scrollOffsetRef.current;
+        activeCellOffset.value = cellData.measurements.offset;
         activeCellSize.value = cellData.measurements.size;
       }
 
@@ -143,15 +116,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       }
     },
     [
-      isTouchActiveRef,
       keyToIndexRef,
       cellDataRef,
       propsRef,
       activeCellOffset,
-      scrollOffsetRef,
       activeCellSize,
       spacerIndexAnim,
       activeIndexAnim,
+      scrollOffset,
     ]
   );
 
@@ -170,14 +142,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   };
 
   const onContainerTouchStart = () => {
-    isTouchActiveRef.current.js = true;
-    isTouchActiveRef.current.native.value = true;
+    isTouchActiveNative.value = true;
     return false;
   };
 
   const onContainerTouchEnd = () => {
-    isTouchActiveRef.current.js = false;
-    isTouchActiveRef.current.native.value = false;
+    isTouchActiveNative.value = false;
   };
 
   let dynamicProps = {};
@@ -220,7 +190,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const onDragEnd = useCallback(
     ({ from, to }: { from: number; to: number }) => {
-      console.log("DRAG END!!!");
       const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
         const newData = [...data];
@@ -234,24 +203,50 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     [propsRef]
   );
 
+  // Handle case where user ends drag without moving their finger.
   useAnimatedReaction(
     () => {
-      return isTouchActiveRef.current.native.value;
+      return isTouchActiveNative.value;
     },
     (cur, prev) => {
       if (cur !== prev && !cur) {
-        // Handle case where drag ends without moving.
         const hasMoved = !!touchTranslate.value;
-        if (!hasMoved && activeKey) {
+        if (!hasMoved && activeIndexAnim.value >= 0) {
           runOnJS(onDragEnd)({
             from: activeIndexAnim.value,
             to: spacerIndexAnim.value,
           });
-          runOnJS(resetHoverState)();
         }
       }
     },
-    [isTouchActiveRef.current.native.value, resetHoverState, onDragEnd]
+    [isTouchActiveNative, onDragEnd]
+  );
+
+  const onGestureEnd = useCallback(
+    (evt: Readonly<GestureEventPayload & PanGestureHandlerEventPayload>) => {
+      "worklet";
+      // Set touch val to current translate val
+      isTouchActiveNative.value = false;
+      const translation = horizontalAnim.value
+        ? evt.translationX
+        : evt.translationY;
+
+      touchTranslate.value = translation + autoScrollDistance.value;
+      panGestureState.value = evt.state;
+      runOnJS(onRelease)(activeIndexAnim.value);
+      const springTo = placeholderOffset.value - activeCellOffset.value;
+      touchTranslate.value = withSpring(
+        springTo,
+        animationConfigRef.current,
+        () => {
+          runOnJS(onDragEnd)({
+            from: activeIndexAnim.value,
+            to: spacerIndexAnim.value,
+          });
+        }
+      );
+    },
+    []
   );
 
   const onGestureEvent = useAnimatedGestureHandler<
@@ -259,25 +254,19 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     { prevState: GestureState }
   >(
     {
+      onStart: (evt) => {
+        panGestureState.value = evt.state;
+      },
       onActive: (evt) => {
-        touchTranslate.value = horizontalAnim.value
+        panGestureState.value = evt.state;
+        const translation = horizontalAnim.value
           ? evt.translationX
           : evt.translationY;
+        touchTranslate.value = translation;
       },
-      onEnd: () => {
-        runOnJS(onRelease)(activeIndexAnim.value);
-        const springTo = placeholderOffset.value - activeCellOffset.value;
-        touchTranslate.value = withSpring(
-          springTo,
-          animationConfigRef.current,
-          () => {
-            runOnJS(onDragEnd)({
-              from: activeIndexAnim.value,
-              to: spacerIndexAnim.value,
-            });
-          }
-        );
-      },
+      onEnd: onGestureEnd,
+      onCancel: onGestureEnd,
+      onFail: onGestureEnd,
     },
     []
   );
@@ -295,18 +284,13 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         scrollOffset.value = horizontalAnim.value
           ? evt.contentOffset.x
           : evt.contentOffset.y;
+        runOnJS(onScroll)(scrollOffset.value);
       },
     },
     [horizontalAnim]
   );
 
   useAutoScroll();
-
-  const someVal = useSharedValue(0);
-
-  useDerivedValue(() => {
-    scrollTo(scrollViewRef, 0, someVal.value, true);
-  });
 
   return (
     <DraggableFlatListProvider
@@ -343,7 +327,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             extraData={extraData}
             keyExtractor={keyExtractor}
             onScroll={scrollHandler}
-            scrollEventThrottle={1}
+            scrollEventThrottle={16}
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
           />
@@ -363,31 +347,4 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       </AnimatedValueProvider>
     </PropsProvider>
   );
-}
-
-function useAnimatedRefDM() {
-  const tag = useSharedValue(-1);
-  const ref = useRef(null);
-
-  if (!ref.current) {
-    const fun = function (component) {
-      "worklet";
-      // enters when ref is set by attaching to a component
-      if (component) {
-        tag.value = findNodeHandle(component);
-        fun.current = component;
-        console.log("SET REF!!!", fun);
-      }
-      return tag.value;
-    };
-
-    Object.defineProperty(fun, "current", {
-      value: null,
-      writable: true,
-      enumerable: false,
-    });
-    ref.current = fun;
-  }
-
-  return ref.current;
 }

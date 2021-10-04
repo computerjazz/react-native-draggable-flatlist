@@ -4,7 +4,6 @@ import { FlatList } from "react-native-gesture-handler";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
-import { useAnimatedValues } from "./animatedValueContext";
 import { CellData, DraggableFlatListProps } from "../types";
 
 type RefContextValue<T> = {
@@ -15,11 +14,6 @@ type RefContextValue<T> = {
   containerRef: React.RefObject<Animated.View>;
   flatlistRef: React.RefObject<FlatList<T>>;
   scrollViewRef: React.RefObject<Animated.ScrollView>;
-  scrollOffsetRef: React.MutableRefObject<number>;
-  isTouchActiveRef: React.MutableRefObject<{
-    native: Animated.SharedValue<number>;
-    js: boolean;
-  }>;
 };
 const RefContext = React.createContext<RefContextValue<any> | undefined>(
   undefined
@@ -48,8 +42,6 @@ function useSetupRefs<T>() {
   const props = useProps<T>();
   const { onRef, animationConfig = DEFAULT_PROPS.animationConfig } = props;
 
-  const { isTouchActiveNative } = useAnimatedValues();
-
   const propsRef = useRef(props);
   propsRef.current = props;
   const animConfig = {
@@ -64,12 +56,6 @@ function useSetupRefs<T>() {
   const containerRef = useAnimatedRef<Animated.View>();
   const flatlistRef = useAnimatedRef<FlatList<T>>();
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
-
-  const scrollOffsetRef = useRef(0);
-  const isTouchActiveRef = useRef({
-    native: isTouchActiveNative,
-    js: false,
-  });
 
   useEffect(() => {
     // This is a workaround for the fact that RN does not respect refs passed in
@@ -92,10 +78,8 @@ function useSetupRefs<T>() {
       cellDataRef,
       containerRef,
       flatlistRef,
-      isTouchActiveRef,
       keyToIndexRef,
       propsRef,
-      scrollOffsetRef,
       scrollViewRef,
     }),
     []

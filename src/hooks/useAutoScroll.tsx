@@ -102,9 +102,6 @@ export function useAutoScroll() {
   });
 
   useDerivedValue(() => {
-    console.log(
-      `dtop: ${distToTopEdge.value}, dbtm: ${distToBottomEdge.value}`
-    );
     if (!shouldAutoScroll.value) return;
 
     const distFromEdge = isAtTopEdge.value
@@ -113,7 +110,7 @@ export function useAutoScroll() {
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
     const offset = speedPct * autoscrollSpeed;
     const targetOffset = isAtTopEdge.value
-      ? Math.max(10, scrollOffset.value - offset)
+      ? Math.max(0, scrollOffset.value - offset)
       : scrollOffset.value + offset;
     const targetX = horizontalAnim.value ? targetOffset : 0;
     const targetY = horizontalAnim.value ? 0 : targetOffset;

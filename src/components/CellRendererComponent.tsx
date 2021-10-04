@@ -40,9 +40,9 @@ function CellRendererComponent<T>(props: Props<T>) {
   );
 
   const viewRef = useRef<Animated.View>(null);
-  const { cellDataRef, propsRef, scrollOffsetRef, containerRef } = useRefs<T>();
+  const { cellDataRef, propsRef, containerRef } = useRefs<T>();
 
-  const { horizontalAnim } = useAnimatedValues();
+  const { horizontalAnim, scrollOffset } = useAnimatedValues();
   const {
     activeKey,
     keyExtractor,
@@ -77,7 +77,7 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const updateCellMeasurements = useCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
-      if (isWeb && horizontal) x += scrollOffsetRef.current;
+      if (isWeb && horizontal) x += scrollOffset.value;
       const cellOffset = horizontal ? x : y;
       const cellSize = horizontal ? w : h;
       cellDataRef.current.set(key, {
@@ -110,7 +110,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     offset,
     propsRef,
     size,
-    scrollOffsetRef,
+    scrollOffset,
     containerRef,
   ]);
 

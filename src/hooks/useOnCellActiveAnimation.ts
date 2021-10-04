@@ -1,18 +1,8 @@
-import Animated, {
-  block,
-  clockRunning,
-  cond,
-  onChange,
-  set,
-  startClock,
-  stopClock,
-  useCode,
-  useSharedValue,
-} from "react-native-reanimated";
+import { useRef } from "react";
+import Animated, { useDerivedValue, withSpring } from "react-native-reanimated";
+import { DEFAULT_ANIMATION_CONFIG } from "../constants";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useIsActive } from "../context/cellContext";
-import { springFill } from "../procs";
-import { useSpring } from "./useSpring";
 
 type Params = {
   animationConfig: Partial<Animated.WithSpringConfig>;
@@ -21,10 +11,28 @@ type Params = {
 export function useOnCellActiveAnimation(
   { animationConfig }: Params = { animationConfig: {} }
 ) {
-  const onActiveAnim = useSharedValue(0);
+  const animationConfigRef = useRef(animationConfig);
+  animationConfigRef.current = animationConfig;
 
-  const { isDraggingCell } = useAnimatedValues();
   const isActive = useIsActive();
+
+  const { isTouchActiveNative } = useAnimatedValues();
+
+  const onActiveAnim = useDerivedValue(() => {
+    const toVal = isActive && isTouchActiveNative.value ? 1 : 0;
+    const animConfig: Partial<Animated.WithSpringConfig> = {};
+
+    // spread operator and Object.assign don't work within worklets
+    for (let key in DEFAULT_ANIMATION_CONFIG) {
+      const v = DEFAULT_ANIMATION_CONFIG[key];
+      animConfig[key] = v;
+    }
+    for (let key in animationConfigRef.current) {
+      const v = animationConfigRef.current[key];
+      animConfig[key] = v;
+    }
+    return withSpring(toVal, DEFAULT_ANIMATION_CONFIG);
+  }, [isActive]);
 
   return {
     isActive,

@@ -72,7 +72,7 @@ export const OpacityDecorator = ({
     return {
       opacity: isActive ? opacity : 1,
     };
-  }, []);
+  }, [isActive]);
 
   return <Animated.View style={style}>{children}</Animated.View>;
 };

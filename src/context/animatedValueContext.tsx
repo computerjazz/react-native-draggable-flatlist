@@ -66,22 +66,18 @@ function useSetupAnimatedValues<T>() {
   const activeCellSize = useSharedValue(0); // Height or width of acctive cell
   const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
 
+  const placeholderOffset = useSharedValue(0);
+  const placeholderScreenOffset = useDerivedValue(() => {
+    return placeholderOffset.value - scrollOffset.value;
+  }, []);
+
   const isDraggingCell = useDerivedValue(() => {
     return isTouchActiveNative.value && activeIndexAnim.value >= 0;
   }, []);
 
-  //DELETE ME
-  // useAnimatedReaction(() => {
-  //   return spacerIndexAnim.value
-  // }, (cur, prev) => {
-  //     if (cur !== prev) {
-  //       console.log("SPSCER INDEX", cur)
-  //     }
-  // }, [])
-
   useAnimatedReaction(
     () => {
-      return isTouchActiveNative.value;
+      return isDraggingCell.value;
     },
     (cur, prev) => {
       if (cur && !prev) {
@@ -95,9 +91,15 @@ function useSetupAnimatedValues<T>() {
     [isTouchActiveNative, scrollOffset]
   );
 
+  const autoScrollDistance = useDerivedValue(() => {
+    return scrollOffset.value - scrollInit.value;
+  }, []);
+
   const touchPositionDiff = useDerivedValue(() => {
-    const scrollSinceTouch = scrollOffset.value - scrollInit.value;
-    return touchTranslate.value + scrollSinceTouch;
+    const extraTranslate = isTouchActiveNative.value
+      ? autoScrollDistance.value
+      : 0;
+    return touchTranslate.value + extraTranslate;
   }, []);
 
   const touchPositionDiffConstrained = useDerivedValue(() => {
@@ -113,19 +115,16 @@ function useSetupAnimatedValues<T>() {
     return constrained - activeCellOffset.value;
   }, []);
 
-  const hoverAnim = props.dragItemOverflow
-    ? touchPositionDiff
-    : touchPositionDiffConstrained;
+  const hoverAnim = useDerivedValue(() => {
+    if (activeIndexAnim.value < 0) return 0;
+    return props.dragItemOverflow
+      ? touchPositionDiff.value
+      : touchPositionDiffConstrained.value;
+  }, []);
 
   const hoverOffset = useDerivedValue(() => {
     return hoverAnim.value + activeCellOffset.value;
   }, [hoverAnim, activeCellOffset]);
-
-  const placeholderOffset = useSharedValue(0);
-
-  const placeholderScreenOffset = useDerivedValue(() => {
-    return placeholderOffset.value - scrollOffset.value;
-  }, []);
 
   // Note: this could use a refactor as it combines touch state + cell animation
   const resetTouchedCell = useCallback(() => {
@@ -155,6 +154,7 @@ function useSetupAnimatedValues<T>() {
       spacerIndexAnim,
       touchPositionDiff,
       touchTranslate,
+      autoScrollDistance,
     }),
     [
       activeCellOffset,
@@ -177,6 +177,7 @@ function useSetupAnimatedValues<T>() {
       spacerIndexAnim,
       touchPositionDiff,
       touchTranslate,
+      autoScrollDistance,
     ]
   );
 

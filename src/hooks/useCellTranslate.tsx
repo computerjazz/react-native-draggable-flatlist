@@ -33,54 +33,69 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     return activeIndexAnim.value >= 0;
   }, []);
 
-  useDerivedValue(() => {
-    // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
-    const isBeforeActive = cellIndex.value < activeIndexAnim.value;
-    const isAfterActive = cellIndex.value > activeIndexAnim.value;
+  useAnimatedReaction(
+    () => {
+      return (
+        isHovering.value &&
+        activeIndexAnim.value &&
+        activeCellSize.value &&
+        hoverOffset.value
+      );
+    },
+    () => {
+      // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
+      const isBeforeActive = cellIndex.value < activeIndexAnim.value;
+      const isAfterActive = cellIndex.value > activeIndexAnim.value;
 
-    const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
-    const offsetPlusHalfSize = cellOffset.value + cellSize.value / 2;
-    const offsetPlusSize = cellOffset.value + cellSize.value;
-    let result = -1;
+      const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
+      const offsetPlusHalfSize = cellOffset.value + cellSize.value / 2;
+      const offsetPlusSize = cellOffset.value + cellSize.value;
+      let result = -1;
 
-    if (isAfterActive) {
-      if (
-        hoverPlusActiveSize >= cellOffset.value &&
-        hoverPlusActiveSize < offsetPlusHalfSize
-      ) {
-        // bottom edge of active cell overlaps top half of current cell
-        result = cellIndex.value - 1;
-      } else if (
-        hoverPlusActiveSize >= offsetPlusHalfSize &&
-        hoverPlusActiveSize < offsetPlusSize
-      ) {
-        // bottom edge of active cell overlaps bottom half of current cell
-        result = cellIndex.value;
+      if (isAfterActive) {
+        if (
+          hoverPlusActiveSize >= cellOffset.value &&
+          hoverPlusActiveSize < offsetPlusHalfSize
+        ) {
+          // bottom edge of active cell overlaps top half of current cell
+          result = cellIndex.value - 1;
+        } else if (
+          hoverPlusActiveSize >= offsetPlusHalfSize &&
+          hoverPlusActiveSize < offsetPlusSize
+        ) {
+          // bottom edge of active cell overlaps bottom half of current cell
+          result = cellIndex.value;
+        }
+      } else if (isBeforeActive) {
+        if (
+          hoverOffset.value < offsetPlusSize &&
+          hoverOffset.value >= offsetPlusHalfSize
+        ) {
+          // top edge of active cell overlaps bottom half of current cell
+          result = cellIndex.value + 1;
+        } else if (
+          hoverOffset.value >= cellOffset.value &&
+          hoverOffset.value < offsetPlusHalfSize
+        ) {
+          // top edge of active cell overlaps top half of current cell
+          result = cellIndex.value;
+        }
       }
-    } else if (isBeforeActive) {
-      if (
-        hoverOffset.value < offsetPlusSize &&
-        hoverOffset.value >= offsetPlusHalfSize
-      ) {
-        // top edge of active cell overlaps bottom half of current cell
-        result = cellIndex.value + 1;
-      } else if (
-        hoverOffset.value >= cellOffset.value &&
-        hoverOffset.value < offsetPlusHalfSize
-      ) {
-        // top edge of active cell overlaps top half of current cell
-        result = cellIndex.value;
-      }
-    }
 
-    if (result !== -1 && isHovering.value && result !== spacerIndexAnim.value) {
-      spacerIndexAnim.value = result;
-    }
-    if (!isHovering.value && spacerIndexAnim.value !== -1) {
-      spacerIndexAnim.value = -1;
-    }
-    return spacerIndexAnim.value;
-  }, []);
+      if (
+        result !== -1 &&
+        isHovering.value &&
+        result !== spacerIndexAnim.value
+      ) {
+        spacerIndexAnim.value = result;
+      }
+      if (!isHovering.value && spacerIndexAnim.value !== -1) {
+        spacerIndexAnim.value = -1;
+      }
+      return spacerIndexAnim.value;
+    },
+    []
+  );
 
   useAnimatedReaction(
     () => {
@@ -99,7 +114,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
           : cellOffset.value;
         placeholderOffset.value = newPlaceholderOffset;
       }
-    }
+    },
+    []
   );
 
   const translate = useDerivedValue(() => {
@@ -126,7 +142,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     return isHovering.value
       ? withSpring(translate.value, animationConfigRef.current)
       : translate.value;
-  });
+  }, []);
 
   return springTranslate;
 }
