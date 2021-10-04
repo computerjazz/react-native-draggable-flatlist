@@ -45,9 +45,6 @@ function useSetupAnimatedValues<T>() {
   const containerSize = useSharedValue(0);
   const scrollViewSize = useSharedValue(0);
 
-  const scrollOffset = useSharedValue(0);
-  const scrollInit = useSharedValue(0);
-
   const panGestureState = useSharedValue<GestureState>(
     GestureState.UNDETERMINED
   );
@@ -66,6 +63,15 @@ function useSetupAnimatedValues<T>() {
   const activeCellSize = useSharedValue(0); // Height or width of acctive cell
   const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
 
+  const scrollOffset = useSharedValue(0);
+  const scrollInit = useSharedValue(0);
+
+  useDerivedValue(() => {
+    if (activeIndexAnim.value < 0) {
+      scrollInit.value = scrollOffset.value;
+    }
+  }, []);
+
   const placeholderOffset = useSharedValue(0);
   const placeholderScreenOffset = useDerivedValue(() => {
     return placeholderOffset.value - scrollOffset.value;
@@ -75,24 +81,9 @@ function useSetupAnimatedValues<T>() {
     return isTouchActiveNative.value && activeIndexAnim.value >= 0;
   }, []);
 
-  useAnimatedReaction(
-    () => {
-      return isDraggingCell.value;
-    },
-    (cur, prev) => {
-      if (cur && !prev) {
-        // Stash the scroll position on touch start
-        scrollInit.value = scrollOffset.value;
-      } else if (!cur && prev) {
-        // Reset on touch end
-        scrollInit.value = 0;
-      }
-    },
-    [isTouchActiveNative, scrollOffset]
-  );
-
   const autoScrollDistance = useDerivedValue(() => {
-    return scrollOffset.value - scrollInit.value;
+    const scrollDiff = scrollOffset.value - scrollInit.value;
+    return scrollDiff;
   }, []);
 
   const touchPositionDiff = useDerivedValue(() => {
@@ -112,7 +103,11 @@ function useSetupAnimatedValues<T>() {
         touchPositionDiff.value + activeCellOffset.value
       )
     );
-    return constrained - activeCellOffset.value;
+    // Only constrain the touch position while the finger is on the screen. This allows the active cell
+    // to snap above/below the fold once let go, if the drag ends at the top/bottom of the screen.
+    return isTouchActiveNative.value
+      ? constrained - activeCellOffset.value
+      : touchPositionDiff.value;
   }, []);
 
   const hoverAnim = useDerivedValue(() => {
@@ -125,6 +120,14 @@ function useSetupAnimatedValues<T>() {
   const hoverOffset = useDerivedValue(() => {
     return hoverAnim.value + activeCellOffset.value;
   }, [hoverAnim, activeCellOffset]);
+
+  useDerivedValue(() => {
+    // Reset spacer index when we stop hovering
+    const isHovering = activeIndexAnim.value >= 0;
+    if (!isHovering && spacerIndexAnim.value >= 0) {
+      spacerIndexAnim.value = -1;
+    }
+  }, []);
 
   // Note: this could use a refactor as it combines touch state + cell animation
   const resetTouchedCell = useCallback(() => {

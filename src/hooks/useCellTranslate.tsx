@@ -33,21 +33,31 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     return activeIndexAnim.value >= 0;
   }, []);
 
+  const hoverAnimConstrained = useDerivedValue(() => {
+    const minRelevantValue = cellOffset.value - activeCellSize.value * 2;
+    const maxRelevantValue =
+      cellOffset.value + cellSize.value + activeCellSize.value * 2;
+    const hoverAnimConstrained = Math.max(
+      Math.min(maxRelevantValue, hoverOffset.value),
+      minRelevantValue
+    );
+    return hoverAnimConstrained;
+  });
+
   useAnimatedReaction(
     () => {
-      return (
-        isHovering.value &&
-        activeIndexAnim.value &&
-        activeCellSize.value &&
-        hoverOffset.value
-      );
+      return hoverAnimConstrained.value;
     },
-    () => {
+    (hoverAnimConstrained, prev) => {
+      if (!isHovering.value || hoverAnimConstrained === prev) {
+        return;
+      }
+
       // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
       const isBeforeActive = cellIndex.value < activeIndexAnim.value;
       const isAfterActive = cellIndex.value > activeIndexAnim.value;
 
-      const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
+      const hoverPlusActiveSize = hoverAnimConstrained + activeCellSize.value;
       const offsetPlusHalfSize = cellOffset.value + cellSize.value / 2;
       const offsetPlusSize = cellOffset.value + cellSize.value;
       let result = -1;
@@ -68,31 +78,23 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
         }
       } else if (isBeforeActive) {
         if (
-          hoverOffset.value < offsetPlusSize &&
-          hoverOffset.value >= offsetPlusHalfSize
+          hoverAnimConstrained < offsetPlusSize &&
+          hoverAnimConstrained >= offsetPlusHalfSize
         ) {
           // top edge of active cell overlaps bottom half of current cell
           result = cellIndex.value + 1;
         } else if (
-          hoverOffset.value >= cellOffset.value &&
-          hoverOffset.value < offsetPlusHalfSize
+          hoverAnimConstrained >= cellOffset.value &&
+          hoverAnimConstrained < offsetPlusHalfSize
         ) {
           // top edge of active cell overlaps top half of current cell
           result = cellIndex.value;
         }
       }
 
-      if (
-        result !== -1 &&
-        isHovering.value &&
-        result !== spacerIndexAnim.value
-      ) {
+      if (result !== -1 && result !== spacerIndexAnim.value) {
         spacerIndexAnim.value = result;
       }
-      if (!isHovering.value && spacerIndexAnim.value !== -1) {
-        spacerIndexAnim.value = -1;
-      }
-      return spacerIndexAnim.value;
     },
     []
   );
@@ -119,10 +121,12 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   );
 
   const translate = useDerivedValue(() => {
+    // If no active cell, translation is already 0
+    if (!isHovering.value) return 0;
+
     // Active cell follows touch
-    if (isActiveCell.value) {
-      return hoverAnim.value;
-    }
+    if (isActiveCell.value) return hoverAnim.value;
+
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
@@ -130,19 +134,11 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       ? cellIndex.value <= spacerIndexAnim.value
       : cellIndex.value >= spacerIndexAnim.value;
 
-    if (shouldTranslate) {
-      return activeCellSize.value * (isAfterActive ? -1 : 1);
-    } else {
-      return 0;
-    }
+    const translationAmt = shouldTranslate
+      ? activeCellSize.value * (isAfterActive ? -1 : 1)
+      : 0;
+    return withSpring(translationAmt, animationConfigRef.current);
   }, [isActiveCell, activeIndexAnim, spacerIndexAnim, touchPositionDiff]);
 
-  const springTranslate = useDerivedValue(() => {
-    if (isActiveCell.value) return translate.value;
-    return isHovering.value
-      ? withSpring(translate.value, animationConfigRef.current)
-      : translate.value;
-  }, []);
-
-  return springTranslate;
+  return translate;
 }

@@ -20,6 +20,7 @@ export default function CellProvider({ isActive, children }: Props) {
     }),
     [isActive]
   );
+  // return children
   return <CellContext.Provider value={value}>{children}</CellContext.Provider>;
 }
 

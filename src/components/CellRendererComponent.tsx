@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
+  View,
 } from "react-native";
 import Animated, {
   useAnimatedReaction,
@@ -130,6 +131,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   );
   // changing zIndex crashes android:
   // https://github.com/facebook/react-native/issues/28751
+
   return (
     <Animated.View
       {...props}

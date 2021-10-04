@@ -117,7 +117,7 @@ export function useAutoScroll() {
 
     scrollTarget.value = targetOffset;
     console.log("SCROLL TO", targetOffset);
-    scrollTo(scrollViewRef, targetX, targetY, true);
+    // scrollTo(scrollViewRef, targetX, targetY, true);
   }, []);
 
   return null;
