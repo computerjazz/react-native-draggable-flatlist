@@ -24,12 +24,16 @@ export function useOnCellActiveAnimation(
 
     // spread operator and Object.assign don't work within worklets
     for (let key in DEFAULT_ANIMATION_CONFIG) {
-      const v = DEFAULT_ANIMATION_CONFIG[key];
-      animConfig[key] = v;
+      const k = key as keyof Animated.WithSpringConfig;
+      const v = DEFAULT_ANIMATION_CONFIG[k];
+      // @ts-ignore
+      animConfig[k] = v;
     }
     for (let key in animationConfigRef.current) {
-      const v = animationConfigRef.current[key];
-      animConfig[key] = v;
+      const k = key as keyof Animated.WithSpringConfig;
+      const v = animationConfigRef.current[k];
+      // @ts-ignore
+      animConfig[k] = v;
     }
     return withSpring(toVal, DEFAULT_ANIMATION_CONFIG);
   }, [isActive]);
