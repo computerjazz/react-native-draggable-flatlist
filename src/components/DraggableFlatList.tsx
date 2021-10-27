@@ -40,7 +40,7 @@ import AnimatedValueProvider, {
   useAnimatedValues,
 } from "../context/animatedValueContext";
 import RefProvider, { useRefs } from "../context/refContext";
-import DraggableFlatListProvider from "../context/draggableFlatlistContext";
+import DraggableFlatListProvider from "../context/draggableFlatListContext";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {

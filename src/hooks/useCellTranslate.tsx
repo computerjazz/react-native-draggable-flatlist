@@ -15,7 +15,7 @@ import { useRefs } from "../context/refContext";
 import { setupCell, springFill } from "../procs";
 import { useSpring } from "./useSpring";
 import { useNode } from "../hooks/useNode";
-import { useDraggableFlatListContext } from "../context/draggableFlatlistContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 
 type Params = {
   cellIndex: Animated.Value<number>;

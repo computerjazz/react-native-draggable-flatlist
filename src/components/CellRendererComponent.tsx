@@ -11,7 +11,7 @@ import {
   MeasureLayoutOnSuccessCallback,
 } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
-import { useDraggableFlatListContext } from "../context/draggableFlatlistContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { isAndroid, isIOS, isReanimatedV2, isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";

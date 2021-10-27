@@ -10,7 +10,7 @@ import Animated, {
   cond,
 } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
-import { useDraggableFlatListContext } from "../context/draggableFlatlistContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useProps } from "../context/propsContext";
 import { useRefs } from "../context/refContext";
 import { useNode } from "../hooks/useNode";
