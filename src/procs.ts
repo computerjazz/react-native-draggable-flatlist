@@ -203,25 +203,26 @@ export const setupCell = proc(
             set(finished, 0),
             startClock(clock),
           ]),
+
+          cond(neq(prevSpacerIndex, spacerIndex), [
+            cond(eq(spacerIndex, -1), [
+              // Hard reset to prevent stale state bugs
+              cond(clockRunning(clock), stopClock(clock)),
+              hardReset(position, finished, time, toValue),
+            ]),
+          ]),
+          cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
+          set(prevSpacerIndex, spacerIndex),
+          set(prevToValue, toValue),
+          set(prevIsDraggingCell, isDraggingCell),
+          cond(clockRunning(clock), runSpring),
         ],
         [
-          // Reset the spacer index when drag ends
-          set(spacerIndex, -1),
-          set(position, 0),
+          // // Reset the spacer index when drag ends
+          cond(neq(spacerIndex, -1), set(spacerIndex, -1)),
+          cond(neq(position, 0), set(position, 0)),
         ]
       ),
-      cond(neq(prevSpacerIndex, spacerIndex), [
-        cond(eq(spacerIndex, -1), [
-          // Hard reset to prevent stale state bugs
-          cond(clockRunning(clock), stopClock(clock)),
-          hardReset(position, finished, time, toValue),
-        ]),
-      ]),
-      cond(finished, [onFinished, set(time, 0), set(finished, 0)]),
-      set(prevSpacerIndex, spacerIndex),
-      set(prevToValue, toValue),
-      set(prevIsDraggingCell, isDraggingCell),
-      cond(clockRunning(clock), runSpring),
       position,
     ])
 );

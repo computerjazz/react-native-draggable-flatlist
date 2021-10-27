@@ -402,7 +402,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             extraData={extraData}
             keyExtractor={keyExtractor}
             onScroll={scrollHandler}
-            scrollEventThrottle={1}
+            scrollEventThrottle={16}
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
           />

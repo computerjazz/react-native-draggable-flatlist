@@ -142,16 +142,11 @@ function CellRendererComponent<T>(props: Props<T>) {
         isAndroid && { elevation: isActive ? 1 : 0 },
         { flexDirection: horizontal ? "row" : "column" },
         (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
+        style,
       ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
-      <Animated.View
-        // Including both animated styles and non-animated styles causes react-native-web
-        // to ignore updates in non-animated styles. Solution is to separate anima
-        style={style}
-      >
-        <CellProvider isActive={isActive}>{children}</CellProvider>
-      </Animated.View>
+      <CellProvider isActive={isActive}>{children}</CellProvider>
     </Animated.View>
   );
 }
