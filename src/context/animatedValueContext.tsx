@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import {
+import Animated, {
   add,
   and,
   block,
