@@ -9,6 +9,8 @@ import {
   findNodeHandle,
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
@@ -24,6 +26,7 @@ type Props<T> = {
   index: number;
   children: React.ReactNode;
   onLayout: (e: LayoutChangeEvent) => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
@@ -142,11 +145,17 @@ function CellRendererComponent<T>(props: Props<T>) {
         isAndroid && { elevation: isActive ? 1 : 0 },
         { flexDirection: horizontal ? "row" : "column" },
         (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
-        style,
       ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
-      <CellProvider isActive={isActive}>{children}</CellProvider>
+      <Animated.View
+        {...props}
+        // Including both animated styles and non-animated styles causes react-native-web
+        // to ignore updates in non-animated styles. Solution is to separate animated styles from non-animated styles
+        style={[props.style, style]}
+      >
+        <CellProvider isActive={isActive}>{children}</CellProvider>
+      </Animated.View>
     </Animated.View>
   );
 }

@@ -1,9 +1,11 @@
 import React from "react";
+import { StyleSheet } from "react-native";
 import Animated, {
   interpolate,
   interpolateNode,
   multiply,
 } from "react-native-reanimated";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useNode } from "../hooks/useNode";
 export { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 import { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
@@ -30,10 +32,14 @@ export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
     })
   );
 
+  const { horizontal } = useDraggableFlatListContext<any>();
   const scale = isActive ? animScale : 1;
   return (
     <Animated.View
-      style={{ transform: [{ scaleX: scale }, { scaleY: scale }] }}
+      style={[
+        { transform: [{ scaleX: scale }, { scaleY: scale }] },
+        horizontal && styles.horizontal,
+      ]}
     >
       {children}
     </Animated.View>
@@ -56,6 +62,8 @@ export const ShadowDecorator = ({
   children,
 }: ShadowProps) => {
   const { isActive, onActiveAnim } = useOnCellActiveAnimation();
+  const { horizontal } = useDraggableFlatListContext<any>();
+
   const shadowOpacity = useNode(multiply(onActiveAnim, opacity));
 
   const style = {
@@ -65,7 +73,11 @@ export const ShadowDecorator = ({
     shadowOpacity: isActive ? shadowOpacity : 0,
   };
 
-  return <Animated.View style={style}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, horizontal && styles.horizontal]}>
+      {children}
+    </Animated.View>
+  );
 };
 
 type OpacityProps = {
@@ -78,6 +90,8 @@ export const OpacityDecorator = ({
   children,
 }: OpacityProps) => {
   const { isActive, onActiveAnim } = useOnCellActiveAnimation();
+  const { horizontal } = useDraggableFlatListContext<any>();
+
   const opacity = useNode(
     interpolateFn(onActiveAnim, {
       inputRange: [0, 1],
@@ -89,5 +103,16 @@ export const OpacityDecorator = ({
     opacity: isActive ? opacity : 1,
   };
 
-  return <Animated.View style={style}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, horizontal && styles.horizontal]}>
+      {children}
+    </Animated.View>
+  );
 };
+
+const styles = StyleSheet.create({
+  horizontal: {
+    flexDirection: "row",
+    flex: 1,
+  },
+});
