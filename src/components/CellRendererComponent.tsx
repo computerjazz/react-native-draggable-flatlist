@@ -11,13 +11,13 @@ import {
   MeasureLayoutOnSuccessCallback,
 } from "react-native";
 import Animated, { cond, useValue } from "react-native-reanimated";
-import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatlistContext";
 import { isAndroid, isIOS, isReanimatedV2, isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";
-import { useRefs } from "../context/RefContext";
-import { useAnimatedValues } from "../context/AnimatedValueContext";
-import CellProvider from "../context/CellContext";
+import { useRefs } from "../context/refContext";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import CellProvider from "../context/cellContext";
 
 type Props<T> = {
   item: T;

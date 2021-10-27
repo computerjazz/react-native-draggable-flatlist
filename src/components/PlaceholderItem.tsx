@@ -9,10 +9,10 @@ import Animated, {
   greaterThan,
   cond,
 } from "react-native-reanimated";
-import { useAnimatedValues } from "../context/AnimatedValueContext";
-import { useDraggableFlatListContext } from "../context/DraggableFlatListContext";
-import { useProps } from "../context/PropsContext";
-import { useRefs } from "../context/RefContext";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatlistContext";
+import { useProps } from "../context/propsContext";
+import { useRefs } from "../context/refContext";
 import { useNode } from "../hooks/useNode";
 import { RenderPlaceholder } from "../types";
 import { typedMemo } from "../utils";

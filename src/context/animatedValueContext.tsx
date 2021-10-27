@@ -13,7 +13,7 @@ import {
 import { State as GestureState } from "react-native-gesture-handler";
 import { useNode } from "../hooks/useNode";
 import { useMemo } from "react";
-import { useProps } from "./PropsContext";
+import { useProps } from "./propsContext";
 
 if (!useValue) {
   throw new Error("Incompatible Reanimated version (useValue not found)");

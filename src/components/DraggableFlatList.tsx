@@ -35,12 +35,12 @@ import ScrollOffsetListener from "./ScrollOffsetListener";
 import { DraggableFlatListProps } from "../types";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useNode } from "../hooks/useNode";
-import PropsProvider from "../context/PropsContext";
+import PropsProvider from "../context/propsContext";
 import AnimatedValueProvider, {
   useAnimatedValues,
-} from "../context/AnimatedValueContext";
-import RefProvider, { useRefs } from "../context/RefContext";
-import DraggableFlatListProvider from "../context/DraggableFlatListContext";
+} from "../context/animatedValueContext";
+import RefProvider, { useRefs } from "../context/refContext";
+import DraggableFlatListProvider from "../context/draggableFlatlistContext";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {

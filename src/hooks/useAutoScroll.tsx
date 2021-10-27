@@ -18,19 +18,18 @@ import {
   useCode,
   useValue,
 } from "react-native-reanimated";
-import { State as GestureState } from "react-native-gesture-handler";
+import { FlatList, State as GestureState } from "react-native-gesture-handler";
 import {
   DEFAULT_PROPS,
   SCROLL_POSITION_TOLERANCE,
-  isReanimatedV2,
   isAndroid,
 } from "../constants";
 import { useNode } from "../hooks/useNode";
-import { useProps } from "../context/PropsContext";
-import { useAnimatedValues } from "../context/AnimatedValueContext";
-import { useRefs } from "../context/RefContext";
+import { useProps } from "../context/propsContext";
+import { useAnimatedValues } from "../context/animatedValueContext";
+import { useRefs } from "../context/refContext";
 
-export function useAutoScroll() {
+export function useAutoScroll<T>() {
   const { flatlistRef } = useRefs();
   const {
     autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
