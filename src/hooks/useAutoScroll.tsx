@@ -114,14 +114,18 @@ export function useAutoScroll<T>() {
       isAutoScrollInProgress.current.native.setValue(1);
       isAutoScrollInProgress.current.js = true;
 
-      const flatlistNode: FlatList<T> | null =
-        "scrollToOffset" in flatlistRef
-          ? flatlistRef
-          : "getNode" in flatlistRef
-          ? //@ts-ignore backwards compat
-            flatlistRef.getNode()
-          : null;
-      flatlistNode?.scrollToOffset?.({ offset });
+      function getFlatListNode(): FlatList<T> | null {
+        if (!flatlistRef.current) return null;
+        if ("scrollToOffset" in flatlistRef.current)
+          return flatlistRef.current as FlatList<T>;
+        //@ts-ignore backwards compat
+        if ("getNode" in flatlistRef.current) return flatlistRef.getNode();
+        return null;
+      }
+
+      const flatListNode = getFlatListNode();
+
+      flatListNode?.scrollToOffset?.({ offset });
     });
 
   const getScrollTargetOffset = (
