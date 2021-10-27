@@ -19,11 +19,7 @@ import Animated, {
   useValue,
 } from "react-native-reanimated";
 import { FlatList, State as GestureState } from "react-native-gesture-handler";
-import {
-  DEFAULT_PROPS,
-  SCROLL_POSITION_TOLERANCE,
-  isAndroid,
-} from "../constants";
+import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "../constants";
 import { useNode } from "../hooks/useNode";
 import { useProps } from "../context/propsContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
@@ -146,9 +142,7 @@ export function useAutoScroll<T>() {
       return -1;
     const distFromEdge = scrollUp ? distFromTop : distFromBottom;
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
-    // Android scroll speed seems much faster than ios
-    const speed = isAndroid ? autoscrollSpeed / 10 : autoscrollSpeed;
-    const offset = speedPct * speed;
+    const offset = speedPct * autoscrollSpeed;
     const targetOffset = scrollUp
       ? Math.max(0, scrollOffset - offset)
       : scrollOffset + offset;
