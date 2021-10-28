@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from "react";
-import { useActiveKey, useStaticValues } from "./context";
-import { RenderItem, typedMemo } from "./types";
+import { useActiveKey, useStaticValues } from "../context";
+import { RenderItem, typedMemo } from "../types";
 
 type Props<T> = {
   extraData?: any;

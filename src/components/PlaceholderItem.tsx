@@ -1,12 +1,13 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { StyleSheet } from "react-native";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
   useDerivedValue,
+  useSharedValue,
 } from "react-native-reanimated";
-import { useActiveKey, useStaticValues } from "./context";
-import { RenderPlaceholder, typedMemo } from "./types";
+import { useActiveKey, useStaticValues } from "../context";
+import { RenderPlaceholder, typedMemo } from "../types";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
@@ -21,6 +22,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     propsRef,
     spacerIndexAnim,
   } = useStaticValues<T>();
+
   const { activeKey, isActiveVisible } = useActiveKey();
 
   const onPlaceholderIndexChange = useCallback(
@@ -36,7 +38,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     runOnJS(onPlaceholderIndexChange)({
       placeholderIndex: spacerIndexAnim.value,
     });
-  });
+  }, []);
 
   const style = useAnimatedStyle(() => {
     return horizontalAnim.value
@@ -48,7 +50,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
           height: activeCellSize.value,
           transform: [{ translateY: placeholderScreenOffset.value }],
         };
-  });
+  }, []);
 
   const activeIndex =
     isActiveVisible && activeKey
@@ -62,9 +64,9 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
       pointerEvents={isActiveVisible ? "auto" : "none"}
       style={[StyleSheet.absoluteFill, style]}
     >
-      {!activeItem || activeIndex === undefined
+      {!renderPlaceholder || !activeItem || activeIndex === undefined
         ? null
-        : renderPlaceholder?.({ item: activeItem, index: activeIndex })}
+        : renderPlaceholder({ item: activeItem, index: activeIndex })} 
     </Animated.View>
   );
 }

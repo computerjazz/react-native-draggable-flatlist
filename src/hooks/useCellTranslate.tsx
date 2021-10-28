@@ -6,7 +6,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useActiveKey, useStaticValues } from "./context";
+import { useActiveKey, useStaticValues } from "../context";
 
 type Params = {
   cellIndex: Animated.SharedValue<number>;

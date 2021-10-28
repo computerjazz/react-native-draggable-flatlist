@@ -4,10 +4,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import { isAndroid, isIOS } from "./constants";
-import { useActiveKey, useProps, useStaticValues } from "./context";
-import { typedMemo } from "./types";
-import { useCellTranslate } from "./useCellTranslate";
+import { isAndroid, isIOS } from "../constants";
+import { useActiveKey, useProps, useStaticValues } from "../context";
+import { typedMemo } from "../types";
+import { useCellTranslate } from "../hooks/useCellTranslate";
 
 type Props<T> = {
   item: T;
@@ -32,7 +32,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     propsRef,
   } = useStaticValues<T>();
 
-  const { activeKey, isActiveVisible } = useActiveKey();
+  const { activeKey } = useActiveKey();
   const { horizontal } = useProps();
 
   const key = keyExtractor(item, index);

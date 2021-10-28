@@ -4,7 +4,7 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
-import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE, isIOS } from "./constants";
+import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "../constants";
 
 type Params = {
   scrollOffset: Animated.SharedValue<number>;
