@@ -1,5 +1,6 @@
-import { useState } from "react";
 import Animated, {
+  Extrapolate,
+  interpolate,
   runOnJS,
   useAnimatedReaction,
   useDerivedValue,
@@ -33,11 +34,19 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     return cellIndex.value === activeIndexAnim.value;
   });
 
+  const hoverClamped = useDerivedValue(() => {
+    const range = [
+      cellOffset.value - activeCellSize.value - 1,
+      cellOffset.value + activeCellSize.value + 1,
+    ];
+    return interpolate(hoverOffset.value, range, range, Extrapolate.CLAMP);
+  }, []);
+
   useDerivedValue(() => {
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
     const isBeforeActive = cellIndex.value < activeIndexAnim.value;
-    const hoverPlusActiveSize = hoverOffset.value + activeCellSize.value;
+    const hoverPlusActiveSize = hoverClamped.value + activeCellSize.value;
     const offsetPlusHalfSize = cellOffset.value + cellSize.value / 2;
     const offsetPlusSize = cellOffset.value + cellSize.value;
     let result = -1;
@@ -57,14 +66,14 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       }
     } else if (isBeforeActive) {
       if (
-        hoverOffset.value < offsetPlusSize &&
-        hoverOffset.value >= offsetPlusHalfSize
+        hoverClamped.value < offsetPlusSize &&
+        hoverClamped.value >= offsetPlusHalfSize
       ) {
         // top edge of active cell overlaps bottom half of current cell
         result = cellIndex.value + 1;
       } else if (
-        hoverOffset.value >= cellOffset.value &&
-        hoverOffset.value < offsetPlusHalfSize
+        hoverClamped.value >= cellOffset.value &&
+        hoverClamped.value < offsetPlusHalfSize
       ) {
         // top edge of active cell overlaps top half of current cell
         result = cellIndex.value;
