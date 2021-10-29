@@ -437,8 +437,15 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             {...props}
             CellRendererComponent={CellRendererComponent}
             ref={(ref) => {
+              // It's not possible to set a custom scroll component on an RNGH flatlist, since RNGH overrides it:
+              // https://github.com/software-mansion/react-native-gesture-handler/blob/master/src/components/GestureComponents.tsx#L78-L80
+              // Calling useAnimatedRef as a function is not documented, but works:
+              // https://github.com/software-mansion/react-native-reanimated/blob/master/src/reanimated2/hook/useAnimatedRef.ts
+
               flatlistRef(ref);
-              scrollViewRef(ref._listRef.getScrollRef());
+              // Grab ScrollView ref off of FlatList:
+              // https://github.com/facebook/react-native/blob/main/Libraries/Lists/FlatList.js#L382-L393
+              scrollViewRef(ref.getNativeScrollRef());
             }}
             onContentSizeChange={onListContentSizeChange}
             scrollEnabled={!activeKey && scrollEnabled}

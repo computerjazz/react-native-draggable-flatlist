@@ -34,7 +34,6 @@ export function useAutoScroll({
 
   const isScrolling = useDerivedValue(() => {
     const scrollTargetDiff = scrollTarget.value - scrollOffset.value;
-    console.log("diff!!", scrollTarget.value, scrollOffset.value);
     return Math.abs(scrollTargetDiff) > SCROLL_POSITION_TOLERANCE;
   }, []);
 
