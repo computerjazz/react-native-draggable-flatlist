@@ -13,7 +13,6 @@ type Props<T> = StaticContextValue<T> &
 function DraggableFlatListProviderBase<T>({
   children,
   activeKey,
-  isActiveVisible,
   props,
   ...rest
 }: Props<T>) {
@@ -22,7 +21,7 @@ function DraggableFlatListProviderBase<T>({
   };
 
   return (
-    <ActiveKeyProvider activeKey={activeKey} isActiveVisible={isActiveVisible}>
+    <ActiveKeyProvider activeKey={activeKey}>
       <StaticValueProvider {...staticValue}>
         <PropsProvider horizontal={!!props.horizontal}>
           {children}

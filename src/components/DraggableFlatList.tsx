@@ -1,15 +1,22 @@
 import React, {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { StyleSheet, ListRenderItem, FlatListProps } from "react-native";
+import {
+  StyleSheet,
+  ListRenderItem,
+  FlatListProps,
+  LayoutChangeEvent,
+} from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
   FlatList,
+  ScrollView,
   PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
 import Animated, {
@@ -72,6 +79,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const containerRef = useRef<Animated.View>(null);
   const flatlistRef = useAnimatedRef<FlatList<T>>();
+  const scrollViewRef = useAnimatedRef<ScrollView>();
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
 
   const containerSize = useSharedValue(0);
@@ -95,13 +103,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     return activeIndexAnim.value > -1;
   });
 
-  const [isActiveVisible, setIsActiveVisible] = useState(false);
-  useDerivedValue(() => {
-    // Tracking active in JS solves for the case where the placeholder renders before
-    // animated values update, and does not expand to fill available space
-    runOnJS(setIsActiveVisible)(isHovering.value);
-  });
-
   const activeCellSize = useSharedValue(0); // Height or width of acctive cell
   const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
 
@@ -111,40 +112,22 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const touchCellOffset = useDerivedValue(() => {
     // Distance between touch point and edge of cell
     return touchInit.value - activeCellOffset.value;
-  });
+  }, []);
 
-  const snapInProgress = useSharedValue(false);
-  const snapTo = useSharedValue(0);
-  const hoverAnimUnconstrained = useDerivedValue(() => {
+  const hoverComponentTranslate = useDerivedValue(() => {
     return (
       touchAbsolute.value - activationDistance.value - touchCellOffset.value
     );
-  });
+  }, []);
 
-  const hoverAnimConstrained = useDerivedValue(() => {
-    const containerMinusCell = containerSize.value - activeCellSize.value;
-    return Math.min(
-      containerMinusCell,
-      Math.max(0, hoverAnimUnconstrained.value)
-    );
-  });
-
-  const hoverAnim = useDerivedValue(() => {
-    const dragVal = dragItemOverflow
-      ? hoverAnimConstrained.value
-      : hoverAnimUnconstrained.value;
-    const hoverSnapVal = snapTo.value - scrollOffset.value;
-    return snapInProgress.value ? hoverSnapVal : dragVal;
-  }, [dragItemOverflow]);
-  const hoverOffset = useDerivedValue(
-    () => hoverAnim.value + scrollOffset.value
-  );
-  const hoverComponentTranslate = useDerivedValue(() => hoverAnim.value);
+  const hoverOffset = useDerivedValue(() => {
+    return hoverComponentTranslate.value + scrollOffset.value;
+  }, []);
 
   const placeholderOffset = useSharedValue(0);
   const placeholderScreenOffset = useDerivedValue(() => {
     return placeholderOffset.value - scrollOffset.value;
-  });
+  }, []);
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
@@ -199,10 +182,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     scrollOffset,
     scrollViewSize,
     containerSize,
-    hoverAnim,
+    hoverComponentTranslate,
+    scrollViewRef,
     isPressedIn,
     activeCellSize,
-    flatlistRef,
   });
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -213,13 +196,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     },
   });
 
-  const onContainerLayout = () => {
-    if (containerRef.current) {
-      //@ts-ignore
-      containerRef.current.measure((_x, _y, w, h) => {
-        containerSize.value = props.horizontal ? w : h;
-      });
-    }
+  const onContainerLayout = ({
+    nativeEvent: { layout },
+  }: LayoutChangeEvent) => {
+    containerSize.value = props.horizontal ? layout.width : layout.height;
   };
 
   const onListContentSizeChange = (w: number, h: number) => {
@@ -262,11 +242,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     [props.renderItem, props.extraData, drag, keyExtractor]
   );
 
-  useMemo(() => {
-    if (!activeKey) {
-    }
-  }, [activeKey]);
-
   const resetHoverState = useCallback(() => {
     setActiveKey(null);
   }, []);
@@ -289,6 +264,18 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   useAnimatedReaction(
     () => {
+      return !isHovering.value && spacerIndexAnim.value !== -1;
+    },
+    (cur, prev) => {
+      if (cur && prev !== cur && prev !== null) {
+        spacerIndexAnim.value = -1;
+      }
+    },
+    []
+  );
+
+  useAnimatedReaction(
+    () => {
       return !isPressedIn.value && !hasMoved.value && isHovering.value;
     },
     (cur, prev) => {
@@ -298,8 +285,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         const from = activeIndexAnim.value;
         const to = spacerIndexAnim.value;
         disabled.value = false;
-        snapTo.value = hoverAnim.value;
-        snapInProgress.value = false;
         hasMoved.value = false;
         runOnJS(onDragEnd)({ from, to });
         runOnJS(resetHoverState)();
@@ -323,12 +308,37 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     },
     onActive: (evt, ctx) => {
       if (disabled.value) return;
+      const rawVal = horizontalAnim.value ? evt.x : evt.y;
       if (ctx.state !== evt.state) {
         ctx.state = evt.state;
-        const reference = horizontalAnim.value ? evt.x : evt.y;
-        activationDistance.value = reference - touchInit.value;
+        activationDistance.value = rawVal - touchInit.value;
       }
-      touchAbsolute.value = horizontalAnim.value ? evt.x : evt.y;
+
+      const resultantHoverAnim =
+        rawVal - activationDistance.value - touchCellOffset.value;
+      if (!dragItemOverflow) {
+        if (resultantHoverAnim < 0) {
+          // item would be translated beyond beginning, constrain to min
+          const minTrans = activationDistance.value + touchCellOffset.value;
+          touchAbsolute.value = minTrans;
+        } else if (
+          resultantHoverAnim + activeCellSize.value >
+          containerSize.value
+        ) {
+          // item would be translated beyond end, constrain to max
+          const maxTrans =
+            containerSize.value +
+            activationDistance.value +
+            touchCellOffset.value -
+            activeCellSize.value;
+          touchAbsolute.value = maxTrans;
+        } else {
+          touchAbsolute.value = rawVal;
+        }
+      } else {
+        // No constraints
+        touchAbsolute.value = rawVal;
+      }
     },
     onEnd: (evt, ctx) => {
       if (ctx.state !== evt.state) {
@@ -337,17 +347,20 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       const from = activeIndexAnim.value;
       const to = spacerIndexAnim.value;
 
-      disabled.value = true;
-      snapTo.value = hoverAnim.value + scrollOffset.value;
-      snapInProgress.value = true;
-      isPressedIn.value = false;
+      console.log(`from ${from} to ${to}`);
 
-      const springAnim = withSpring(
-        placeholderOffset.value,
+      disabled.value = true;
+      isPressedIn.value = false;
+      const targetScreenOffset =
+        placeholderScreenOffset.value +
+        touchCellOffset.value +
+        activationDistance.value;
+
+      touchAbsolute.value = withSpring(
+        targetScreenOffset,
         animationConfigRef.current,
         () => {
           runOnJS(onDragEnd)({ from, to });
-          snapInProgress.value = false;
           activeIndexAnim.value = -1;
           activeCellSize.value = 0;
           activeCellOffset.value = 0;
@@ -357,21 +370,20 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
           disabled.value = false;
           touchAbsolute.value = 0;
-          spacerIndexAnim.value = 0;
+          spacerIndexAnim.value = -1;
         }
       );
-      snapTo.value = springAnim;
     },
     onCancel: (evt, ctx) => {
       if (ctx.state !== evt.state) {
         ctx.state = evt.state;
-        // TODO: copy onEnd
+        // TODO: copy onEnd?
       }
     },
     onFinish: (evt, ctx) => {
       if (ctx.state !== evt.state) {
         ctx.state = evt.state;
-        // TODO: copy onEnd
+        // TODO: copy onEnd?
       }
     },
   });
@@ -391,13 +403,12 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       placeholderOffset={placeholderOffset}
       placeholderScreenOffset={placeholderScreenOffset}
       animationConfigRef={animationConfigRef}
-      hoverComponentTranslate={hoverComponentTranslate}
       keyExtractor={keyExtractor}
       flatlistRef={flatlistRef}
       activeKey={activeKey}
-      isActiveVisible={!!activeKey || isActiveVisible}
       isPressedIn={isPressedIn}
       propsRef={propsRef}
+      hoverComponentTranslate={hoverComponentTranslate}
       props={props}
     >
       <PanGestureHandler
@@ -425,7 +436,10 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           <AnimatedFlatList
             {...props}
             CellRendererComponent={CellRendererComponent}
-            ref={flatlistRef}
+            ref={(ref) => {
+              flatlistRef(ref);
+              scrollViewRef(ref._listRef.getScrollRef());
+            }}
             onContentSizeChange={onListContentSizeChange}
             scrollEnabled={!activeKey && scrollEnabled}
             renderItem={renderItem}

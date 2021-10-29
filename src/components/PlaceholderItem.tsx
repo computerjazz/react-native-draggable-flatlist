@@ -23,7 +23,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     spacerIndexAnim,
   } = useStaticValues<T>();
 
-  const { activeKey, isActiveVisible } = useActiveKey();
+  const { activeKey } = useActiveKey();
 
   const onPlaceholderIndexChange = useCallback(
     ({ placeholderIndex }: { placeholderIndex: number }) => {
@@ -52,21 +52,20 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
         };
   }, []);
 
-  const activeIndex =
-    isActiveVisible && activeKey
-      ? keyToIndexRef.current.get(activeKey)
-      : undefined;
+  const activeIndex = activeKey
+    ? keyToIndexRef.current.get(activeKey)
+    : undefined;
   const activeItem =
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
   return (
     <Animated.View
-      pointerEvents={isActiveVisible ? "auto" : "none"}
+      pointerEvents={activeKey ? "auto" : "none"}
       style={[StyleSheet.absoluteFill, style]}
     >
       {!renderPlaceholder || !activeItem || activeIndex === undefined
         ? null
-        : renderPlaceholder({ item: activeItem, index: activeIndex })} 
+        : renderPlaceholder({ item: activeItem, index: activeIndex })}
     </Animated.View>
   );
 }

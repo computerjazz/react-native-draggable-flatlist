@@ -1,7 +1,6 @@
 import Animated, {
   Extrapolate,
   interpolate,
-  runOnJS,
   useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
@@ -28,8 +27,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     scrollOffset,
   } = useStaticValues();
 
-  const { isActiveVisible } = useActiveKey();
-
   const isActiveCell = useDerivedValue(() => {
     return cellIndex.value === activeIndexAnim.value;
   });
@@ -42,27 +39,31 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     return interpolate(hoverOffset.value, range, range, Extrapolate.CLAMP);
   }, []);
 
-  useDerivedValue(() => {
+  const translate = useDerivedValue(() => {
+    // The cell doesn't translate unless there is a drag in progress
+    if (!isHovering.value) return 0;
+
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
     const isBeforeActive = cellIndex.value < activeIndexAnim.value;
     const hoverPlusActiveSize = hoverClamped.value + activeCellSize.value;
     const offsetPlusHalfSize = cellOffset.value + cellSize.value / 2;
     const offsetPlusSize = cellOffset.value + cellSize.value;
-    let result = -1;
+
+    let hoverIndex = -1;
     if (isAfterActive) {
       if (
         hoverPlusActiveSize >= cellOffset.value &&
         hoverPlusActiveSize < offsetPlusHalfSize
       ) {
         // bottom edge of active cell overlaps top half of current cell
-        result = cellIndex.value - 1;
+        hoverIndex = cellIndex.value - 1;
       } else if (
         hoverPlusActiveSize >= offsetPlusHalfSize &&
         hoverPlusActiveSize < offsetPlusSize
       ) {
         // bottom edge of active cell overlaps bottom half of current cell
-        result = cellIndex.value;
+        hoverIndex = cellIndex.value;
       }
     } else if (isBeforeActive) {
       if (
@@ -70,79 +71,49 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
         hoverClamped.value >= offsetPlusHalfSize
       ) {
         // top edge of active cell overlaps bottom half of current cell
-        result = cellIndex.value + 1;
+        hoverIndex = cellIndex.value + 1;
       } else if (
         hoverClamped.value >= cellOffset.value &&
         hoverClamped.value < offsetPlusHalfSize
       ) {
         // top edge of active cell overlaps top half of current cell
-        result = cellIndex.value;
+        hoverIndex = cellIndex.value;
       }
     }
 
-    if (result !== -1 && isHovering.value && result !== spacerIndexAnim.value) {
-      spacerIndexAnim.value = result;
+    if (hoverIndex !== -1 && hoverIndex !== spacerIndexAnim.value) {
+      spacerIndexAnim.value = hoverIndex;
     }
-    if (!isHovering.value && spacerIndexAnim.value !== -1) {
-      spacerIndexAnim.value = -1;
-    }
-    return spacerIndexAnim.value;
-  }, []);
 
-  useAnimatedReaction(
-    () => {
-      const isActiveSpacerIndex =
-        isHovering.value &&
-        cellSize.value !== -1 &&
-        cellOffset.value !== -1 &&
-        spacerIndexAnim.value === cellIndex.value;
-      return isActiveSpacerIndex;
-    },
-    (result, prev) => {
-      if (result && result !== prev) {
-        const isAfterActive = cellIndex.value > activeIndexAnim.value;
-        const newPlaceholderOffset = isAfterActive
-          ? cellSize.value + (cellOffset.value - activeCellSize.value)
-          : cellOffset.value;
+    if (cellIndex.value === spacerIndexAnim.value) {
+      const newPlaceholderOffset = isAfterActive
+        ? cellSize.value + (cellOffset.value - activeCellSize.value)
+        : cellOffset.value;
+
+      if (placeholderOffset.value !== newPlaceholderOffset) {
         placeholderOffset.value = newPlaceholderOffset;
       }
     }
-  );
 
-  const translate = useDerivedValue(() => {
     // Active cell follows touch
-    if (isActiveCell.value)
-      return (
-        hoverComponentTranslate.value - cellOffset.value + scrollOffset.value
-      );
+    if (isActiveCell.value) {
+      const screenTranslateVal =
+        hoverComponentTranslate.value - cellOffset.value + scrollOffset.value;
+      return screenTranslateVal;
+    }
+
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
-    const isAfterActive = cellIndex.value > activeIndexAnim.value;
+
     const shouldTranslate = isAfterActive
       ? cellIndex.value <= spacerIndexAnim.value
       : cellIndex.value >= spacerIndexAnim.value;
 
-    if (shouldTranslate) {
-      return activeCellSize.value * (isAfterActive ? -1 : 1);
-    } else {
-      return 0;
-    }
-  });
-
-  const lastKnownTranslate = useSharedValue(0);
-  useDerivedValue(() => {
-    if (!isActiveVisible) lastKnownTranslate.value = 0;
-  });
-
-  const springTranslate = useDerivedValue(() => {
-    if (isHovering.value) lastKnownTranslate.value = translate.value;
-    if (isActiveCell.value) return translate.value;
-    return isHovering.value
-      ? withSpring(translate.value, animationConfigRef.current)
-      : isActiveVisible
-      ? lastKnownTranslate.value
+    const translateVal = shouldTranslate
+      ? activeCellSize.value * (isAfterActive ? -1 : 1)
       : 0;
-  });
+    return withSpring(translateVal, animationConfigRef.current);
+  }, []);
 
-  return springTranslate;
+  return translate;
 }
