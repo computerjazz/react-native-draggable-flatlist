@@ -1,11 +1,21 @@
 import React, { useRef } from "react";
-import { findNodeHandle, MeasureLayoutOnSuccessCallback } from "react-native";
+import {
+  findNodeHandle,
+  MeasureLayoutOnSuccessCallback,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
 import { isAndroid, isIOS } from "../constants";
-import { useActiveKey, useProps, useStaticValues } from "../context";
+import {
+  CellProvider,
+  useActiveKey,
+  useProps,
+  useStaticValues,
+} from "../context";
 import { typedMemo } from "../types";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 
@@ -14,6 +24,7 @@ type Props<T> = {
   index: number;
   children: React.ReactNode;
   onLayout: () => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
@@ -94,6 +105,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       ref={viewRef}
       onLayout={onLayout}
       style={[
+        props.style,
         style,
         isIOS && { zIndex: isActive ? 999 : 0 },
         isAndroid && { elevation: isActive ? 1 : 0 },
@@ -102,9 +114,11 @@ function CellRendererComponent<T>(props: Props<T>) {
     >
       <Animated.View
         pointerEvents={activeKey ? "none" : "auto"}
-        style={{ flexDirection: horizontal ? "row" : "column" }}
+        style={[props.style, { flexDirection: horizontal ? "row" : "column" }]}
       >
-        {children}
+        <CellProvider index={index} isActive={isActive}>
+          {children}
+        </CellProvider>
       </Animated.View>
     </Animated.View>
   );

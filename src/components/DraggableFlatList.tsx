@@ -15,6 +15,7 @@ import {
 import Animated, {
   runOnJS,
   useAnimatedGestureHandler,
+  useAnimatedReaction,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useDerivedValue,
@@ -266,9 +267,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     }
   }, [activeKey]);
 
-  const resetHoverState = () => {
+  const resetHoverState = useCallback(() => {
     setActiveKey(null);
-  };
+  }, []);
 
   const onDragEnd = useCallback(
     ({ from, to }: { from: number; to: number }) => {
@@ -286,20 +287,26 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     []
   );
 
-  useDerivedValue(() => {
-    // The gesture handler will not activate if the user activates a cell and then releases without dragging.
-    // This resets state in that case.
-    if (!isPressedIn.value && !hasMoved.value && isHovering.value) {
-      const from = activeIndexAnim.value;
-      const to = spacerIndexAnim.value;
-      disabled.value = true;
-      snapTo.value = hoverAnim.value;
-      snapInProgress.value = true;
-      hasMoved.value = false;
-      runOnJS(onDragEnd)({ from, to });
-      runOnJS(resetHoverState)();
-    }
-  });
+  useAnimatedReaction(
+    () => {
+      return !isPressedIn.value && !hasMoved.value && isHovering.value;
+    },
+    (cur, prev) => {
+      // The gesture handler will not activate if the user activates a cell and then releases without dragging.
+      // This resets state in that case.
+      if (cur && cur !== prev && prev !== null) {
+        const from = activeIndexAnim.value;
+        const to = spacerIndexAnim.value;
+        disabled.value = false;
+        snapTo.value = hoverAnim.value;
+        snapInProgress.value = false;
+        hasMoved.value = false;
+        runOnJS(onDragEnd)({ from, to });
+        runOnJS(resetHoverState)();
+      }
+    },
+    []
+  );
 
   const onGestureEvent = useAnimatedGestureHandler<
     PanGestureHandlerGestureEvent,
@@ -333,7 +340,8 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       disabled.value = true;
       snapTo.value = hoverAnim.value + scrollOffset.value;
       snapInProgress.value = true;
-      hasMoved.value = false;
+      isPressedIn.value = false;
+
       const springAnim = withSpring(
         placeholderOffset.value,
         animationConfigRef.current,
@@ -345,9 +353,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           activeCellOffset.value = 0;
           activationDistance.value = 0;
           touchInit.value = 0;
+          hasMoved.value = false;
 
           disabled.value = false;
-          isPressedIn.value = false;
           touchAbsolute.value = 0;
           spacerIndexAnim.value = 0;
         }
@@ -388,6 +396,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
       flatlistRef={flatlistRef}
       activeKey={activeKey}
       isActiveVisible={!!activeKey || isActiveVisible}
+      isPressedIn={isPressedIn}
       propsRef={propsRef}
       props={props}
     >
@@ -410,7 +419,9 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
               onScrollOffsetChange={props.onScrollOffsetChange}
             />
           )}
-          {!!props.renderPlaceholder && <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />}
+          {!!props.renderPlaceholder && (
+            <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
+          )}
           <AnimatedFlatList
             {...props}
             CellRendererComponent={CellRendererComponent}

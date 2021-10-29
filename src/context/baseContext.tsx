@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { ActiveKeyContextValue, ActiveKeyProvider } from "./activeKeyContext";
 import { PropsProvider } from "./propsContext";
 import { DraggableFlatListProps, typedMemo } from "../types";
@@ -12,48 +12,14 @@ type Props<T> = StaticContextValue<T> &
 
 function DraggableFlatListProviderBase<T>({
   children,
-  activeIndexAnim,
-  spacerIndexAnim,
-  hoverOffset,
-  horizontalAnim,
-  keyToIndexRef,
-  cellDataRef,
-  activeCellSize,
-  activeCellOffset,
-  scrollOffset,
-  isHovering,
-  animationConfigRef,
-  placeholderOffset,
-  placeholderScreenOffset,
-  hoverComponentTranslate,
-  flatlistRef,
   activeKey,
   isActiveVisible,
-  keyExtractor,
-  propsRef,
   props,
+  ...rest
 }: Props<T>) {
-
-
-  const staticValue =  {
-      activeIndexAnim,
-      spacerIndexAnim,
-      hoverOffset,
-      horizontalAnim,
-      keyToIndexRef,
-      cellDataRef,
-      activeCellSize,
-      activeCellOffset,
-      scrollOffset,
-      isHovering,
-      animationConfigRef,
-      placeholderOffset,
-      placeholderScreenOffset,
-      flatlistRef,
-      keyExtractor,
-      hoverComponentTranslate,
-      propsRef,
-    };
+  const staticValue = {
+    ...rest,
+  };
 
   return (
     <ActiveKeyProvider activeKey={activeKey} isActiveVisible={isActiveVisible}>
@@ -69,4 +35,3 @@ function DraggableFlatListProviderBase<T>({
 export const DraggableFlatListProvider = typedMemo(
   DraggableFlatListProviderBase
 );
-

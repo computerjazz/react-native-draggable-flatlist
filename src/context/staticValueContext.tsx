@@ -1,6 +1,6 @@
-import React, { useContext, useMemo } from "react"
-import Animated from "react-native-reanimated"
-import { FlatList } from "react-native-gesture-handler"
+import React, { useContext, useMemo } from "react";
+import Animated from "react-native-reanimated";
+import { FlatList } from "react-native-gesture-handler";
 import { DraggableFlatListProps } from "../types";
 
 export type StaticContextValue<T> = {
@@ -17,20 +17,22 @@ export type StaticContextValue<T> = {
   placeholderScreenOffset: Animated.SharedValue<number>;
   horizontalAnim: Animated.SharedValue<boolean>;
   isHovering: Animated.SharedValue<boolean>;
+  isPressedIn: Animated.SharedValue<boolean>;
   animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
   keyExtractor: (item: T, index: number) => string;
   flatlistRef: React.RefObject<FlatList<T>>;
-  propsRef: React.MutableRefObject<DraggableFlatListProps<T>>
+  propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
 };
-
 
 // context to hold values that remain referentially equal
 const StaticContext = React.createContext<StaticContextValue<any> | undefined>(
   undefined
 );
 
-export function StaticValueProvider<T>({ children, ...rest }: StaticContextValue<T> & { children: React.ReactNode }) {
-
+export function StaticValueProvider<T>({
+  children,
+  ...rest
+}: StaticContextValue<T> & { children: React.ReactNode }) {
   const {
     activeIndexAnim,
     spacerIndexAnim,
@@ -42,6 +44,7 @@ export function StaticValueProvider<T>({ children, ...rest }: StaticContextValue
     activeCellOffset,
     scrollOffset,
     isHovering,
+    isPressedIn,
     animationConfigRef,
     placeholderOffset,
     placeholderScreenOffset,
@@ -49,7 +52,7 @@ export function StaticValueProvider<T>({ children, ...rest }: StaticContextValue
     keyExtractor,
     hoverComponentTranslate,
     propsRef,
-  } = rest
+  } = rest;
 
   const staticValue = useMemo(() => {
     return {
@@ -70,6 +73,7 @@ export function StaticValueProvider<T>({ children, ...rest }: StaticContextValue
       keyExtractor,
       hoverComponentTranslate,
       propsRef,
+      isPressedIn,
     };
   }, [
     activeIndexAnim,
@@ -88,13 +92,14 @@ export function StaticValueProvider<T>({ children, ...rest }: StaticContextValue
     cellDataRef,
     keyToIndexRef,
     hoverComponentTranslate,
+    isPressedIn,
   ]);
 
   return (
     <StaticContext.Provider value={staticValue}>
       {children}
     </StaticContext.Provider>
-  )
+  );
 }
 
 export function useStaticValues<T>() {
