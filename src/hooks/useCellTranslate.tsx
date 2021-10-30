@@ -97,8 +97,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
 
     // Active cell follows touch
     if (isActiveCell.value) {
-      const screenTranslateVal =
-        hoverComponentTranslate.value - cellOffset.value + scrollOffset.value;
+      const screenTranslateVal = hoverComponentTranslate.value;
       return screenTranslateVal;
     }
 

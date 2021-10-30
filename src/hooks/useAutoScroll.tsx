@@ -6,30 +6,26 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "../constants";
+import { useStaticValues } from "../context";
 
-type Params = {
-  scrollOffset: Animated.SharedValue<number>;
-  scrollViewSize: Animated.SharedValue<number>;
-  containerSize: Animated.SharedValue<number>;
-  hoverComponentTranslate: Animated.DerivedValue<number>;
-  isPressedIn: Animated.SharedValue<boolean>;
-  activeCellSize: Animated.SharedValue<number>;
-  scrollViewRef: React.RefObject<ScrollView>;
-  autoscrollThreshold?: number;
-  autoscrollSpeed?: number;
-};
+export function useAutoScroll() {
+  const {
+    scrollOffset,
+    hoverComponentTranslate,
+    propsRef,
+    isPressedIn,
+    scrollViewRef,
+    scrollViewSize,
+    containerSize,
+    activeCellOffset,
+    activeCellSize,
+  } = useStaticValues();
 
-export function useAutoScroll({
-  scrollOffset,
-  scrollViewSize,
-  containerSize,
-  hoverComponentTranslate,
-  isPressedIn,
-  activeCellSize,
-  scrollViewRef,
-  autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
-  autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
-}: Params) {
+  const {
+    autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
+    autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
+  } = propsRef.current;
+
   const scrollTarget = useSharedValue(0);
 
   const isScrolling = useDerivedValue(() => {
@@ -48,14 +44,17 @@ export function useAutoScroll({
   });
 
   const distToTopEdge = useDerivedValue(() => {
-    return Math.max(0, hoverComponentTranslate.value);
+    return Math.max(0, hoverComponentTranslate.value + activeCellOffset.value);
   }, []);
 
   const distToBottomEdge = useDerivedValue(() => {
     return Math.max(
       0,
       containerSize.value -
-        (hoverComponentTranslate.value + activeCellSize.value)
+        (hoverComponentTranslate.value +
+          activeCellOffset.value +
+          activeCellSize.value -
+          scrollOffset.value)
     );
   }, []);
 

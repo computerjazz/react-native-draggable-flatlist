@@ -1,27 +1,30 @@
 import React, { useContext, useMemo } from "react";
 import Animated from "react-native-reanimated";
-import { FlatList } from "react-native-gesture-handler";
+import { FlatList, ScrollView } from "react-native-gesture-handler";
 import { DraggableFlatListProps } from "../types";
 
 export type StaticContextValue<T> = {
-  cellDataRef: React.MutableRefObject<Map<string, any>>;
-  keyToIndexRef: React.MutableRefObject<Map<string, number>>;
+  activeCellOffset: Animated.SharedValue<number>;
+  activeCellSize: Animated.SharedValue<number>;
   activeIndexAnim: Animated.SharedValue<number>;
-  spacerIndexAnim: Animated.SharedValue<number>;
+  animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
+  cellDataRef: React.MutableRefObject<Map<string, any>>;
+  flatlistRef: React.RefObject<FlatList<T>>;
+  horizontalAnim: Animated.SharedValue<boolean>;
   hoverComponentTranslate: Animated.SharedValue<number>;
   hoverOffset: Animated.SharedValue<number>;
-  activeCellSize: Animated.SharedValue<number>;
-  activeCellOffset: Animated.SharedValue<number>;
-  scrollOffset: Animated.SharedValue<number>;
-  placeholderOffset: Animated.SharedValue<number>;
-  placeholderScreenOffset: Animated.SharedValue<number>;
-  horizontalAnim: Animated.SharedValue<boolean>;
   isHovering: Animated.SharedValue<boolean>;
   isPressedIn: Animated.SharedValue<boolean>;
-  animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
   keyExtractor: (item: T, index: number) => string;
-  flatlistRef: React.RefObject<FlatList<T>>;
+  keyToIndexRef: React.MutableRefObject<Map<string, number>>;
+  placeholderOffset: Animated.SharedValue<number>;
+  placeholderScreenOffset: Animated.SharedValue<number>;
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
+  scrollOffset: Animated.SharedValue<number>;
+  spacerIndexAnim: Animated.SharedValue<number>;
+  scrollViewSize: Animated.SharedValue<number>;
+  containerSize: Animated.SharedValue<number>;
+  scrollViewRef: React.RefObject<ScrollView>;
 };
 
 // context to hold values that remain referentially equal
@@ -52,6 +55,9 @@ export function StaticValueProvider<T>({
     keyExtractor,
     hoverComponentTranslate,
     propsRef,
+    scrollViewRef,
+    scrollViewSize,
+    containerSize,
   } = rest;
 
   const staticValue = useMemo(() => {
@@ -74,6 +80,9 @@ export function StaticValueProvider<T>({
       hoverComponentTranslate,
       propsRef,
       isPressedIn,
+      scrollViewRef,
+      scrollViewSize,
+      containerSize,
     };
   }, [
     activeIndexAnim,
@@ -93,6 +102,9 @@ export function StaticValueProvider<T>({
     keyToIndexRef,
     hoverComponentTranslate,
     isPressedIn,
+    scrollViewRef,
+    scrollViewSize,
+    containerSize,
   ]);
 
   return (
