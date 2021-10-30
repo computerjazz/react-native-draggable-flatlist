@@ -299,7 +299,18 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         const rawVal = horizontalAnim.value
           ? evt.translationX
           : evt.translationY;
-        touchTranslate.value = rawVal;
+        const minTouchTrans =
+          scrollOffset.value - scrollTranslate.value - activeCellOffset.value;
+        const maxTouchTrans =
+          containerSize.value -
+          (scrollTranslate.value +
+            activeCellOffset.value +
+            activeCellSize.value -
+            scrollOffset.value);
+
+        touchTranslate.value = dragItemOverflow
+          ? rawVal
+          : Math.max(Math.min(maxTouchTrans, rawVal), minTouchTrans);
       },
       onEnd: () => {
         const from = activeIndexAnim.value;

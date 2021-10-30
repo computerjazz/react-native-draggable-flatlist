@@ -30,17 +30,22 @@ export function useAutoScroll() {
   } = propsRef.current;
 
   const scrollTarget = useSharedValue(0);
+  const isScrolling = useSharedValue(false);
 
-  const isScrolling = useDerivedValue(() => {
-    return (
-      Math.abs(scrollOffset.value - scrollTarget.value) >
-      SCROLL_POSITION_TOLERANCE
-    );
+  useDerivedValue(() => {
+    const hasFinishedScrolling =
+      Math.abs(scrollTarget.value - scrollOffset.value) <
+      SCROLL_POSITION_TOLERANCE;
+
+    if (hasFinishedScrolling && isScrolling.value) {
+      isScrolling.value = false;
+    }
   }, []);
 
   const isScrolledUp = useDerivedValue(() => {
     return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
   });
+
   const isScrolledDown = useDerivedValue(() => {
     return (
       scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
@@ -49,7 +54,12 @@ export function useAutoScroll() {
   });
 
   const distToTopEdge = useDerivedValue(() => {
-    return Math.max(0, hoverComponentTranslate.value + activeCellOffset.value);
+    return Math.max(
+      0,
+      hoverComponentTranslate.value +
+        activeCellOffset.value -
+        scrollOffset.value
+    );
   }, []);
 
   const distToBottomEdge = useDerivedValue(() => {
@@ -92,7 +102,9 @@ export function useAutoScroll() {
       if (cur !== -1 && cur !== prev) {
         const xVal = horizontalAnim.value ? cur : 0;
         const yVal = horizontalAnim.value ? 0 : cur;
+
         scrollTarget.value = cur;
+        isScrolling.value = true;
         scrollTo(flatlistRef, xVal, yVal, true);
       }
     },
