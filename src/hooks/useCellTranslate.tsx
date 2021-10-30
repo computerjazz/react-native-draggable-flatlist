@@ -27,10 +27,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     scrollOffset,
   } = useStaticValues();
 
-  const isActiveCell = useDerivedValue(() => {
-    return cellIndex.value === activeIndexAnim.value;
-  });
-
   const hoverClamped = useDerivedValue(() => {
     const range = [
       cellOffset.value - activeCellSize.value - 1,
@@ -39,10 +35,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     return interpolate(hoverOffset.value, range, range, Extrapolate.CLAMP);
   }, []);
 
-  const translate = useDerivedValue(() => {
-    // The cell doesn't translate unless there is a drag in progress
-    if (!isHovering.value) return 0;
-
+  useDerivedValue(() => {
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
     const isBeforeActive = cellIndex.value < activeIndexAnim.value;
@@ -94,13 +87,13 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
         placeholderOffset.value = newPlaceholderOffset;
       }
     }
+  }, []);
 
-    // Active cell follows touch
-    if (isActiveCell.value) {
-      const screenTranslateVal = hoverComponentTranslate.value;
-      return screenTranslateVal;
-    }
-
+  const translate = useDerivedValue(() => {
+    if (activeIndexAnim.value === -1) return 0;
+    if (cellIndex.value === activeIndexAnim.value)
+      return hoverComponentTranslate.value;
+    const isAfterActive = cellIndex.value > activeIndexAnim.value;
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
 
