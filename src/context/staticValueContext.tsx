@@ -36,76 +36,11 @@ export function StaticValueProvider<T>({
   children,
   ...rest
 }: StaticContextValue<T> & { children: React.ReactNode }) {
-  const {
-    activeIndexAnim,
-    spacerIndexAnim,
-    hoverOffset,
-    horizontalAnim,
-    keyToIndexRef,
-    cellDataRef,
-    activeCellSize,
-    activeCellOffset,
-    scrollOffset,
-    isHovering,
-    isPressedIn,
-    animationConfigRef,
-    placeholderOffset,
-    placeholderScreenOffset,
-    flatlistRef,
-    keyExtractor,
-    hoverComponentTranslate,
-    propsRef,
-    scrollViewRef,
-    scrollViewSize,
-    containerSize,
-  } = rest;
-
   const staticValue = useMemo(() => {
     return {
-      activeIndexAnim,
-      spacerIndexAnim,
-      hoverOffset,
-      horizontalAnim,
-      keyToIndexRef,
-      cellDataRef,
-      activeCellSize,
-      activeCellOffset,
-      scrollOffset,
-      isHovering,
-      animationConfigRef,
-      placeholderOffset,
-      placeholderScreenOffset,
-      flatlistRef,
-      keyExtractor,
-      hoverComponentTranslate,
-      propsRef,
-      isPressedIn,
-      scrollViewRef,
-      scrollViewSize,
-      containerSize,
+      ...rest,
     };
-  }, [
-    activeIndexAnim,
-    horizontalAnim,
-    spacerIndexAnim,
-    hoverOffset,
-    activeCellSize,
-    activeCellOffset,
-    scrollOffset,
-    isHovering,
-    animationConfigRef,
-    placeholderOffset,
-    placeholderScreenOffset,
-    flatlistRef,
-    keyExtractor,
-    cellDataRef,
-    keyToIndexRef,
-    hoverComponentTranslate,
-    isPressedIn,
-    scrollViewRef,
-    scrollViewSize,
-    containerSize,
-  ]);
+  }, Object.values(rest));
 
   return (
     <StaticContext.Provider value={staticValue}>

@@ -2,6 +2,7 @@ import { FlatList, ScrollView } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
   scrollTo,
+  useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
@@ -15,10 +16,12 @@ export function useAutoScroll() {
     propsRef,
     isPressedIn,
     scrollViewRef,
+    flatlistRef,
     scrollViewSize,
     containerSize,
     activeCellOffset,
     activeCellSize,
+    horizontalAnim,
   } = useStaticValues();
 
   const {
@@ -29,8 +32,10 @@ export function useAutoScroll() {
   const scrollTarget = useSharedValue(0);
 
   const isScrolling = useDerivedValue(() => {
-    const scrollTargetDiff = scrollTarget.value - scrollOffset.value;
-    return Math.abs(scrollTargetDiff) > SCROLL_POSITION_TOLERANCE;
+    return (
+      Math.abs(scrollOffset.value - scrollTarget.value) >
+      SCROLL_POSITION_TOLERANCE
+    );
   }, []);
 
   const isScrolledUp = useDerivedValue(() => {
@@ -58,16 +63,39 @@ export function useAutoScroll() {
     );
   }, []);
 
-  useDerivedValue(() => {
-    if (isPressedIn.value) {
-      if (distToBottomEdge.value < autoscrollThreshold) {
-        if (!isScrolling.value) {
-          scrollTarget.value = scrollOffset.value + 100;
-          scrollTo(scrollViewRef, 0, scrollTarget.value, true);
-        }
-      }
-    } else {
-      scrollTarget.value = scrollOffset.value;
-    }
+  const nextScrollTarget = useDerivedValue(() => {
+    if (isScrolling.value || !isPressedIn.value) return -1;
+    const scrollUp = distToTopEdge.value < autoscrollThreshold!;
+    const scrollDown = distToBottomEdge.value < autoscrollThreshold!;
+    if (
+      !(scrollUp || scrollDown) ||
+      (scrollUp && isScrolledUp.value) ||
+      (scrollDown && isScrolledDown.value)
+    )
+      return -1;
+    const distFromEdge = scrollUp
+      ? distToTopEdge.value
+      : distToBottomEdge.value;
+    const speedPct = 1 - distFromEdge / autoscrollThreshold!;
+    const offset = speedPct * autoscrollSpeed;
+    const targetOffset = scrollUp
+      ? Math.max(0, scrollOffset.value - offset)
+      : scrollOffset.value + offset;
+    return targetOffset;
   }, []);
+
+  useAnimatedReaction(
+    () => {
+      return nextScrollTarget.value;
+    },
+    (cur, prev) => {
+      if (cur !== -1 && cur !== prev) {
+        const xVal = horizontalAnim.value ? cur : 0;
+        const yVal = horizontalAnim.value ? 0 : cur;
+        scrollTarget.value = cur;
+        scrollTo(flatlistRef, xVal, yVal, true);
+      }
+    },
+    []
+  );
 }

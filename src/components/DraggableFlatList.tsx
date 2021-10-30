@@ -109,7 +109,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const scrollViewSize = useSharedValue(0);
   const scrollInit = useSharedValue(0);
   const scrollTranslate = useDerivedValue(() => {
-    return scrollInit.value - scrollOffset.value;
+    return isPressedIn.value ? scrollOffset.value - scrollInit.value : 0;
   }, []);
 
   const touchTranslate = useSharedValue(0);
@@ -120,12 +120,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const hoverOffset = useDerivedValue(() => {
     const offset = hoverComponentTranslate.value + activeCellOffset.value;
-    console.log(
-      "offset!!",
-      offset,
-      hoverComponentTranslate.value,
-      activeCellOffset.value
-    );
     return offset;
   }, []);
 
@@ -183,13 +177,16 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     ]
   );
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (evt) => {
-      scrollOffset.value = horizontalAnim.value
-        ? evt.contentOffset.x
-        : evt.contentOffset.y;
+  const scrollHandler = useAnimatedScrollHandler(
+    {
+      onScroll: (evt) => {
+        scrollOffset.value = horizontalAnim.value
+          ? evt.contentOffset.x
+          : evt.contentOffset.y;
+      },
     },
-  });
+    []
+  );
 
   const onContainerLayout = ({
     nativeEvent: { layout },
@@ -293,34 +290,28 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     { state: GestureState; touchInit: number; activationDist: number }
   >(
     {
-      onStart: (evt, ctx) => {
+      onStart: () => {
         if (disabled.value) return;
         hasMoved.value = true;
       },
-      onActive: (evt, ctx) => {
+      onActive: (evt) => {
         if (disabled.value) return;
         const rawVal = horizontalAnim.value
           ? evt.translationX
           : evt.translationY;
         touchTranslate.value = rawVal;
-
-        console.log(
-          `active!! trans: ${touchTranslate.value}  res: $}  rawVal ${rawVal}`
-        );
       },
-      onEnd: (evt, ctx) => {
+      onEnd: () => {
         const from = activeIndexAnim.value;
         const to = spacerIndexAnim.value;
-
-        console.log(`from ${from} to ${to}`);
-
         disabled.value = true;
+        // In order to maintain a single source of animation toValue truth,
+        // once the touch ends we ignore scroll translate,
+        // so we set touch translate to the current touch plus scroll.
+        touchTranslate.value = hoverComponentTranslate.value;
         isPressedIn.value = false;
-        const targetOffset = placeholderOffset.value - activeCellOffset.value;
 
-        console.log(
-          `tgt: ${targetOffset}, act fst: ${activeCellOffset.value}, ph: ${placeholderOffset.value}`
-        );
+        const targetOffset = placeholderOffset.value - activeCellOffset.value;
 
         touchTranslate.value = withSpring(
           targetOffset,
