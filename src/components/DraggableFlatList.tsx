@@ -1,4 +1,10 @@
-import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  ForwardedRef,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   ListRenderItem,
   FlatListProps,
@@ -57,7 +63,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
     cellDataRef,
     containerRef,
-    flatlistRef,
+    flatListRef,
     isTouchActiveRef,
     keyToIndexRef,
     panGestureHandlerRef,
@@ -395,7 +401,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           <AnimatedFlatList
             {...props}
             CellRendererComponent={CellRendererComponent}
-            ref={flatlistRef}
+            ref={flatListRef}
             onContentSizeChange={onListContentSizeChange}
             scrollEnabled={!activeKey && scrollEnabled}
             renderItem={renderItem}
@@ -422,14 +428,19 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   );
 }
 
-export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
+function DraggableFlatList<T>(
+  props: DraggableFlatListProps<T>,
+  ref: React.ForwardedRef<FlatList<T>>
+) {
   return (
     <PropsProvider {...props}>
       <AnimatedValueProvider>
-        <RefProvider>
+        <RefProvider flatListRef={ref}>
           <DraggableFlatListInner {...props} />
         </RefProvider>
       </AnimatedValueProvider>
     </PropsProvider>
   );
 }
+
+export default React.forwardRef(DraggableFlatList);

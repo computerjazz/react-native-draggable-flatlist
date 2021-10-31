@@ -13,7 +13,7 @@ type RefContextValue<T> = {
   cellDataRef: React.MutableRefObject<Map<string, CellData>>;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   containerRef: React.RefObject<Animated.View>;
-  flatlistRef: React.RefObject<FlatList<T>>;
+  flatListRef: React.RefObject<FlatList<T>> | React.ForwardedRef<FlatList<T>>;
   panGestureHandlerRef: React.RefObject<PanGestureHandler>;
   scrollOffsetRef: React.MutableRefObject<number>;
   isTouchActiveRef: React.MutableRefObject<{
@@ -27,10 +27,12 @@ const RefContext = React.createContext<RefContextValue<any> | undefined>(
 
 export default function RefProvider<T>({
   children,
+  flatListRef,
 }: {
   children: React.ReactNode;
+  flatListRef: React.ForwardedRef<FlatList<T>>;
 }) {
-  const value = useSetupRefs<T>();
+  const value = useSetupRefs<T>({ flatListRef });
   return <RefContext.Provider value={value}>{children}</RefContext.Provider>;
 }
 
@@ -44,7 +46,11 @@ export function useRefs<T>() {
   return value as RefContextValue<T>;
 }
 
-function useSetupRefs<T>() {
+function useSetupRefs<T>({
+  flatListRef: flatListRefProp,
+}: {
+  flatListRef: React.ForwardedRef<FlatList<T>>;
+}) {
   const props = useProps<T>();
   const { onRef, animationConfig = DEFAULT_PROPS.animationConfig } = props;
 
@@ -62,7 +68,8 @@ function useSetupRefs<T>() {
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
   const containerRef = useRef<Animated.View>(null);
-  const flatlistRef = useRef<FlatList<T>>(null);
+  const flatListRefInner = useRef<FlatList<T>>(null);
+  const flatListRef = flatListRefProp || flatListRefInner;
   const panGestureHandlerRef = useRef<PanGestureHandler>(null);
   const scrollOffsetRef = useRef(0);
   const isTouchActiveRef = useRef({
@@ -70,16 +77,12 @@ function useSetupRefs<T>() {
     js: false,
   });
 
-  useEffect(() => {
-    if (flatlistRef.current) onRef?.(flatlistRef.current);
-  }, [onRef]);
-
   const refs = useMemo(
     () => ({
       animationConfigRef,
       cellDataRef,
       containerRef,
-      flatlistRef,
+      flatListRef,
       isTouchActiveRef,
       keyToIndexRef,
       panGestureHandlerRef,

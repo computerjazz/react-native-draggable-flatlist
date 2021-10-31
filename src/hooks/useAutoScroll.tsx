@@ -26,7 +26,7 @@ import { useAnimatedValues } from "../context/animatedValueContext";
 import { useRefs } from "../context/refContext";
 
 export function useAutoScroll<T>() {
-  const { flatlistRef } = useRefs();
+  const { flatListRef } = useRefs<T>();
   const {
     autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
     autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
@@ -111,11 +111,12 @@ export function useAutoScroll<T>() {
       isAutoScrollInProgress.current.js = true;
 
       function getFlatListNode(): FlatList<T> | null {
-        if (!flatlistRef.current) return null;
-        if ("scrollToOffset" in flatlistRef.current)
-          return flatlistRef.current as FlatList<T>;
+        if (!flatListRef || !("current" in flatListRef) || !flatListRef.current)
+          return null;
+        if ("scrollToOffset" in flatListRef.current)
+          return flatListRef.current as FlatList<T>;
         //@ts-ignore backwards compat
-        if ("getNode" in flatlistRef.current) return flatlistRef.getNode();
+        if ("getNode" in flatListRef.current) return flatListRef.getNode();
         return null;
       }
 
