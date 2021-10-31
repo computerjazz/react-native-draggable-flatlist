@@ -6,7 +6,6 @@ import {
   ViewStyle,
 } from "react-native";
 import Animated, {
-  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
@@ -58,14 +57,6 @@ function CellRendererComponent<T>(props: Props<T>) {
   });
 
   const lastKnownTranslate = useSharedValue(0);
-
-  useAnimatedReaction(
-    () => {
-      return offset.value;
-    },
-    () => {},
-    [offset]
-  );
 
   const style = useAnimatedStyle(() => {
     if (activeIndexAnim.value >= 0) {
