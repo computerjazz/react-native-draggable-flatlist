@@ -63,6 +63,8 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+
   const {
     dragItemOverflow = DEFAULT_PROPS.dragItemOverflow,
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
@@ -77,8 +79,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   };
   const animationConfigRef = useRef(animConfig);
   animationConfigRef.current = animConfig;
-
-  const [activeKey, setActiveKey] = useState<string | null>(null);
 
   const containerRef = useRef<Animated.View>(null);
   const flatlistRef = useAnimatedRef<FlatList<T>>();
@@ -240,6 +240,8 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onDragEnd = useCallback(
     ({ from, to }: { from: number; to: number }) => {
+      resetHoverState();
+
       const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
         const newData = [...data];
@@ -249,7 +251,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         }
         onDragEnd({ from, to, data: newData });
       }
-      resetHoverState();
     },
     []
   );
@@ -268,18 +269,17 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   useAnimatedReaction(
     () => {
-      return !isPressedIn.value && !hasMoved.value && isHovering.value;
+      return isPressedIn.value;
     },
     (cur, prev) => {
       // The gesture handler will not activate if the user activates a cell and then releases without dragging.
       // This resets state in that case.
-      if (cur && cur !== prev && prev !== null) {
+      if (!cur && cur !== prev && prev !== null && !hasMoved.value) {
         const from = activeIndexAnim.value;
         const to = spacerIndexAnim.value;
         disabled.value = false;
         hasMoved.value = false;
         runOnJS(onDragEnd)({ from, to });
-        runOnJS(resetHoverState)();
       }
     },
     []
@@ -329,7 +329,6 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           animationConfigRef.current,
           () => {
             runOnJS(onDragEnd)({ from, to });
-            activeIndexAnim.value = -1;
             activeCellSize.value = 0;
             activeCellOffset.value = 0;
 
@@ -337,6 +336,7 @@ export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
             hasMoved.value = false;
             touchTranslate.value = 0;
             disabled.value = false;
+            activeIndexAnim.value = -1;
           }
         );
       },

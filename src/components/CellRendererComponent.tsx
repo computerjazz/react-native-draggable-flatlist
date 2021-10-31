@@ -6,6 +6,7 @@ import {
   ViewStyle,
 } from "react-native";
 import Animated, {
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
@@ -50,20 +51,41 @@ function CellRendererComponent<T>(props: Props<T>) {
   const offset = useSharedValue(-1);
   const size = useSharedValue(-1);
   const translate = useCellTranslate({
+    key,
     cellOffset: offset,
     cellSize: size,
     cellIndex: currentIndexAnim,
   });
 
+  const lastKnownTranslate = useSharedValue(0);
+
+  useAnimatedReaction(
+    () => {
+      return offset.value;
+    },
+    () => {},
+    [offset]
+  );
+
   const style = useAnimatedStyle(() => {
+    if (activeIndexAnim.value >= 0) {
+      // At the end of a drag, we need to swap the translated values for re-initialized values without
+      // any visual jank, which may occur if translate values aren't perfectly in sync with list rendering.
+      // lastKnownTranslate ensures that items remain translated until the list re-renders.
+      lastKnownTranslate.value = translate.value;
+    }
+
+    const translateVal =
+      activeIndexAnim.value >= 0 ? translate.value : lastKnownTranslate.value;
+
     return {
       transform: [
         horizontalAnim.value
-          ? { translateX: translate.value }
-          : { translateY: translate.value },
+          ? { translateX: translateVal }
+          : { translateY: translateVal },
       ],
     };
-  });
+  }, [translate]);
 
   const onLayout = () => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {

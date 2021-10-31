@@ -1,7 +1,6 @@
 import Animated, {
   Extrapolate,
   interpolate,
-  useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
   withSpring,
@@ -12,20 +11,26 @@ type Params = {
   cellIndex: Animated.SharedValue<number>;
   cellSize: Animated.SharedValue<number>;
   cellOffset: Animated.SharedValue<number>;
+  key: string;
 };
 
-export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
+export function useCellTranslate({
+  key,
+  cellIndex,
+  cellSize,
+  cellOffset,
+}: Params) {
   const {
     activeIndexAnim,
     activeCellSize,
     hoverOffset,
-    isHovering,
     spacerIndexAnim,
     placeholderOffset,
     animationConfigRef,
     hoverComponentTranslate,
-    scrollOffset,
   } = useStaticValues();
+
+  const { activeKey } = useActiveKey();
 
   const hoverClamped = useDerivedValue(() => {
     const range = [
@@ -42,7 +47,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     const hoverPlusActiveSize = hoverClamped.value + activeCellSize.value;
     const offsetPlusHalfSize = cellOffset.value + cellSize.value / 2;
     const offsetPlusSize = cellOffset.value + cellSize.value;
-
     let hoverIndex = -1;
     if (isAfterActive) {
       if (
@@ -90,10 +94,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   }, []);
 
   const translate = useDerivedValue(() => {
-    if (activeIndexAnim.value === -1) return 0;
-    if (cellIndex.value === activeIndexAnim.value)
-      return hoverComponentTranslate.value;
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
+
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
 
@@ -104,8 +106,15 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     const translateVal = shouldTranslate
       ? activeCellSize.value * (isAfterActive ? -1 : 1)
       : 0;
-    return withSpring(translateVal, animationConfigRef.current);
-  }, []);
 
-  return translate;
+    return withSpring(translateVal, animationConfigRef.current);
+  }, [activeKey, cellIndex, activeIndexAnim, activeCellSize]);
+
+  const noTranslate = useSharedValue(0);
+
+  return !activeKey
+    ? noTranslate
+    : key === activeKey
+    ? hoverComponentTranslate
+    : translate;
 }

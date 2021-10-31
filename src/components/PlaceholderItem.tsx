@@ -50,7 +50,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
           height: activeCellSize.value,
           transform: [{ translateY: placeholderScreenOffset.value }],
         };
-  }, []);
+  }, [activeCellSize]);
 
   const activeIndex = activeKey
     ? keyToIndexRef.current.get(activeKey)
