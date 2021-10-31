@@ -10,6 +10,7 @@ import {
   FlatListProps,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  LayoutChangeEvent,
 } from "react-native";
 import {
   PanGestureHandler,
@@ -147,15 +148,10 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const autoScrollNode = useAutoScroll();
 
-  const onContainerLayout = () => {
-    const containerNode = isReanimatedV2
-      ? containerRef.current
-      : containerRef.current?.getNode();
-
-    //@ts-ignore
-    containerNode?.measure((_x, _y, w, h) => {
-      containerSize.setValue(props.horizontal ? w : h);
-    });
+  const onContainerLayout = ({
+    nativeEvent: { layout },
+  }: LayoutChangeEvent) => {
+    containerSize.setValue(props.horizontal ? layout.width : layout.height);
   };
 
   const onListContentSizeChange = (w: number, h: number) => {
@@ -193,7 +189,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const renderItem: ListRenderItem<T> = useCallback(
     ({ item, index }) => {
       const key = keyExtractor(item, index);
-      if (index !== keyToIndexRef.current.get(key)) keyToIndexRef.current.set(key, index);
+      if (index !== keyToIndexRef.current.get(key))
+        keyToIndexRef.current.set(key, index);
 
       return (
         <RowItem
