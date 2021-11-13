@@ -443,6 +443,8 @@ function DraggableFlatList<T>(
   );
 }
 
+// Generic forwarded ref type assertion taken from:
+// https://fettblog.eu/typescript-react-generic-forward-refs/#option-1%3A-type-assertion
 export default React.forwardRef(DraggableFlatList) as <T>(
   props: DraggableFlatListProps<T> & { ref?: React.ForwardedRef<FlatList<T>> }
 ) => ReturnType<typeof DraggableFlatList>;
