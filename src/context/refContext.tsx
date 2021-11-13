@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -52,7 +52,7 @@ function useSetupRefs<T>({
   flatListRef: React.ForwardedRef<FlatList<T>>;
 }) {
   const props = useProps<T>();
-  const { onRef, animationConfig = DEFAULT_PROPS.animationConfig } = props;
+  const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
 
   const { isTouchActiveNative } = useAnimatedValues();
 
