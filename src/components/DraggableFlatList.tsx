@@ -444,6 +444,5 @@ function DraggableFlatList<T>(
 }
 
 export default React.forwardRef(DraggableFlatList) as <T>(
-  props: DraggableFlatListProps<T>,
-  ref: React.ForwardedRef<FlatList<T>>
-)=>ReturnType<typeof DraggableFlatList>;
+  props: DraggableFlatListProps<T> & { ref?: React.ForwardedRef<FlatList<T>> }
+) => ReturnType<typeof DraggableFlatList>;
