@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
-import { ListRenderItem, FlatListProps } from "react-native";
+import { ListRenderItem, FlatListProps, LayoutChangeEvent } from "react-native";
 import {
   FlatList,
   PanGestureHandler,
@@ -127,13 +127,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     ]
   );
 
-  const onContainerLayout = () => {
-    const containerNode = containerRef.current;
-
-    //@ts-ignore
-    containerNode?.measure((_x, _y, w, h) => {
-      containerSize.value = props.horizontal ? w : h;
-    });
+  const onContainerLayout = ({ nativeEvent: { layout } }: LayoutChangeEvent) => {
+    const { width, height } = layout;
+    containerSize.value = props.horizontal ? width : height;
   };
 
   const onListContentSizeChange = (w: number, h: number) => {
