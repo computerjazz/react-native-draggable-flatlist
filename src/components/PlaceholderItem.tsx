@@ -3,7 +3,6 @@ import { StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { useProps } from "../context/propsContext";
 import { useRefs } from "../context/refContext";
 import { RenderPlaceholder } from "../types";
 import { typedMemo } from "../utils";

@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useRef } from "react";
 import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
+  StyleProp,
   View,
+  ViewStyle,
 } from "react-native";
 import Animated, {
   useAnimatedReaction,
@@ -23,6 +25,7 @@ type Props<T> = {
   index: number;
   children: React.ReactNode;
   onLayout: (e: LayoutChangeEvent) => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
@@ -145,9 +148,10 @@ function CellRendererComponent<T>(props: Props<T>) {
       pointerEvents={activeKey ? "none" : "auto"}
     >
       <Animated.View
+        {...props}
         // Including both animated styles and non-animated styles causes react-native-web
-        // to ignore updates in non-animated styles. Solution is to separate animated styles from non-animated.
-        style={style}
+        // to ignore updates in non-animated styles. Solution is to separate animated styles from non-animated styles
+        style={[props.style, style]}
       >
         <CellProvider isActive={isActive}>{children}</CellProvider>
       </Animated.View>

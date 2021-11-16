@@ -1,6 +1,6 @@
 {
   "name": "react-native-draggable-flatlist",
-  "version": "2.6.2",
+  "version": "3.0.2",
   "description": "A drag-and-drop-enabled FlatList component for React Native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -47,9 +47,9 @@
   },
   "homepage": "https://github.com/computerjazz/react-native-draggable-flatlist#readme",
   "peerDependencies": {
-    "react-native": ">=0.62.0",
-    "react-native-gesture-handler": ">=1.10.1",
-    "react-native-reanimated": ">=2.0.0"
+    "react-native": ">=0.64.0",
+    "react-native-gesture-handler": ">=1.10.0",
+    "react-native-reanimated": ">=2.2.0"
   },
   "devDependencies": {
     "@testing-library/react-native": "^7.2.0",

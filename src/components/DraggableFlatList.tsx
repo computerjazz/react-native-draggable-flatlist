@@ -168,10 +168,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const renderItem: ListRenderItem<T> = useCallback(
     ({ item, index }) => {
+      const key = keyExtractor(item, index);
+      if (index !== keyToIndexRef.current.get(key))
+        keyToIndexRef.current.set(key, index);
+
       return (
         <RowItem
           item={item}
-          itemKey={keyExtractor(item, index)}
+          itemKey={key}
           renderItem={props.renderItem}
           drag={drag}
           extraData={props.extraData}
@@ -337,14 +341,23 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   );
 }
 
-export default function DraggableFlatList<T>(props: DraggableFlatListProps<T>) {
+function DraggableFlatList<T>(
+  props: DraggableFlatListProps<T>,
+  ref: React.ForwardedRef<FlatList<T>>
+) {
   return (
     <PropsProvider {...props}>
       <AnimatedValueProvider>
-        <RefProvider>
+        <RefProvider flatListRef={ref}>
           <DraggableFlatListInner {...props} />
         </RefProvider>
       </AnimatedValueProvider>
     </PropsProvider>
   );
 }
+
+// Generic forwarded ref type assertion taken from:
+// https://fettblog.eu/typescript-react-generic-forward-refs/#option-1%3A-type-assertion
+export default React.forwardRef(DraggableFlatList) as <T>(
+  props: DraggableFlatListProps<T> & { ref?: React.ForwardedRef<FlatList<T>> }
+) => ReturnType<typeof DraggableFlatList>;

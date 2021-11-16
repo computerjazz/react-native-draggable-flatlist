@@ -1,8 +1,10 @@
 import React from "react";
+import { StyleSheet } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 export { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 import { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 
@@ -17,6 +19,7 @@ export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
   });
 
   const style = useAnimatedStyle(() => {
+    const { horizontal } = useDraggableFlatListContext<any>();
     const animScale = interpolate(onActiveAnim.value, [0, 1], [1, activeScale]);
     const scale = isActive ? animScale : 1;
     return {
@@ -43,6 +46,7 @@ export const ShadowDecorator = ({
   children,
 }: ShadowProps) => {
   const { isActive, onActiveAnim } = useOnCellActiveAnimation();
+  const { horizontal } = useDraggableFlatListContext<any>();
 
   const style = useAnimatedStyle(() => {
     const shadowOpacity = onActiveAnim.value * opacity;
@@ -54,7 +58,11 @@ export const ShadowDecorator = ({
     };
   }, [isActive, onActiveAnim]);
 
-  return <Animated.View style={style}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, horizontal && styles.horizontal]}>
+      {children}
+    </Animated.View>
+  );
 };
 
 type OpacityProps = {
@@ -67,6 +75,7 @@ export const OpacityDecorator = ({
   children,
 }: OpacityProps) => {
   const { isActive, onActiveAnim } = useOnCellActiveAnimation();
+  const { horizontal } = useDraggableFlatListContext<any>();
   const style = useAnimatedStyle(() => {
     const opacity = interpolate(onActiveAnim.value, [0, 1], [1, activeOpacity]);
     return {
@@ -74,5 +83,16 @@ export const OpacityDecorator = ({
     };
   }, [isActive]);
 
-  return <Animated.View style={style}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, horizontal && styles.horizontal]}>
+      {children}
+    </Animated.View>
+  );
 };
+
+const styles = StyleSheet.create({
+  horizontal: {
+    flexDirection: "row",
+    flex: 1,
+  },
+});

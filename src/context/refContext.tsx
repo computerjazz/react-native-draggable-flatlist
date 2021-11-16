@@ -21,10 +21,12 @@ const RefContext = React.createContext<RefContextValue<any> | undefined>(
 
 export default function RefProvider<T>({
   children,
+  flatListRef,
 }: {
   children: React.ReactNode;
+  flatListRef: React.ForwardedRef<FlatList<T>>;
 }) {
-  const value = useSetupRefs<T>();
+  const value = useSetupRefs<T>({ flatListRef });
   return <RefContext.Provider value={value}>{children}</RefContext.Provider>;
 }
 
@@ -38,9 +40,13 @@ export function useRefs<T>() {
   return value as RefContextValue<T>;
 }
 
-function useSetupRefs<T>() {
+function useSetupRefs<T>({
+  flatListRef: flatListRefProp,
+}: {
+  flatListRef: React.ForwardedRef<FlatList<T>>;
+}) {
   const props = useProps<T>();
-  const { onRef, animationConfig = DEFAULT_PROPS.animationConfig } = props;
+  const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
 
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -67,10 +73,6 @@ function useSetupRefs<T>() {
       scrollViewRef(scrollRef);
     }
   }, []);
-
-  useEffect(() => {
-    if (flatlistRef.current) onRef?.(flatlistRef.current);
-  }, [onRef]);
 
   const refs = useMemo(
     () => ({

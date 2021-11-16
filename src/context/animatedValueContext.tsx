@@ -1,6 +1,5 @@
 import React, { useCallback, useContext } from "react";
 import {
-  useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
   useValue,
