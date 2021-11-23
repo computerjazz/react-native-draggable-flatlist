@@ -397,7 +397,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
               props.onScrollOffsetChange?.(offset);
             }}
           />
-          <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
+          {!!props.renderPlaceholder && (
+            <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
+          )}
           <AnimatedFlatList
             {...props}
             CellRendererComponent={CellRendererComponent}
