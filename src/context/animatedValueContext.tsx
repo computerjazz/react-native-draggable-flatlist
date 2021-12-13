@@ -57,7 +57,6 @@ function useSetupAnimatedValues<T>() {
 
   const isTouchActiveNative = useValue<number>(0);
 
-  const hasMoved = useValue<number>(0);
   const disabled = useValue<number>(0);
 
   const horizontalAnim = useValue(props.horizontal ? 1 : 0);
@@ -102,7 +101,6 @@ function useSetupAnimatedValues<T>() {
       set(touchInit, 0),
       set(activeCellOffset, 0),
       set(activationDistance, 0),
-      set(hasMoved, 0),
     ])
   );
 
@@ -114,7 +112,6 @@ function useSetupAnimatedValues<T>() {
       activeIndexAnim,
       containerSize,
       disabled,
-      hasMoved,
       horizontalAnim,
       hoverAnim,
       hoverAnimConstrained,
@@ -140,7 +137,6 @@ function useSetupAnimatedValues<T>() {
       activeIndexAnim,
       containerSize,
       disabled,
-      hasMoved,
       horizontalAnim,
       hoverAnim,
       hoverAnimConstrained,

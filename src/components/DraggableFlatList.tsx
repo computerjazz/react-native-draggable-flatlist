@@ -78,7 +78,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     activeIndexAnim,
     containerSize,
     disabled,
-    hasMoved,
     panGestureState,
     resetTouchedCell,
     scrollOffset,
@@ -245,7 +244,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         set(disabled, 1),
         set(isTouchActiveRef.current.native, 0),
         call([activeIndexAnim], onRelease),
-        cond(not(hasMoved), call([activeIndexAnim], resetHoverState)),
       ],
       [call([activeIndexAnim], resetHoverState), resetTouchedCell]
     )
@@ -323,17 +321,13 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
                 eq(panGestureState, GestureState.ACTIVE),
                 not(disabled)
               ),
-              [
-                cond(not(hasMoved), set(hasMoved, 1)),
-                set(touchAbsolute, props.horizontal ? x : y),
-              ]
+              [set(touchAbsolute, props.horizontal ? x : y)]
             ),
         },
       ]),
     [
       activeIndexAnim,
       disabled,
-      hasMoved,
       panGestureState,
       props.horizontal,
       touchAbsolute,

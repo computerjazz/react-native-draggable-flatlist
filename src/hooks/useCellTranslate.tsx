@@ -91,7 +91,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     )
   );
 
-  // This is required to continually evaluate values
+  // This is a workaround required to continually evaluate values
   useCode(
     () =>
       block([
