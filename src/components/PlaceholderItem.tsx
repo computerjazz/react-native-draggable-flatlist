@@ -1,13 +1,13 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { StyleSheet } from "react-native";
 import Animated, {
   call,
-  set,
   useCode,
-  useValue,
   onChange,
   greaterThan,
   cond,
+  sub,
+  block,
 } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
@@ -24,16 +24,16 @@ type Props<T> = {
 function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const {
     activeCellSize,
-    placeholderScreenOffset,
+    placeholderOffset,
     spacerIndexAnim,
+    scrollOffset,
   } = useAnimatedValues();
+  const [placeholderSize, setPlaceholderSize] = useState(0);
+
   const { keyToIndexRef, propsRef } = useRefs<T>();
 
   const { activeKey } = useDraggableFlatListContext();
   const { horizontal } = useProps();
-
-  // for some reason using placeholderScreenOffset directly is buggy
-  const translate = useValue(0);
 
   const onPlaceholderIndexChange = useCallback(
     (index: number) => {
@@ -44,12 +44,21 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
 
   useCode(
     () =>
-      onChange(
-        spacerIndexAnim,
-        call([spacerIndexAnim], ([i]) => {
-          onPlaceholderIndexChange(i);
-        })
-      ),
+      block([
+        onChange(
+          activeCellSize,
+          call([activeCellSize], ([size]) => {
+            setPlaceholderSize(size);
+          })
+        ),
+        onChange(
+          spacerIndexAnim,
+          call([spacerIndexAnim], ([i]) => {
+            onPlaceholderIndexChange(i);
+            if (i === -1) setPlaceholderSize(0);
+          })
+        ),
+      ]),
     []
   );
 
@@ -65,9 +74,9 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
 
   const animStyle = {
     opacity,
-    [sizeKey]: activeCellSize,
+    [sizeKey]: placeholderSize, // Using animated values to set height caused a bug where item wouldn't correctly update
     transform: ([
-      { [translateKey]: translate },
+      { [translateKey]: sub(placeholderOffset, scrollOffset) },
     ] as unknown) as Animated.AnimatedTransform,
   };
 
@@ -79,9 +88,6 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
       {!activeItem || activeIndex === undefined
         ? null
         : renderPlaceholder?.({ item: activeItem, index: activeIndex })}
-      <Animated.Code>
-        {() => set(translate, placeholderScreenOffset)}
-      </Animated.Code>
     </Animated.View>
   );
 }

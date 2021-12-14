@@ -92,7 +92,6 @@ function useSetupAnimatedValues<T>() {
   const hoverOffset = useNode(add(hoverAnim, scrollOffset));
 
   const placeholderOffset = useValue<number>(0);
-  const placeholderScreenOffset = useNode(sub(placeholderOffset, scrollOffset));
 
   // Note: this could use a refactor as it combines touch state + cell animation
   const resetTouchedCell = useNode(
@@ -121,7 +120,6 @@ function useSetupAnimatedValues<T>() {
       isTouchActiveNative,
       panGestureState,
       placeholderOffset,
-      placeholderScreenOffset,
       resetTouchedCell,
       scrollOffset,
       scrollViewSize,
@@ -146,7 +144,6 @@ function useSetupAnimatedValues<T>() {
       isTouchActiveNative,
       panGestureState,
       placeholderOffset,
-      placeholderScreenOffset,
       resetTouchedCell,
       scrollOffset,
       scrollViewSize,
