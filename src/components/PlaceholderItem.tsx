@@ -48,6 +48,8 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
         onChange(
           activeCellSize,
           call([activeCellSize], ([size]) => {
+            // Using animated values to set height caused a bug where item wouldn't correctly update
+            // so instead we mirror the animated value in component state.
             setPlaceholderSize(size);
           })
         ),
@@ -74,7 +76,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
 
   const animStyle = {
     opacity,
-    [sizeKey]: placeholderSize, // Using animated values to set height caused a bug where item wouldn't correctly update
+    [sizeKey]: placeholderSize,
     transform: ([
       { [translateKey]: sub(placeholderOffset, scrollOffset) },
     ] as unknown) as Animated.AnimatedTransform,
