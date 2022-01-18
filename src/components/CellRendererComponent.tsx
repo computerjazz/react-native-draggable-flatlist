@@ -25,12 +25,12 @@ type Props<T> = {
   item: T;
   index: number;
   children: React.ReactNode;
-  onLayout: (e: LayoutChangeEvent) => void;
+  onLayout?: (e: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
-  const { item, index, onLayout, children } = props;
+  const { item, index, onLayout = () => {}, children } = props;
 
   const currentIndexAnim = useValue(index);
 
@@ -104,8 +104,13 @@ function CellRendererComponent<T>(props: Props<T>) {
       : findNodeHandle(containerNode);
 
     if (viewNode && nodeHandle) {
-      //@ts-ignore
-      viewNode.measureLayout(nodeHandle, onSuccess, onFail);
+      if (propsRef.current && typeof propsRef.current.getItemLayout === 'function') {
+        const layout = propsRef.current.getItemLayout([], index);
+        onSuccess(layout.offset, layout.offset, layout.length, layout.length);
+      } else {
+        //@ts-ignore
+        viewNode.measureLayout(nodeHandle, onSuccess, onFail);
+      }
     }
   }, [
     cellDataRef,
@@ -136,13 +141,14 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   // changing zIndex crashes android:
   // https://github.com/facebook/react-native/issues/28751
+  const baseElevation = propsRef.current.baseElevation ?? 0;
   return (
     <Animated.View
       {...props}
       ref={viewRef}
       onLayout={onCellLayout}
       style={[
-        isAndroid && { elevation: isActive ? 1 : 0 },
+        isAndroid && { elevation: isActive ? baseElevation + 1 : baseElevation },
         { flexDirection: horizontal ? "row" : "column" },
         (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
       ]}
