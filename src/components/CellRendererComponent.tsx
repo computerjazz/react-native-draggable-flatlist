@@ -141,14 +141,14 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   // changing zIndex crashes android:
   // https://github.com/facebook/react-native/issues/28751
-  const baseElevation = propsRef.current.baseElevation ?? 0;
   return (
     <Animated.View
       {...props}
       ref={viewRef}
       onLayout={onCellLayout}
       style={[
-        isAndroid && { elevation: isActive ? baseElevation + 1 : baseElevation },
+        isAndroid && { elevation: isActive ? 1 : 0 },
+        // isAndroid && { zIndex: isActive ? 999 : 0 },
         { flexDirection: horizontal ? "row" : "column" },
         (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
       ]}

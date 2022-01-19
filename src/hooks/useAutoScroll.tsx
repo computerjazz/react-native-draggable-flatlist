@@ -32,6 +32,8 @@ export function useAutoScroll<T>() {
     autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
   } = useProps();
 
+  if (autoscrollSpeed === 0 || autoscrollThreshold === 0) return useNode(0);
+
   const {
     scrollOffset,
     scrollViewSize,
