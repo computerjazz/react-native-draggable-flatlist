@@ -115,9 +115,10 @@ export function useAutoScroll<T>() {
           return null;
         if ("scrollToOffset" in flatListRef.current)
           return flatListRef.current as FlatList<T>;
-        //@ts-ignore backwards compat
-        if ("getNode" in flatListRef.current)
+        if ("getNode" in flatListRef.current) {
+          //@ts-ignore backwards compat
           return flatListRef.current.getNode();
+        }
         return null;
       }
 
