@@ -25,7 +25,7 @@ type Props<T> = {
   item: T;
   index: number;
   children: React.ReactNode;
-  onLayout: (e: LayoutChangeEvent) => void;
+  onLayout?: (e: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -129,7 +129,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   const onCellLayout = useCallback(
     (e: LayoutChangeEvent) => {
       updateCellMeasurements();
-      onLayout(e);
+      if (onLayout) onLayout(e);
     },
     [updateCellMeasurements, onLayout]
   );
