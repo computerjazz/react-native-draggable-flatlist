@@ -34,7 +34,7 @@ function RowItem<T>(props: Props<T>) {
     drag(itemKey);
   }, []);
 
-  const { renderItem, item, itemKey } = props;
+  const { renderItem, item, itemKey, extraData } = props;
   return (
     <MemoizedInner
       isActive={activeKey === itemKey}
@@ -42,6 +42,7 @@ function RowItem<T>(props: Props<T>) {
       renderItem={renderItem}
       item={item}
       index={keyToIndexRef.current.get(itemKey)}
+      extraData={extraData}
     />
   );
 }
@@ -54,6 +55,7 @@ type InnerProps<T> = {
   index?: number;
   drag: () => void;
   renderItem: RenderItem<T>;
+  extraData?: any;
 };
 
 function Inner<T>({ isActive, item, drag, index, renderItem }: InnerProps<T>) {
