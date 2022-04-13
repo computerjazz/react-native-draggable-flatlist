@@ -35,7 +35,7 @@ import Animated, {
   sub,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isReanimatedV2, isWeb } from "../constants";
+import { DEFAULT_PROPS, isWeb } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import ScrollOffsetListener from "./ScrollOffsetListener";

@@ -64,6 +64,38 @@ Cell Decorators are an easy way to add common hover animations. For example, wra
 
 `ScaleDecorator`, `ShadowDecorator`, and `OpacityDecorator` are currently exported. Developers may create their own custom decorators using the animated values provided by the `useOnCellActiveAnimation` hook.
 
+## Nesting DraggableFlatLists
+
+Use an outer `NestableScrollContainer` paired with one or more inner `NestableDraggableFlatList` components to nest multiple separate `DraggableFlatList` components within a single scrollable parent. `NestableScrollContainer` extends a `ScrollView` from `react-native-gesture-handler`, and `NestableDraggableFlatList` shares the same API as a regular `DraggableFlatList`.
+
+```tsx
+      <NestableScrollContainer>
+        <Header text='List 1' />
+        <NestableDraggableFlatList
+          data={data1}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          onDragEnd={({ data }) => setData1(data)}
+        />
+        <Header text='List 2' />
+        <NestableDraggableFlatList
+          data={data2}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          onDragEnd={({ data }) => setData2(data)}
+        />
+        <Header text='List 3' />
+        <NestableDraggableFlatList
+          data={data3}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          onDragEnd={({ data }) => setData3(data)}
+        />
+      </NestableScrollContainer>
+```
+
+![Nested DraggableFlatList demo](https://i.imgur.com/Kv0aj4l.gif)
+
 ## Example
 
 Example snack: https://snack.expo.io/@computerjazz/rndfl3 <br />
