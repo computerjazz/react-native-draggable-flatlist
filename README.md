@@ -66,32 +66,40 @@ Cell Decorators are an easy way to add common hover animations. For example, wra
 
 ## Nesting DraggableFlatLists
 
-Use an outer `NestableScrollContainer` paired with one or more inner `NestableDraggableFlatList` components to nest multiple separate `DraggableFlatList` components within a single scrollable parent. `NestableScrollContainer` extends a `ScrollView` from `react-native-gesture-handler`, and `NestableDraggableFlatList` shares the same API as a regular `DraggableFlatList`.
+It's possible to render multiple `DraggableFlatList` components within a single scrollable parent by wrapping one or more `NestableDraggableFlatList` components within an outer `NestableScrollContainer` component. 
+
+`NestableScrollContainer` extends the `ScrollView` from `react-native-gesture-handler`, and `NestableDraggableFlatList` extends `DraggableFlatList`, so all available props may be passed into both of them.
+
+> Note: When using NestableDraggableFlatLists, all React Native warnings about nested list performance will be disabled. 
 
 ```tsx
-      <NestableScrollContainer>
-        <Header text='List 1' />
-        <NestableDraggableFlatList
-          data={data1}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          onDragEnd={({ data }) => setData1(data)}
-        />
-        <Header text='List 2' />
-        <NestableDraggableFlatList
-          data={data2}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          onDragEnd={({ data }) => setData2(data)}
-        />
-        <Header text='List 3' />
-        <NestableDraggableFlatList
-          data={data3}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          onDragEnd={({ data }) => setData3(data)}
-        />
-      </NestableScrollContainer>
+import { NestableScrollContainer, NestableDraggableFlatList } from "react-native-draggable-flatlist"
+
+...
+
+<NestableScrollContainer>
+  <Header text='List 1' />
+  <NestableDraggableFlatList
+    data={data1}
+    renderItem={renderItem}
+    keyExtractor={keyExtractor}
+    onDragEnd={({ data }) => setData1(data)}
+  />
+  <Header text='List 2' />
+  <NestableDraggableFlatList
+    data={data2}
+    renderItem={renderItem}
+    keyExtractor={keyExtractor}
+    onDragEnd={({ data }) => setData2(data)}
+  />
+  <Header text='List 3' />
+  <NestableDraggableFlatList
+    data={data3}
+    renderItem={renderItem}
+    keyExtractor={keyExtractor}
+    onDragEnd={({ data }) => setData3(data)}
+  />
+</NestableScrollContainer>
 ```
 
 ![Nested DraggableFlatList demo](https://i.imgur.com/Kv0aj4l.gif)
