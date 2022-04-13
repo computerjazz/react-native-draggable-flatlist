@@ -77,29 +77,35 @@ import { NestableScrollContainer, NestableDraggableFlatList } from "react-native
 
 ...
 
-<NestableScrollContainer>
-  <Header text='List 1' />
-  <NestableDraggableFlatList
-    data={data1}
-    renderItem={renderItem}
-    keyExtractor={keyExtractor}
-    onDragEnd={({ data }) => setData1(data)}
-  />
-  <Header text='List 2' />
-  <NestableDraggableFlatList
-    data={data2}
-    renderItem={renderItem}
-    keyExtractor={keyExtractor}
-    onDragEnd={({ data }) => setData2(data)}
-  />
-  <Header text='List 3' />
-  <NestableDraggableFlatList
-    data={data3}
-    renderItem={renderItem}
-    keyExtractor={keyExtractor}
-    onDragEnd={({ data }) => setData3(data)}
-  />
-</NestableScrollContainer>
+  const [data1, setData1] = useState(initialData1);
+  const [data2, setData2] = useState(initialData2);
+  const [data3, setData3] = useState(initialData3);
+
+  return (
+    <NestableScrollContainer>
+      <Header text='List 1' />
+      <NestableDraggableFlatList
+        data={data1}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onDragEnd={({ data }) => setData1(data)}
+      />
+      <Header text='List 2' />
+      <NestableDraggableFlatList
+        data={data2}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onDragEnd={({ data }) => setData2(data)}
+      />
+      <Header text='List 3' />
+      <NestableDraggableFlatList
+        data={data3}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onDragEnd={({ data }) => setData3(data)}
+      />
+    </NestableScrollContainer>
+  )
 ```
 
 ![Nested DraggableFlatList demo](https://i.imgur.com/Kv0aj4l.gif)
