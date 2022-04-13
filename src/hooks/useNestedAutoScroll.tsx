@@ -34,7 +34,9 @@ const DUMMY_VAL = new Animated.Value<number>(0);
 // useAutoScroll hook with a few notable exceptions:
 // - Since Animated.Values are now coming from the caller,
 //   we won't guarantee they exist and default if not.
-//   This changes our useNode implementation since we don't want to store stale nodes.
+//   This changes our useNode implementation since we don't want to store stale nodes.
+// - Outer scrollable is a ScrollView, not a FlatList
+// TODO: see if we can combine into a single `useAutoScroll()` hook
 
 export function useNestedAutoScroll({
   activeCellSize = DUMMY_VAL,
