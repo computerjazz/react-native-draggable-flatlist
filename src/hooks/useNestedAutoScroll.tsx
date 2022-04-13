@@ -19,7 +19,7 @@ import Animated, {
   useValue,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
-import { useNestedScrollContainerContext } from "../context/nestedScrollContainerContext";
+import { useNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { SCROLL_POSITION_TOLERANCE } from "../constants";
 
 function useNodeAlt<T>(node: Animated.Node<T>, deps: DependencyList = []) {
@@ -58,7 +58,7 @@ export function useNestedAutoScroll({
     containerSize,
     scrollableRef,
     scrollViewSize,
-  } = useNestedScrollContainerContext();
+  } = useNestableScrollContainerContext();
 
   const scrollOffset = outerScrollOffset;
 

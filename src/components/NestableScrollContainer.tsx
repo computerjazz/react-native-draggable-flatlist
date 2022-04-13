@@ -3,13 +3,13 @@ import { NativeScrollEvent, ScrollViewProps } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import Animated, { block, set } from "react-native-reanimated";
 import {
-  NestedScrollContainerProvider,
-  useNestedScrollContainerContext,
-} from "../context/nestedScrollContainerContext";
+  NestableScrollContainerProvider,
+  useNestableScrollContainerContext,
+} from "../context/nestableScrollContainerContext";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
-function DraggableScrollContainerInner(props: ScrollViewProps) {
+function NestableScrollContainerInner(props: ScrollViewProps) {
   const {
     outerScrollOffset,
     containerRef,
@@ -17,7 +17,7 @@ function DraggableScrollContainerInner(props: ScrollViewProps) {
     scrollViewSize,
     scrollableRef,
     outerScrollEnabled,
-  } = useNestedScrollContainerContext();
+  } = useNestableScrollContainerContext();
 
   const onScroll = useMemo(
     () =>
@@ -52,10 +52,10 @@ function DraggableScrollContainerInner(props: ScrollViewProps) {
   );
 }
 
-export function DraggableScrollContainer(props: ScrollViewProps) {
+export function NestableScrollContainer(props: ScrollViewProps) {
   return (
-    <NestedScrollContainerProvider>
-      <DraggableScrollContainerInner {...props} />
-    </NestedScrollContainerProvider>
+    <NestableScrollContainerProvider>
+      <NestableScrollContainerInner {...props} />
+    </NestableScrollContainerProvider>
   );
 }

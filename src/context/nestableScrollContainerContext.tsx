@@ -2,14 +2,14 @@ import React, { useContext, useMemo, useRef, useState } from "react";
 import { ScrollView } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 
-type NestedScrollContainerContextVal = ReturnType<
-  typeof useSetupNestedScrollContextValue
+type NestableScrollContainerContextVal = ReturnType<
+  typeof useSetupNestableScrollContextValue
 >;
-const NestedScrollContainerContext = React.createContext<
-  NestedScrollContainerContextVal | undefined
+const NestableScrollContainerContext = React.createContext<
+  NestableScrollContainerContextVal | undefined
 >(undefined);
 
-function useSetupNestedScrollContextValue() {
+function useSetupNestableScrollContextValue() {
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
   const scrollViewSize = useMemo(() => new Animated.Value<number>(0), []);
   const scrollableRef = useRef<ScrollView>(null);
@@ -33,24 +33,24 @@ function useSetupNestedScrollContextValue() {
   return contextVal;
 }
 
-export function NestedScrollContainerProvider({
+export function NestableScrollContainerProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const contextVal = useSetupNestedScrollContextValue();
+  const contextVal = useSetupNestableScrollContextValue();
   return (
-    <NestedScrollContainerContext.Provider value={contextVal}>
+    <NestableScrollContainerContext.Provider value={contextVal}>
       {children}
-    </NestedScrollContainerContext.Provider>
+    </NestableScrollContainerContext.Provider>
   );
 }
 
-export function useNestedScrollContainerContext() {
-  const value = useContext(NestedScrollContainerContext);
+export function useNestableScrollContainerContext() {
+  const value = useContext(NestableScrollContainerContext);
   if (!value) {
     throw new Error(
-      "useNestedScrollContainerContext must be called from within NestedScrollContainerContext Provider!"
+      "useNestableScrollContainerContext must be called from within NestableScrollContainerContext Provider!"
     );
   }
   return value;
