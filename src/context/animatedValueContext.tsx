@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useMemo } from "react";
 import Animated, {
   add,
   and,
@@ -6,14 +6,16 @@ import Animated, {
   greaterThan,
   max,
   min,
+  onChange,
   set,
   sub,
+  useCode,
   useValue,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
 import { useNode } from "../hooks/useNode";
-import { useMemo } from "react";
 import { useProps } from "./propsContext";
+import { DEFAULT_PROPS } from "../constants";
 
 if (!useValue) {
   throw new Error("Incompatible Reanimated version (useValue not found)");
@@ -73,12 +75,23 @@ function useSetupAnimatedValues<T>() {
 
   const scrollOffset = useValue<number>(0);
 
+  const outerScrollOffset =
+    props.outerScrollOffset || DEFAULT_PROPS.outerScrollOffset;
+  const outerScrollOffsetSnapshot = useValue<number>(0); // Amount any outer scrollview has scrolled since last gesture event.
+  const outerScrollOffsetDiff = sub(
+    outerScrollOffset,
+    outerScrollOffsetSnapshot
+  );
+
   const scrollViewSize = useValue<number>(0);
 
   const touchCellOffset = useNode(sub(touchInit, activeCellOffset));
 
   const hoverAnimUnconstrained = useNode(
-    sub(sub(touchAbsolute, activationDistance), touchCellOffset)
+    add(
+      outerScrollOffsetDiff,
+      sub(sub(touchAbsolute, activationDistance), touchCellOffset)
+    )
   );
 
   const hoverAnimConstrained = useNode(
@@ -90,6 +103,17 @@ function useSetupAnimatedValues<T>() {
     : hoverAnimConstrained;
 
   const hoverOffset = useNode(add(hoverAnim, scrollOffset));
+
+  useCode(
+    () =>
+      onChange(
+        touchAbsolute,
+        // If the list is being used in "nested" mode (ie. there's an outer scrollview that contains the list)
+        // then we need a way to track the amound the outer list has auto-scrolled during the current touch position.
+        set(outerScrollOffsetSnapshot, outerScrollOffset)
+      ),
+    [outerScrollOffset]
+  );
 
   const placeholderOffset = useValue<number>(0);
 
@@ -153,6 +177,10 @@ function useSetupAnimatedValues<T>() {
       touchInit,
     ]
   );
+
+  useEffect(() => {
+    props.onAnimValInit?.(value);
+  }, [value]);
 
   return value;
 }
