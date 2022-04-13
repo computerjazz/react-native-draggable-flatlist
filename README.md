@@ -66,7 +66,7 @@ Cell Decorators are an easy way to add common hover animations. For example, wra
 
 ## Nesting DraggableFlatLists
 
-Use an outer `NestableScrollContainer` paired with one or more inner `NestableDraggableFlatList` components to nest multiple separate `DraggableFlatList` components within a single scrollable parent. `NestedScrollContainer` extends a `ScrollView` from `react-native-gesture-handler`, and `NestableDraggableFlatList` shares the same API as a regular `DraggableFlatList`.
+Use an outer `NestableScrollContainer` paired with one or more inner `NestableDraggableFlatList` components to nest multiple separate `DraggableFlatList` components within a single scrollable parent. `NestableScrollContainer` extends a `ScrollView` from `react-native-gesture-handler`, and `NestableDraggableFlatList` shares the same API as a regular `DraggableFlatList`.
 
 ```tsx
       <NestableScrollContainer>
