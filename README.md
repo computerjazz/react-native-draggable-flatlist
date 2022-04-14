@@ -112,7 +112,7 @@ import { NestableScrollContainer, NestableDraggableFlatList } from "react-native
 
 ## Example
 
-Example snack: https://snack.expo.io/@computerjazz/rndfl3 <br />
+Example snack: https://snack.expo.dev/@computerjazz/draggable-flatlist-examples <br />
 
 ```typescript
 import React, { useState } from "react";
