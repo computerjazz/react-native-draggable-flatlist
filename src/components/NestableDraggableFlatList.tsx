@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState } from "react";
 import { findNodeHandle, LogBox } from "react-native";
 import Animated, { add } from "react-native-reanimated";
-import DraggableFlatList, { DraggableFlatListProps } from "../index";
+import { DraggableFlatListProps } from "../types";
+import DraggableFlatList from "../components/DraggableFlatList";
 import { useNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
 
