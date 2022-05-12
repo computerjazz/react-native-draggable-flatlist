@@ -36,6 +36,11 @@ export type DraggableFlatListProps<T> = Modify<
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     outerScrollOffset?: Animated.Node<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
+    /**
+     * Whether the renderItem prop passed in doesn't need index to passed into
+     * the component. Can be used to improve performance. Defaults to true
+     */
+    passIndexToRenderItem?: boolean;
   } & Partial<DefaultProps>
 >;
 

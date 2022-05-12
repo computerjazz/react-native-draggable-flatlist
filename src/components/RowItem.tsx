@@ -10,6 +10,7 @@ type Props<T> = {
   item: T;
   renderItem: RenderItem<T>;
   itemKey: string;
+  passIndexToRenderItem: boolean;
   debug?: boolean;
 };
 
@@ -34,14 +35,14 @@ function RowItem<T>(props: Props<T>) {
     drag(itemKey);
   }, []);
 
-  const { renderItem, item, itemKey, extraData } = props;
+  const { renderItem, item, itemKey, extraData, passIndexToRenderItem } = props;
   return (
     <MemoizedInner
       isActive={activeKey === itemKey}
       drag={drag}
       renderItem={renderItem}
       item={item}
-      index={keyToIndexRef.current.get(itemKey)}
+      index={passIndexToRenderItem? keyToIndexRef.current.get(itemKey): undefined}
       extraData={extraData}
     />
   );

@@ -48,6 +48,7 @@ import AnimatedValueProvider, {
 } from "../context/animatedValueContext";
 import RefProvider, { useRefs } from "../context/refContext";
 import DraggableFlatListProvider from "../context/draggableFlatListContext";
+import {typedMemo} from "../utils";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
@@ -190,6 +191,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       const key = keyExtractor(item, index);
       if (index !== keyToIndexRef.current.get(key))
         keyToIndexRef.current.set(key, index);
+      const passIndexToRenderItem = props.passIndexToRenderItem !== false
 
       return (
         <RowItem
@@ -198,6 +200,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           renderItem={props.renderItem}
           drag={drag}
           extraData={props.extraData}
+          passIndexToRenderItem={passIndexToRenderItem}
         />
       );
     },
@@ -424,6 +427,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   );
 }
 
+const MemoizedDraggableFlatListInner = typedMemo(DraggableFlatListInner);
+
 function DraggableFlatList<T>(
   props: DraggableFlatListProps<T>,
   ref: React.ForwardedRef<FlatList<T>>
@@ -432,7 +437,7 @@ function DraggableFlatList<T>(
     <PropsProvider {...props}>
       <AnimatedValueProvider>
         <RefProvider flatListRef={ref}>
-          <DraggableFlatListInner {...props} />
+          <MemoizedDraggableFlatListInner {...props} />
         </RefProvider>
       </AnimatedValueProvider>
     </PropsProvider>
