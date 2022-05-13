@@ -42,7 +42,9 @@ function RowItem<T>(props: Props<T>) {
       drag={drag}
       renderItem={renderItem}
       item={item}
-      index={passIndexToRenderItem? keyToIndexRef.current.get(itemKey): undefined}
+      index={
+        passIndexToRenderItem ? keyToIndexRef.current.get(itemKey) : undefined
+      }
       extraData={extraData}
     />
   );
