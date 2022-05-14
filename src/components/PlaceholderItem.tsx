@@ -18,7 +18,6 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     spacerIndexAnim,
     horizontalAnim,
   } = useAnimatedValues();
-  const [placeholderSize, setPlaceholderSize] = useState(0);
 
   const { keyToIndexRef, propsRef } = useRefs<T>();
 
@@ -35,8 +34,8 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
       opacity: spacerIndexAnim.value >= 0 ? 1 : 0,
       transform: [
         horizontalAnim.value
-          ? { translateX: placeholderScreenOffset.value }
-          : { translateY: placeholderScreenOffset.value },
+          ? { translateX: placeholderOffset.value }
+          : { translateY: placeholderOffset.value },
       ],
     };
     if (horizontalAnim.value) {
@@ -46,7 +45,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     }
 
     return style;
-  }, [spacerIndexAnim, placeholderScreenOffset, horizontalAnim]);
+  }, [spacerIndexAnim, placeholderOffset, horizontalAnim]);
 
   return (
     <Animated.View
