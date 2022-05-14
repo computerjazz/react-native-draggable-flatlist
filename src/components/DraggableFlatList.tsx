@@ -27,6 +27,7 @@ import AnimatedValueProvider, {
 import RefProvider, { useRefs } from "../context/refContext";
 import DraggableFlatListProvider from "../context/draggableFlatListContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
+import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
@@ -74,14 +75,13 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const keyExtractor = useCallback(
+  const keyExtractor = useIdentityRetainingCallback(
     (item: T, index: number) => {
       if (propsRef.current.keyExtractor)
         return propsRef.current.keyExtractor(item, index);
       else
         throw new Error("You must provide a keyExtractor to DraggableFlatList");
-    },
-    [propsRef]
+    }
   );
 
   useLayoutEffect(() => {
@@ -99,35 +99,23 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     setActiveKey(null);
   }, [props.data]);
 
-  const drag = useCallback(
-    (activeKey: string) => {
-      if (!isTouchActiveNative.value) return;
-      const index = keyToIndexRef.current.get(activeKey);
-      const cellData = cellDataRef.current.get(activeKey);
-      if (cellData) {
-        activeCellOffset.value = cellData.measurements.offset;
-        activeCellSize.value = cellData.measurements.size;
-      }
+  const drag = useIdentityRetainingCallback((activeKey: string) => {
+    if (!isTouchActiveNative.value) return;
+    const index = keyToIndexRef.current.get(activeKey);
+    const cellData = cellDataRef.current.get(activeKey);
+    if (cellData) {
+      activeCellOffset.value = cellData.measurements.offset;
+      activeCellSize.value = cellData.measurements.size;
+    }
 
-      const { onDragBegin } = propsRef.current;
-      if (index !== undefined) {
-        spacerIndexAnim.value = index;
-        activeIndexAnim.value = index;
-        setActiveKey(activeKey);
-        onDragBegin?.(index);
-      }
-    },
-    [
-      keyToIndexRef,
-      cellDataRef,
-      propsRef,
-      activeCellOffset,
-      activeCellSize,
-      spacerIndexAnim,
-      activeIndexAnim,
-      scrollOffset,
-    ]
-  );
+    const { onDragBegin } = propsRef.current;
+    if (index !== undefined) {
+      spacerIndexAnim.value = index;
+      activeIndexAnim.value = index;
+      setActiveKey(activeKey);
+      onDragBegin?.(index);
+    }
+  });
 
   const onContainerLayout = ({
     nativeEvent: { layout },
@@ -185,14 +173,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     [props.renderItem, props.extraData, drag, keyExtractor]
   );
 
-  const onRelease = useCallback(
-    (index: number) => {
-      propsRef.current.onRelease?.(index);
-    },
-    [propsRef]
-  );
+  const onRelease = useIdentityRetainingCallback((index: number) => {
+    propsRef.current.onRelease?.(index);
+  });
 
-  const onDragEnd = useCallback(
+  const onDragEnd = useIdentityRetainingCallback(
     ({ from, to }: { from: number; to: number }) => {
       const { onDragEnd, data } = propsRef.current;
       if (onDragEnd) {
@@ -203,8 +188,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         }
         onDragEnd({ from, to, data: newData });
       }
-    },
-    [propsRef]
+    }
   );
 
   // Handle case where user ends drag without moving their finger.
