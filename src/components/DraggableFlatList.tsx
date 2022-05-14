@@ -157,8 +157,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const renderItem: ListRenderItem<T> = useCallback(
     ({ item, index }) => {
       const key = keyExtractor(item, index);
-      if (index !== keyToIndexRef.current.get(key))
+      if (index !== keyToIndexRef.current.get(key)) {
         keyToIndexRef.current.set(key, index);
+      }
 
       return (
         <RowItem

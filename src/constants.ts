@@ -34,7 +34,7 @@ export const isWeb = Platform.OS === "web";
 export const isReanimatedV2 = !!useSharedValue;
 
 if (!isReanimatedV2) {
-  console.warn(
-    "Your version of react-native-reanimated is too old for react-native-draggable-flatlist. It may not work as expected."
+  throw new Error(
+    "Your version of react-native-reanimated is too old for react-native-draggable-flatlist!"
   );
 }
