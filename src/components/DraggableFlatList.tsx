@@ -54,7 +54,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     activeIndexAnim,
     containerSize,
     disabled,
-    panGestureState,
     resetTouchedCell,
     scrollOffset,
     scrollViewSize,

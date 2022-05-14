@@ -17,9 +17,9 @@ export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
   const { isActive, onActiveAnim } = useOnCellActiveAnimation({
     animationConfig: { mass: 0.1, restDisplacementThreshold: 0.0001 },
   });
+  const { horizontal } = useDraggableFlatListContext<any>();
 
   const style = useAnimatedStyle(() => {
-    const { horizontal } = useDraggableFlatListContext<any>();
     const animScale = interpolate(onActiveAnim.value, [0, 1], [1, activeScale]);
     const scale = isActive ? animScale : 1;
     return {
@@ -27,7 +27,11 @@ export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
     };
   }, [isActive]);
 
-  return <Animated.View style={style}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, horizontal && styles.horizontal]}>
+      {children}
+    </Animated.View>
+  );
 };
 
 type ShadowProps = {

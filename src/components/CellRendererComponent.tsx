@@ -29,7 +29,7 @@ type Props<T> = {
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
-  const { item, index, onLayout, children } = props;
+  const { item, index, onLayout, children, ...rest } = props;
 
   const currentIndexAnim = useSharedValue(index);
 
@@ -137,7 +137,7 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   return (
     <Animated.View
-      {...props}
+      {...rest}
       ref={viewRef}
       onLayout={onCellLayout}
       style={[
@@ -148,7 +148,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       pointerEvents={activeKey ? "none" : "auto"}
     >
       <Animated.View
-        {...props}
+        {...rest}
         // Including both animated styles and non-animated styles causes react-native-web
         // to ignore updates in non-animated styles. Solution is to separate animated styles from non-animated styles
         style={[props.style, style]}

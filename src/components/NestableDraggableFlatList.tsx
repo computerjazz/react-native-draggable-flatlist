@@ -1,6 +1,9 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { findNodeHandle, LogBox } from "react-native";
-import Animated, { add } from "react-native-reanimated";
+import Animated, {
+  useDerivedValue,
+  useSharedValue,
+} from "react-native-reanimated";
 import { DraggableFlatListProps } from "../types";
 import DraggableFlatList from "../components/DraggableFlatList";
 import { useNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
@@ -24,9 +27,15 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     setOuterScrollEnabled,
   } = useNestableScrollContainerContext();
 
-  const listVerticalOffset = useMemo(() => new Animated.Value<number>(0), []);
+  const listVerticalOffset = useSharedValue(0);
   const viewRef = useRef<Animated.View>(null);
   const [animVals, setAnimVals] = useState({});
+  const defaultHoverAnim = useSharedValue(0);
+  const [hoverAnim, setHoverAnim] = useState(defaultHoverAnim);
+
+  const hoverAnimWithOffset = useDerivedValue(() => {
+    return hoverAnim.value + listVerticalOffset.value;
+  }, [hoverAnim]);
 
   useNestedAutoScroll(animVals);
 
@@ -35,7 +44,7 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     const nodeHandle = findNodeHandle(containerRef.current);
 
     const onSuccess = (_x: number, y: number) => {
-      listVerticalOffset.setValue(y);
+      listVerticalOffset.value = y;
     };
     const onFail = () => {
       console.log("## nested draggable list measure fail");
@@ -63,7 +72,7 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
         onAnimValInit={(animVals) => {
           setAnimVals({
             ...animVals,
-            hoverAnim: add(animVals.hoverAnim, listVerticalOffset),
+            hoverAnim: hoverAnimWithOffset,
           });
           props.onAnimValInit?.(animVals);
         }}
