@@ -7,6 +7,7 @@ import {
 import { State as GestureState } from "react-native-gesture-handler";
 import { useMemo } from "react";
 import { useProps } from "./propsContext";
+import { DEFAULT_PROPS } from "../constants";
 
 if (!useValue) {
   throw new Error("Incompatible Reanimated version (useValue not found)");
@@ -141,7 +142,6 @@ function useSetupAnimatedValues<T>() {
       activeIndexAnim,
       containerSize,
       disabled,
-      hasMoved,
       horizontalAnim,
       hoverAnim,
       hoverOffset,
@@ -149,7 +149,6 @@ function useSetupAnimatedValues<T>() {
       isTouchActiveNative,
       panGestureState,
       placeholderOffset,
-      placeholderScreenOffset,
       resetTouchedCell,
       scrollOffset,
       scrollViewSize,
@@ -164,7 +163,6 @@ function useSetupAnimatedValues<T>() {
       activeIndexAnim,
       containerSize,
       disabled,
-      hasMoved,
       horizontalAnim,
       hoverAnim,
       hoverOffset,
@@ -172,7 +170,6 @@ function useSetupAnimatedValues<T>() {
       isTouchActiveNative,
       panGestureState,
       placeholderOffset,
-      placeholderScreenOffset,
       resetTouchedCell,
       scrollOffset,
       scrollViewSize,
@@ -182,6 +179,10 @@ function useSetupAnimatedValues<T>() {
       autoScrollDistance,
     ]
   );
+
+  useEffect(() => {
+    props.onAnimValInit?.(value);
+  }, [value]);
 
   return value;
 }

@@ -53,6 +53,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     activeCellSize,
     activeIndexAnim,
     containerSize,
+    disabled,
+    panGestureState,
+    resetTouchedCell,
     scrollOffset,
     scrollViewSize,
     spacerIndexAnim,
@@ -127,7 +130,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     ]
   );
 
-  const onContainerLayout = ({ nativeEvent: { layout } }: LayoutChangeEvent) => {
+  const onContainerLayout = ({
+    nativeEvent: { layout },
+  }: LayoutChangeEvent) => {
     const { width, height } = layout;
     containerSize.value = props.horizontal ? width : height;
   };

@@ -46,7 +46,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `onDragEnd`                | `(params: { data: T[], from: number, to: number }) => void`                               | Called after animation has completed. Returns updated ordering of `data`                                                                                                                                           |
 | `autoscrollThreshold`      | `number`                                                                                  | Distance from edge of container where list begins to autoscroll when dragging.                                                                                                                                     |
 | `autoscrollSpeed`          | `number`                                                                                  | Determines how fast the list autoscrolls.                                                                                                                                                                          |
-| `animationConfig`          | `Partial<Animated.SpringConfig>`                                                          | Configure list animations. See [reanimated spring config](https://github.com/software-mansion/react-native-reanimated/blob/master/react-native-reanimated.d.ts#L112-L120)                                          |
+| `animationConfig`          | `Partial<Animated.SpringConfig>`                                                          | Configure list animations. See [reanimated spring config](https://github.com/software-mansion/react-native-reanimated/blob/12093cbe04d978b2ef619531755ef7d472242cd9/react-native-reanimated.d.ts#L198-L206)                                          |
 | `activationDistance`       | `number`                                                                                  | Distance a finger must travel before the gesture handler activates. Useful when using a draggable list within a TabNavigator so that the list does not capture navigator gestures.                                 |
 | `onScrollOffsetChange`     | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                                                |
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                                                   |
@@ -64,9 +64,55 @@ Cell Decorators are an easy way to add common hover animations. For example, wra
 
 `ScaleDecorator`, `ShadowDecorator`, and `OpacityDecorator` are currently exported. Developers may create their own custom decorators using the animated values provided by the `useOnCellActiveAnimation` hook.
 
+## Nesting DraggableFlatLists
+
+It's possible to render multiple `DraggableFlatList` components within a single scrollable parent by wrapping one or more `NestableDraggableFlatList` components within an outer `NestableScrollContainer` component. 
+
+`NestableScrollContainer` extends the `ScrollView` from `react-native-gesture-handler`, and `NestableDraggableFlatList` extends `DraggableFlatList`, so all available props may be passed into both of them.
+
+> Note: When using NestableDraggableFlatLists, all React Native warnings about nested list performance will be disabled. 
+
+```tsx
+import { NestableScrollContainer, NestableDraggableFlatList } from "react-native-draggable-flatlist"
+
+...
+
+  const [data1, setData1] = useState(initialData1);
+  const [data2, setData2] = useState(initialData2);
+  const [data3, setData3] = useState(initialData3);
+
+  return (
+    <NestableScrollContainer>
+      <Header text='List 1' />
+      <NestableDraggableFlatList
+        data={data1}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onDragEnd={({ data }) => setData1(data)}
+      />
+      <Header text='List 2' />
+      <NestableDraggableFlatList
+        data={data2}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onDragEnd={({ data }) => setData2(data)}
+      />
+      <Header text='List 3' />
+      <NestableDraggableFlatList
+        data={data3}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onDragEnd={({ data }) => setData3(data)}
+      />
+    </NestableScrollContainer>
+  )
+```
+
+![Nested DraggableFlatList demo](https://i.imgur.com/Kv0aj4l.gif)
+
 ## Example
 
-Example snack: https://snack.expo.io/@computerjazz/rndfl3 <br />
+Example snack: https://snack.expo.dev/@computerjazz/draggable-flatlist-examples <br />
 
 ```typescript
 import React, { useState } from "react";

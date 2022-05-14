@@ -14,10 +14,12 @@ type Props<T> = {
 function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const {
     activeCellSize,
-    placeholderScreenOffset,
+    placeholderOffset,
     spacerIndexAnim,
     horizontalAnim,
   } = useAnimatedValues();
+  const [placeholderSize, setPlaceholderSize] = useState(0);
+
   const { keyToIndexRef, propsRef } = useRefs<T>();
 
   const { activeKey } = useDraggableFlatListContext();

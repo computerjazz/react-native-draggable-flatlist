@@ -1,5 +1,6 @@
 import React from "react";
 import { FlatListProps, StyleProp, ViewStyle } from "react-native";
+import { useAnimatedValues } from "./context/animatedValueContext";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
@@ -33,6 +34,8 @@ export type DraggableFlatListProps<T> = Modify<
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
+    outerScrollOffset?: Animated.Node<number>;
+    onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
   } & Partial<DefaultProps>
 >;
 
