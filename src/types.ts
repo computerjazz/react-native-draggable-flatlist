@@ -2,7 +2,7 @@ import React from "react";
 import { FlatListProps, StyleProp, ViewStyle } from "react-native";
 import { useAnimatedValues } from "./context/animatedValueContext";
 import { FlatList } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import Animated, { WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
 
 export type DragEndParams<T> = {
@@ -19,7 +19,7 @@ export type DraggableFlatListProps<T> = Modify<
   {
     data: T[];
     activationDistance?: number;
-    animationConfig?: Partial<Animated.SpringConfig>;
+    animationConfig?: Partial<WithSpringConfig>;
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
     containerStyle?: StyleProp<ViewStyle>;
@@ -34,7 +34,7 @@ export type DraggableFlatListProps<T> = Modify<
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
-    outerScrollOffset?: Animated.Node<number>;
+    outerScrollOffset?: Animated.SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
   } & Partial<DefaultProps>
 >;

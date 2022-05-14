@@ -1,11 +1,10 @@
-import React, { useEffect, useCallback, useContext } from "react";
+import React, { useMemo, useEffect, useCallback, useContext } from "react";
 import {
   useDerivedValue,
   useSharedValue,
   useValue,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
-import { useMemo } from "react";
 import { useProps } from "./propsContext";
 import { DEFAULT_PROPS } from "../constants";
 

@@ -70,6 +70,7 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           setOuterScrollEnabled(true);
         }}
         onAnimValInit={(animVals) => {
+          setHoverAnim(animVals.hoverAnim);
           setAnimVals({
             ...animVals,
             hoverAnim: hoverAnimWithOffset,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import {
+  runOnJS,
   scrollTo,
   useAnimatedReaction,
   useDerivedValue,
@@ -101,6 +102,10 @@ export function useAutoScroll() {
     return hasScrolledToTarget && isAtEdge && !isEdgeDisabled && cellIsActive;
   });
 
+  function scrollToInternal({ x, y }: { x: number; y: number }) {
+    scrollViewRef.current?.scrollTo({ x, y, animated: true });
+  }
+
   useDerivedValue(() => {
     if (!shouldAutoScroll.value) return;
 
@@ -116,8 +121,9 @@ export function useAutoScroll() {
     const targetY = horizontalAnim.value ? 0 : targetOffset;
 
     scrollTarget.value = targetOffset;
-    console.log("SCROLL TO", targetOffset);
+    // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
     // scrollTo(scrollViewRef, targetX, targetY, true);
+    runOnJS(scrollToInternal)({ x: targetX, y: targetY });
   }, []);
 
   return null;

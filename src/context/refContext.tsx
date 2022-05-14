@@ -1,14 +1,17 @@
 import React, { useContext, useEffect } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
-import Animated, { useAnimatedRef } from "react-native-reanimated";
+import Animated, {
+  useAnimatedRef,
+  WithSpringConfig,
+} from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
 import { CellData, DraggableFlatListProps } from "../types";
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
-  animationConfigRef: React.MutableRefObject<Animated.WithSpringConfig>;
+  animationConfigRef: React.MutableRefObject<WithSpringConfig>;
   cellDataRef: React.MutableRefObject<Map<string, CellData>>;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   containerRef: React.RefObject<Animated.View>;
@@ -53,7 +56,7 @@ function useSetupRefs<T>({
   const animConfig = {
     ...DEFAULT_PROPS.animationConfig,
     ...animationConfig,
-  } as Animated.WithSpringConfig;
+  } as WithSpringConfig;
   const animationConfigRef = useRef(animConfig);
   animationConfigRef.current = animConfig;
 
