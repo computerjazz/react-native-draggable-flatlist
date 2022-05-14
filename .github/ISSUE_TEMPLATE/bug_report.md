@@ -17,6 +17,7 @@ Link a snack if possible.
 
 **Platform & Dependencies**
 Please list any  applicable dependencies in addition to those below (react-navigation etc).
+ - react-native-draggable-flatlist version:
  - Platform:
  - React Native or Expo version:
  - Reanimated version:

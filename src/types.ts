@@ -1,5 +1,6 @@
 import React from "react";
 import { FlatListProps, StyleProp, ViewStyle } from "react-native";
+import { useAnimatedValues } from "./context/animatedValueContext";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
@@ -16,23 +17,25 @@ type DefaultProps = Readonly<typeof DEFAULT_PROPS>;
 export type DraggableFlatListProps<T> = Modify<
   FlatListProps<T>,
   {
+    data: T[];
+    activationDistance?: number;
+    animationConfig?: Partial<Animated.SpringConfig>;
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
-    data: T[];
-    onRef?: (ref: React.RefObject<AnimatedFlatListType>) => void;
+    containerStyle?: StyleProp<ViewStyle>;
+    debug?: boolean;
+    dragItemOverflow?: boolean;
+    keyExtractor: (item: T, index: number) => string;
     onDragBegin?: (index: number) => void;
-    onRelease?: (index: number) => void;
     onDragEnd?: (params: DragEndParams<T>) => void;
+    onPlaceholderIndexChange?: (placeholderIndex: number) => void;
+    onRelease?: (index: number) => void;
+    onScrollOffsetChange?: (scrollOffset: number) => void;
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
-    animationConfig: Partial<Animated.WithSpringConfig>;
-    activationDistance?: number;
-    debug?: boolean;
-    onScrollOffsetChange?: (scrollOffset: number) => void;
-    onPlaceholderIndexChange?: (placeholderIndex: number) => void;
-    containerStyle?: StyleProp<ViewStyle>;
-    dragItemOverflow?: boolean;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
+    outerScrollOffset?: Animated.SharedValue<number>;
+    onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
   } & Partial<DefaultProps>
 >;
 
@@ -62,3 +65,9 @@ export type AnimatedFlatListType = <T>(
 // Fixes bug with useMemo + generic types:
 // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/37087#issuecomment-542793243
 export const typedMemo: <T>(c: T) => T = React.memo;
+export type CellData = {
+  measurements: {
+    size: number;
+    offset: number;
+  };
+};
