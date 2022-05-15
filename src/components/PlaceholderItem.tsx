@@ -22,6 +22,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     placeholderOffset,
     spacerIndexAnim,
     horizontalAnim,
+    scrollOffset,
   } = useAnimatedValues();
   const { keyToIndexRef, propsRef } = useRefs<T>();
   const { activeKey, horizontal } = useDraggableFlatListContext();
@@ -45,17 +46,19 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
   const animStyle = useAnimatedStyle(() => {
-    const style: ReturnType<typeof useAnimatedStyle> = {
+  
+    const offset = placeholderOffset.value - scrollOffset.value
+
+   return {
       opacity: spacerIndexAnim.value >= 0 ? 1 : 0,
       transform: [
         horizontalAnim.value
-          ? { translateX: placeholderOffset.value }
-          : { translateY: placeholderOffset.value },
+          ? { translateX: offset }
+          : { translateY: offset },
       ],
     };
 
-    return style;
-  }, [spacerIndexAnim, placeholderOffset, horizontalAnim]);
+  }, [spacerIndexAnim, placeholderOffset, horizontalAnim, scrollOffset]);
 
   const extraStyle = horizontal ? { width: size } : { height: size };
 
