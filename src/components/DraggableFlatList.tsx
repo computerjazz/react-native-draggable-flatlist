@@ -77,10 +77,10 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const keyExtractor = useIdentityRetainingCallback(
     (item: T, index: number) => {
-      if (propsRef.current.keyExtractor)
-        return propsRef.current.keyExtractor(item, index);
-      else
+      if (!props.keyExtractor) {
         throw new Error("You must provide a keyExtractor to DraggableFlatList");
+      }
+      return props.keyExtractor(item, index);
     }
   );
 
@@ -263,11 +263,10 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     []
   );
 
-  const onScroll = useCallback(
-    (scrollOffset) => {
-      propsRef.current.onScrollOffsetChange?.(scrollOffset);
+  const onScroll = useIdentityRetainingCallback(
+    (scrollOffset: number) => {
+      props.onScrollOffsetChange?.(scrollOffset);
     },
-    [propsRef]
   );
 
   const scrollHandler = useAnimatedScrollHandler(
