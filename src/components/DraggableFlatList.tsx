@@ -94,14 +94,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   // Reset hover state whenever data changes
   useMemo(() => {
     setActiveKey(null);
-    setTimeout(() => {
-      requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
         activeIndexAnim.value = -1;
         spacerIndexAnim.value = -1;
         touchTranslate.value = 0;
         activeCellSize.value = -1;
         activeCellOffset.value = -1;
-      })
+      }, 0)
     })
   }, [props.data]);
 
