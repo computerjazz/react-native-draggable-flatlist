@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ListRenderItem, FlatListProps, LayoutChangeEvent } from "react-native";
 import {
   FlatList,
@@ -93,10 +93,16 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   // Reset hover state whenever data changes
   useMemo(() => {
-    activeIndexAnim.value = -1;
-    spacerIndexAnim.value = -1;
-    touchTranslate.value = 0;
     setActiveKey(null);
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        activeIndexAnim.value = -1;
+        spacerIndexAnim.value = -1;
+        touchTranslate.value = 0;
+        activeCellSize.value = -1;
+        activeCellOffset.value = -1;
+      })
+    })
   }, [props.data]);
 
   const drag = useIdentityRetainingCallback((activeKey: string) => {

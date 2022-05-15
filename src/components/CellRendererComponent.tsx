@@ -62,22 +62,19 @@ function CellRendererComponent<T>(props: Props<T>) {
     cellIndex: currentIndexAnim,
   });
 
-  // useMemo(() => {
-  //   // prevent flicker on web
-  //   if (isWeb) translate.setValue(0);
-  // }, [index]); //eslint-disable-line react-hooks/exhaustive-deps
-
   const isActive = activeKey === key;
 
-  const style = useAnimatedStyle(() => {
+  const animStyle = useAnimatedStyle(() => {
+    const _translate = activeKey ? translate.value : 0
+
     return {
       transform: [
         horizontalAnim.value
-          ? { translateX: translate.value }
-          : { translateY: translate.value },
+          ? { translateX: _translate }
+          : { translateY: _translate },
       ],
     };
-  });
+  }, [activeKey] );
 
   const updateCellMeasurements = useCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
@@ -151,7 +148,7 @@ function CellRendererComponent<T>(props: Props<T>) {
         {...rest}
         // Including both animated styles and non-animated styles causes react-native-web
         // to ignore updates in non-animated styles. Solution is to separate animated styles from non-animated styles
-        style={[props.style, style]}
+        style={[props.style, animStyle]}
       >
         <CellProvider isActive={isActive}>{children}</CellProvider>
       </Animated.View>

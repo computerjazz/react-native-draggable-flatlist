@@ -21,6 +21,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const { animationConfigRef } = useRefs();
 
   const translate = useDerivedValue(() => {
+    if (activeIndexAnim.value === -1) return 0
+
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
     const isBeforeActive = cellIndex.value < activeIndexAnim.value;
     const isAfterActive = cellIndex.value > activeIndexAnim.value;
