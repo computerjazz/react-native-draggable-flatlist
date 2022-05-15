@@ -175,12 +175,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   );
 
   const onRelease = useIdentityRetainingCallback((index: number) => {
-    propsRef.current.onRelease?.(index);
+    props.onRelease?.(index);
   });
 
   const onDragEnd = useIdentityRetainingCallback(
     ({ from, to }: { from: number; to: number }) => {
-      const { onDragEnd, data } = propsRef.current;
+      const { onDragEnd, data } = props;
       if (onDragEnd) {
         const newData = [...data];
         if (from !== to) {
@@ -222,6 +222,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
       touchTranslate.value = translation + autoScrollDistance.value;
       panGestureState.value = evt.state;
+
+      // Only call onDragEnd if actually dragging a cell
+      if (activeIndexAnim.value === -1) return
       runOnJS(onRelease)(activeIndexAnim.value);
       const springTo = placeholderOffset.value - activeCellOffset.value;
       touchTranslate.value = withSpring(
