@@ -1,5 +1,6 @@
 import Animated, { useDerivedValue, withSpring } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
+import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useRefs } from "../context/refContext";
 
 type Params = {
@@ -8,7 +9,7 @@ type Params = {
   cellOffset: Animated.SharedValue<number>;
 };
 
-export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
+export function useCellTranslate({ cellIndex, cellSize, cellOffset, key }: Params) {
   const {
     activeIndexAnim,
     activeCellSize,
@@ -18,10 +19,12 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     hoverAnim,
   } = useAnimatedValues();
 
+  const { activeKey } = useDraggableFlatListContext()
+
   const { animationConfigRef } = useRefs();
 
   const translate = useDerivedValue(() => {
-    if (activeIndexAnim.value === -1) return 0
+    if (!activeKey || activeIndexAnim.value < 0) return 0
 
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
     const isBeforeActive = cellIndex.value < activeIndexAnim.value;
@@ -77,7 +80,10 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     if (activeIndexAnim.value < 0) return 0;
 
     // Active cell follows touch
-    if (cellIndex.value === activeIndexAnim.value) return hoverAnim.value;
+    if (cellIndex.value === activeIndexAnim.value) {
+      if (key === "key-1") console.log('1 is active!!', hoverAnim.value)
+      return hoverAnim.value
+    };
 
     // Translate cell down if it is before active index and active cell has passed it.
     // Translate cell up if it is after the active index and active cell has passed it.
@@ -89,8 +95,10 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     const translationAmt = shouldTranslate
       ? activeCellSize.value * (isAfterActive ? -1 : 1)
       : 0;
+
     return withSpring(translationAmt, animationConfigRef.current);
-  }, []);
+  }, [activeKey]);
+
 
   return translate;
 }

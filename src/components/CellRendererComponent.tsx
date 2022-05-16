@@ -7,10 +7,8 @@ import {
   ViewStyle,
 } from "react-native";
 import Animated, {
-  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
-  useValue,
 } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { isAndroid, isIOS, isWeb } from "../constants";
@@ -33,15 +31,14 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const currentIndexAnim = useSharedValue(index);
 
-  useAnimatedReaction(
-    () => {
-      return index;
-    },
-    (index, prev) => {
-      if (index !== prev) currentIndexAnim.value = index;
-    },
-    [index, currentIndexAnim]
-  );
+  useEffect(() => {
+    // If we set the index immediately the newly-ordered data can get out of sync
+    // with the activeIndexAnim, and cause the wrong item to momentarily become the
+    // "active item", which causes a flicker.
+    requestAnimationFrame(() => {
+      currentIndexAnim.value = index
+    })
+  }, [index])
 
   const viewRef = useRef<Animated.View>(null);
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
@@ -56,6 +53,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   const key = keyExtractor(item, index);
   const offset = useSharedValue(-1);
   const size = useSharedValue(-1);
+
   const translate = useCellTranslate({
     cellOffset: offset,
     cellSize: size,
@@ -63,10 +61,10 @@ function CellRendererComponent<T>(props: Props<T>) {
   });
 
   const isActive = activeKey === key;
+  const dragInProgress = !!activeKey
 
   const animStyle = useAnimatedStyle(() => {
-    const _translate = activeKey ? translate.value : 0
-
+    const _translate = dragInProgress ? translate.value : 0
     return {
       transform: [
         horizontalAnim.value
@@ -74,7 +72,7 @@ function CellRendererComponent<T>(props: Props<T>) {
           : { translateY: _translate },
       ],
     };
-  }, [activeKey] );
+  }, [dragInProgress, translate] );
 
   const updateCellMeasurements = useCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
@@ -146,8 +144,9 @@ function CellRendererComponent<T>(props: Props<T>) {
     >
       <Animated.View
         {...rest}
-        // Including both animated styles and non-animated styles causes react-native-web
-        // to ignore updates in non-animated styles. Solution is to separate animated styles from non-animated styles
+        // Including both animated styles and non-animated styles 
+        // causes react-native-web to ignore updates in non-animated styles. 
+        // Solution is to separate animated styles from non-animated styles
         style={[props.style, animStyle]}
       >
         <CellProvider isActive={isActive}>{children}</CellProvider>

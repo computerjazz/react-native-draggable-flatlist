@@ -37,7 +37,10 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     return hoverAnim.value + listVerticalOffset.value;
   }, [hoverAnim]);
 
-  useNestedAutoScroll(animVals);
+  useNestedAutoScroll({
+    ...animVals,
+    hoverAnim: hoverAnimWithOffset,
+  });
 
   const onListContainerLayout = async () => {
     const viewNode = viewRef.current;

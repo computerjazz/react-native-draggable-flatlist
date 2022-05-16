@@ -57,7 +57,7 @@ export function useNestedAutoScroll(params: {
 
   const distToTopEdge = useDerivedValue(() => {
     return Math.max(0, hoverAnim.value - scrollOffset.value);
-  }, []);
+  }, [hoverAnim]);
 
   const distToBottomEdge = useDerivedValue(() => {
     const hoverMinusScroll = hoverAnim.value - scrollOffset.value;
@@ -121,6 +121,7 @@ export function useNestedAutoScroll(params: {
       scrollTarget.value = targetOffset;
       // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
       // scrollTo(scrollViewRef, 0, scrollTarget.value, true)
+      console.log("SCROLL TO!!", targetOffset)
       runOnJS(scrollToInternal)(targetOffset);
     }
   }, [autoscrollSpeed, autoscrollThreshold, isDraggingCell]);

@@ -1,18 +1,13 @@
-import { useEffect, useRef } from "react";
 import {
   runOnJS,
-  scrollTo,
   useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
   useValue,
 } from "react-native-reanimated";
-import { State as GestureState } from "react-native-gesture-handler";
 import {
   DEFAULT_PROPS,
   SCROLL_POSITION_TOLERANCE,
-  isReanimatedV2,
-  isAndroid,
 } from "../constants";
 import { useProps } from "../context/propsContext";
 import { useAnimatedValues } from "../context/animatedValueContext";

@@ -1,11 +1,11 @@
 import { useRef } from "react";
-import Animated, { useDerivedValue, withSpring } from "react-native-reanimated";
+import Animated, { useDerivedValue, withSpring, WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_ANIMATION_CONFIG } from "../constants";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useIsActive } from "../context/cellContext";
 
 type Params = {
-  animationConfig: Partial<Animated.WithSpringConfig>;
+  animationConfig: Partial<WithSpringConfig>;
 };
 
 export function useOnCellActiveAnimation(
@@ -20,17 +20,17 @@ export function useOnCellActiveAnimation(
 
   const onActiveAnim = useDerivedValue(() => {
     const toVal = isActive && isTouchActiveNative.value ? 1 : 0;
-    const animConfig: Partial<Animated.WithSpringConfig> = {};
+    const animConfig: Partial<WithSpringConfig> = {};
 
     // spread operator and Object.assign don't work within worklets
     for (let key in DEFAULT_ANIMATION_CONFIG) {
-      const k = key as keyof Animated.WithSpringConfig;
+      const k = key as keyof WithSpringConfig;
       const v = DEFAULT_ANIMATION_CONFIG[k];
       // @ts-ignore
       animConfig[k] = v;
     }
     for (let key in animationConfigRef.current) {
-      const k = key as keyof Animated.WithSpringConfig;
+      const k = key as keyof WithSpringConfig;
       const v = animationConfigRef.current[k];
       // @ts-ignore
       animConfig[k] = v;

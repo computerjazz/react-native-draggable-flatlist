@@ -93,15 +93,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   // Reset hover state whenever data changes
   useMemo(() => {
-    setActiveKey(null);
     requestAnimationFrame(() => {
-      setTimeout(() => {
         activeIndexAnim.value = -1;
         spacerIndexAnim.value = -1;
         touchTranslate.value = 0;
         activeCellSize.value = -1;
         activeCellOffset.value = -1;
-      }, 0)
     })
   }, [props.data]);
 
@@ -163,6 +160,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const renderItem: ListRenderItem<T> = useCallback(
     ({ item, index }) => {
       const key = keyExtractor(item, index);
+
       if (index !== keyToIndexRef.current.get(key)) {
         keyToIndexRef.current.set(key, index);
       }
@@ -194,6 +192,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           newData.splice(to, 0, data[from]);
         }
         onDragEnd({ from, to, data: newData });
+        requestAnimationFrame(() => {
+          setActiveKey(null);
+        })
       }
     }
   );
