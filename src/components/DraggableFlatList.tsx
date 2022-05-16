@@ -64,6 +64,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     autoScrollDistance,
     panGestureState,
     isTouchActiveNative,
+    disabled,
   } = useAnimatedValues();
 
   const {
@@ -102,6 +103,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }, [props.data]);
 
   const drag = useIdentityRetainingCallback((activeKey: string) => {
+    if (disabled.value) return
     const index = keyToIndexRef.current.get(activeKey);
     const cellData = cellDataRef.current.get(activeKey);
     if (cellData) {
@@ -205,7 +207,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     (cur, prev) => {
       if (cur !== prev && !cur) {
         const hasMoved = !!touchTranslate.value;
-        if (!hasMoved && activeIndexAnim.value >= 0) {
+        if (!hasMoved && activeIndexAnim.value >= 0 && !disabled.value) {
           runOnJS(onDragEnd)({
             from: activeIndexAnim.value,
             to: spacerIndexAnim.value,
@@ -216,54 +218,51 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     [isTouchActiveNative, onDragEnd]
   );
 
-  const onGestureEnd = useCallback(
-    (evt: Readonly<GestureEventPayload & PanGestureHandlerEventPayload>) => {
-      "worklet";
-      // Set touch val to current translate val
-      isTouchActiveNative.value = false;
-      const translation = horizontalAnim.value
-        ? evt.translationX
-        : evt.translationY;
-
-      touchTranslate.value = translation + autoScrollDistance.value;
-      panGestureState.value = evt.state;
-
-      // Only call onDragEnd if actually dragging a cell
-      if (activeIndexAnim.value === -1) return
-      runOnJS(onRelease)(activeIndexAnim.value);
-      const springTo = placeholderOffset.value - activeCellOffset.value;
-      touchTranslate.value = withSpring(
-        springTo,
-        animationConfigRef.current,
-        () => {
-          runOnJS(onDragEnd)({
-            from: activeIndexAnim.value,
-            to: spacerIndexAnim.value,
-          });
-        }
-      );
-    },
-    []
-  );
-
   const onGestureEvent = useAnimatedGestureHandler<
     GestureEvent<PanGestureHandlerEventPayload>,
     { prevState: GestureState }
   >(
     {
       onStart: (evt) => {
+        if (disabled.value) return 
         panGestureState.value = evt.state;
       },
       onActive: (evt) => {
+        if (disabled.value) return 
         panGestureState.value = evt.state;
         const translation = horizontalAnim.value
           ? evt.translationX
           : evt.translationY;
         touchTranslate.value = translation;
       },
-      onEnd: onGestureEnd,
-      onCancel: onGestureEnd,
-      onFail: onGestureEnd,
+      onEnd: (evt) => {
+        // Set touch val to current translate val
+        isTouchActiveNative.value = false;
+        const translation = horizontalAnim.value
+          ? evt.translationX
+          : evt.translationY;
+
+        touchTranslate.value = translation + autoScrollDistance.value;
+        panGestureState.value = evt.state;
+
+        // Only call onDragEnd if actually dragging a cell
+        if (activeIndexAnim.value === -1 || disabled.value) return
+
+        disabled.value = true;
+        runOnJS(onRelease)(activeIndexAnim.value);
+        const springTo = placeholderOffset.value - activeCellOffset.value;
+        touchTranslate.value = withSpring(
+          springTo,
+          animationConfigRef.current,
+          () => {
+            runOnJS(onDragEnd)({
+              from: activeIndexAnim.value,
+              to: spacerIndexAnim.value,
+            });
+            disabled.value = false;
+          }
+        );
+      },
     },
     []
   );

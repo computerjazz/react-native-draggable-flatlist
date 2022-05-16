@@ -50,7 +50,7 @@ function useSetupAnimatedValues<T>() {
   const isTouchActiveNative = useSharedValue(false);
 
   const hasMoved = useSharedValue(0);
-  const disabled = useSharedValue(0);
+  const disabled = useSharedValue(false);
 
   const horizontalAnim = useSharedValue(!!props.horizontal);
 
