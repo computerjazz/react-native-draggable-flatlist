@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, {
@@ -15,7 +15,7 @@ type RefContextValue<T> = {
   cellDataRef: React.MutableRefObject<Map<string, CellData>>;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   containerRef: React.RefObject<Animated.View>;
-  flatlistRef: React.RefObject<FlatList<T>>;
+  flatlistRef: React.RefObject<FlatList<T>> | React.ForwardedRef<FlatList<T>>;
   scrollViewRef: React.RefObject<Animated.ScrollView>;
 };
 const RefContext = React.createContext<RefContextValue<any> | undefined>(
@@ -27,7 +27,7 @@ export default function RefProvider<T>({
   flatListRef,
 }: {
   children: React.ReactNode;
-  flatListRef: React.ForwardedRef<FlatList<T>>;
+  flatListRef?: React.ForwardedRef<FlatList<T>> | null;
 }) {
   const value = useSetupRefs<T>({ flatListRef });
   return <RefContext.Provider value={value}>{children}</RefContext.Provider>;
@@ -46,7 +46,7 @@ export function useRefs<T>() {
 function useSetupRefs<T>({
   flatListRef: flatListRefProp,
 }: {
-  flatListRef: React.ForwardedRef<FlatList<T>>;
+    flatListRef?: React.ForwardedRef<FlatList<T>> | null;
 }) {
   const props = useProps<T>();
   const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
@@ -63,19 +63,21 @@ function useSetupRefs<T>({
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
   const containerRef = useAnimatedRef<Animated.View>();
-  const flatlistRef = useAnimatedRef<FlatList<T>>();
+  const flatlistRefInternal = useAnimatedRef<FlatList<T>>();
+  const flatlistRef = flatListRefProp || flatlistRefInternal
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
 
-  useEffect(() => {
-    // This is a workaround for the fact that RN does not respect refs passed in
-    // to renderScrollViewComponent underlying ScrollView
-    //@ts-ignore
-    const scrollRef = flatlistRef.current?.getNativeScrollRef();
-    if (!scrollViewRef.current) {
-      //@ts-ignore
-      scrollViewRef(scrollRef);
-    }
-  }, []);
+  // useEffect(() => {
+  //   // This is a workaround for the fact that RN does not respect refs passed in
+  //   // to renderScrollViewComponent underlying ScrollView (currently not used but
+  //   // may need to add if we want to use reanimated scrollTo in the future)
+  //   //@ts-ignore
+  //   const scrollRef = flatlistRef.current?.getNativeScrollRef();
+  //   if (!scrollViewRef.current) {
+  //     //@ts-ignore
+  //     scrollViewRef(scrollRef);
+  //   }
+  // }, []);
 
   const refs = useMemo(
     () => ({

@@ -3,7 +3,6 @@ import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
   StyleProp,
-  View,
   ViewStyle,
 } from "react-native";
 import Animated, {
@@ -11,7 +10,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { isAndroid, isIOS, isWeb } from "../constants";
+import { isAndroid, isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";
 import { useRefs } from "../context/refContext";
@@ -127,7 +126,8 @@ function CellRendererComponent<T>(props: Props<T>) {
     },
     [updateCellMeasurements, onLayout]
   );
-  // changing zIndex crashes android:
+
+  // changing zIndex may crash android, but seems to work ok as of RN 68:
   // https://github.com/facebook/react-native/issues/28751
 
   return (
@@ -138,7 +138,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       style={[
         isAndroid && { elevation: isActive ? 1 : 0 },
         { flexDirection: horizontal ? "row" : "column" },
-        (isWeb || isIOS) && { zIndex: isActive ? 999 : 0 },
+        { zIndex: isActive ? 999 : 0 },
       ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >

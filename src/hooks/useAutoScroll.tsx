@@ -92,7 +92,9 @@ export function useAutoScroll() {
   });
 
   function scrollToInternal(offset: number) {
-    flatlistRef.current?.scrollToOffset({ offset, animated: true });
+    if (flatlistRef && "current" in flatlistRef) {
+      flatlistRef.current?.scrollToOffset({ offset, animated: true });
+    }
   }
 
   useDerivedValue(() => {

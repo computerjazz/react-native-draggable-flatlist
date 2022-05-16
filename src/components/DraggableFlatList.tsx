@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { ListRenderItem, FlatListProps, LayoutChangeEvent } from "react-native";
 import {
   FlatList,
@@ -16,7 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isWeb } from "../constants";
+import { DEFAULT_PROPS } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -28,6 +28,7 @@ import RefProvider, { useRefs } from "../context/refContext";
 import DraggableFlatListProvider from "../context/draggableFlatListContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
+import ScrollOffsetListener from "./ScrollOffsetListener";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
@@ -54,8 +55,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     activeCellSize,
     activeIndexAnim,
     containerSize,
-    disabled,
-    resetTouchedCell,
     scrollOffset,
     scrollViewSize,
     spacerIndexAnim,
@@ -103,7 +102,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }, [props.data]);
 
   const drag = useIdentityRetainingCallback((activeKey: string) => {
-    if (!isTouchActiveNative.value) return;
     const index = keyToIndexRef.current.get(activeKey);
     const cellData = cellDataRef.current.get(activeKey);
     if (cellData) {
@@ -329,6 +327,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
           />
+          {!!props.onScrollOffsetChange && (
+            <ScrollOffsetListener 
+              onScrollOffsetChange={props.onScrollOffsetChange} 
+              scrollOffset={scrollOffset}
+              />
+          )}
         </Animated.View>
       </PanGestureHandler>
     </DraggableFlatListProvider>
@@ -337,7 +341,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
 function DraggableFlatList<T>(
   props: DraggableFlatListProps<T>,
-  ref: React.ForwardedRef<FlatList<T>>
+  ref?: React.ForwardedRef<FlatList<T>> | null
 ) {
   return (
     <PropsProvider {...props}>

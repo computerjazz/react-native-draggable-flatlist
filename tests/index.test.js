@@ -7,8 +7,9 @@ jest.mock("react-native-reanimated", () =>
   require("react-native-reanimated/mock")
 );
 
-const DummyFlatList = props => {
-  const [data, setData] = useState([
+
+const DummyFlatList = (props) => {
+  const [data] = useState([
     { id: "1", name: "item 1" },
     { id: "2", name: "item 2" }
   ]);
@@ -29,6 +30,7 @@ const DummyFlatList = props => {
 };
 
 describe("DraggableFlatList", () => {
+  
   const setup = propOverrides => {
     const defaultProps = {
       ...propOverrides

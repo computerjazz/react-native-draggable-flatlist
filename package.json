@@ -38,7 +38,8 @@
   "jest": {
     "preset": "react-native",
     "setupFiles": [
-      "./node_modules/react-native-gesture-handler/jestSetup.js"
+      "./node_modules/react-native-gesture-handler/jestSetup.js",
+      "./jest-setup.js"
     ],
     "transform": {
       "^.+\\.[t|j]sx?$": "babel-jest"
@@ -75,5 +76,8 @@
       "module",
       "typescript"
     ]
+  },
+  "dependencies": {
+    "@babel/preset-typescript": "^7.17.12"
   }
 }
