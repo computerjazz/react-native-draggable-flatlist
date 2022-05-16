@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
 import Animated, {
   runOnJS,
@@ -46,21 +46,22 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
   const animStyle = useAnimatedStyle(() => {
-  
     const offset = placeholderOffset.value - scrollOffset.value
+    return {
+        opacity: size >= 0 ? 1 : 0,
+        overflow: 'hidden',
+        transform: [
+          horizontalAnim.value
+            ? { translateX: offset }
+            : { translateY: offset },
+        ],
+      };
 
-   return {
-      opacity: spacerIndexAnim.value >= 0 ? 1 : 0,
-      transform: [
-        horizontalAnim.value
-          ? { translateX: offset }
-          : { translateY: offset },
-      ],
-    };
+  }, [spacerIndexAnim, placeholderOffset, horizontalAnim, scrollOffset, size]);
 
-  }, [spacerIndexAnim, placeholderOffset, horizontalAnim, scrollOffset]);
-
-  const extraStyle = horizontal ? { width: size } : { height: size };
+  const extraStyle = useMemo(() => {
+    return horizontal ? { width: size } : { height: size };
+  }, [horizontal, size])
 
   return (
     <Animated.View
