@@ -3,7 +3,6 @@ import {
   useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
-  useValue,
 } from "react-native-reanimated";
 import {
   DEFAULT_PROPS,
@@ -14,7 +13,7 @@ import { useAnimatedValues } from "../context/animatedValueContext";
 import { useRefs } from "../context/refContext";
 
 export function useAutoScroll() {
-  const { flatlistRef, scrollViewRef } = useRefs();
+  const { flatlistRef } = useRefs();
 
   const {
     autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
@@ -25,13 +24,8 @@ export function useAutoScroll() {
     scrollOffset,
     scrollViewSize,
     containerSize,
-    hoverAnim,
-    isDraggingCell,
     activeCellSize,
-    panGestureState,
-    horizontalAnim,
     hoverOffset,
-    isTouchActiveNative,
     activeIndexAnim,
   } = useAnimatedValues();
 
@@ -97,8 +91,8 @@ export function useAutoScroll() {
     return hasScrolledToTarget && isAtEdge && !isEdgeDisabled && cellIsActive;
   });
 
-  function scrollToInternal({ x, y }: { x: number; y: number }) {
-    scrollViewRef.current?.scrollTo({ x, y, animated: true });
+  function scrollToInternal(offset: number) {
+    flatlistRef.current?.scrollToOffset({ offset, animated: true });
   }
 
   useDerivedValue(() => {
@@ -112,13 +106,11 @@ export function useAutoScroll() {
     const targetOffset = isAtTopEdge.value
       ? Math.max(0, scrollOffset.value - offset)
       : scrollOffset.value + offset;
-    const targetX = horizontalAnim.value ? targetOffset : 0;
-    const targetY = horizontalAnim.value ? 0 : targetOffset;
 
     scrollTarget.value = targetOffset;
     // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
     // scrollTo(scrollViewRef, targetX, targetY, true);
-    runOnJS(scrollToInternal)({ x: targetX, y: targetY });
+    runOnJS(scrollToInternal)(targetOffset);
   }, []);
 
   return null;

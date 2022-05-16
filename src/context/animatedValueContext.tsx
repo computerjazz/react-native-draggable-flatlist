@@ -63,11 +63,18 @@ function useSetupAnimatedValues<T>() {
   const scrollOffset = useSharedValue(0);
   const scrollInit = useSharedValue(0);
 
-  useDerivedValue(() => {
-    if (activeIndexAnim.value < 0) {
-      scrollInit.value = scrollOffset.value;
-    }
-  }, []);
+  // If list is nested there may be an outer scrollview
+  const outerScrollOffset = props.outerScrollOffset || DEFAULT_VAL;
+  const outerScrollInit = useSharedValue(0);
+
+  useAnimatedReaction(() => {
+    return activeIndexAnim.value
+  }, (cur, prev) => {
+      if (cur !== prev && cur >= 0) {
+        scrollInit.value = scrollOffset.value;
+        outerScrollInit.value = outerScrollOffset.value;
+      }
+  }, [outerScrollOffset]);
 
   const placeholderOffset = useSharedValue(0);
 
@@ -76,27 +83,13 @@ function useSetupAnimatedValues<T>() {
   }, []);
 
   const autoScrollDistance = useDerivedValue(() => {
-    const scrollDiff = scrollOffset.value - scrollInit.value;
+    if (!isDraggingCell.value) return 0
+    const innerScrollDiff = scrollOffset.value - scrollInit.value;
+    // If list is nested there may be an outer scroll diff
+    const outerScrollDiff = outerScrollOffset.value - outerScrollInit.value
+    const scrollDiff = innerScrollDiff + outerScrollDiff;
     return scrollDiff;
   }, []);
-
-  const outerScrollOffset = props.outerScrollOffset || DEFAULT_VAL;
-  const outerScrollOffsetSnapshot = useSharedValue(0); // Amount any outer scrollview has scrolled since last gesture event.
-  const outerScrollOffsetDiff = useDerivedValue(() => {
-    return outerScrollOffset.value - outerScrollOffsetSnapshot.value
-}, [outerScrollOffset]);
-
-useAnimatedReaction(() => {
-  // If the list is being used in "nested" mode 
-  // (ie. there's an outer scrollview that contains the list)
-  // then we need a way to track the amound the outer list has
-  // auto-scrolled during the current touch position.
-  return touchTranslate.value
-}, (cur, prev) => {
-  if (cur !== prev) {
-    outerScrollOffsetSnapshot.value = outerScrollOffset.value
-  }
-}, [])
 
   const touchPositionDiff = useDerivedValue(() => {
     const extraTranslate = isTouchActiveNative.value
@@ -126,11 +119,10 @@ useAnimatedReaction(() => {
 
   const hoverAnim = useDerivedValue(() => {
     if (activeIndexAnim.value < 0) return 0;
-    const baseVal = props.dragItemOverflow
+    return props.dragItemOverflow
       ? touchPositionDiff.value
       : touchPositionDiffConstrained.value;
 
-    return baseVal + outerScrollOffsetDiff.value;
   }, []);
 
   const hoverOffset = useDerivedValue(() => {
@@ -195,7 +187,7 @@ useAnimatedReaction(() => {
       autoScrollDistance,
     ]
   );
-
+  
   useEffect(() => {
     props.onAnimValInit?.(value);
   }, [value]);

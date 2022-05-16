@@ -5,9 +5,7 @@ import Animated, { useSharedValue } from "react-native-reanimated";
 type NestableScrollContainerContextVal = ReturnType<
   typeof useSetupNestableScrollContextValue
 >;
-const NestableScrollContainerContext = React.createContext<
-  NestableScrollContainerContextVal | undefined
->(undefined);
+const NestableScrollContainerContext = React.createContext<NestableScrollContainerContextVal | undefined>(undefined);
 
 function useSetupNestableScrollContextValue() {
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
@@ -48,10 +46,13 @@ export function NestableScrollContainerProvider({
 
 export function useNestableScrollContainerContext() {
   const value = useContext(NestableScrollContainerContext);
+  return value;
+}
+
+export function useSafeNestableScrollContainerContext() {
+  const value = useNestableScrollContainerContext();
   if (!value) {
-    throw new Error(
-      "useNestableScrollContainerContext must be called from within NestableScrollContainerContext Provider!"
-    );
+    throw new Error("useSafeNestableScrollContainerContext must be called within a NestableScrollContainerContext.Provider")
   }
   return value;
 }

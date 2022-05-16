@@ -6,7 +6,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { DraggableFlatListProps } from "../types";
 import DraggableFlatList from "../components/DraggableFlatList";
-import { useNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
+import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
 
 export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
@@ -25,21 +25,21 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     containerRef,
     outerScrollOffset,
     setOuterScrollEnabled,
-  } = useNestableScrollContainerContext();
+  } = useSafeNestableScrollContainerContext();
 
   const listVerticalOffset = useSharedValue(0);
   const viewRef = useRef<Animated.View>(null);
   const [animVals, setAnimVals] = useState({});
-  const defaultHoverAnim = useSharedValue(0);
-  const [hoverAnim, setHoverAnim] = useState(defaultHoverAnim);
+  const defaultHoverOffset = useSharedValue(0);
+  const [listHoverOffset, setListHoverOffset] = useState(defaultHoverOffset);
 
-  const hoverAnimWithOffset = useDerivedValue(() => {
-    return hoverAnim.value + listVerticalOffset.value;
-  }, [hoverAnim]);
+  const hoverOffset = useDerivedValue(() => {
+    return listHoverOffset.value + listVerticalOffset.value;
+  }, [listHoverOffset]);
 
   useNestedAutoScroll({
     ...animVals,
-    hoverAnim: hoverAnimWithOffset,
+    hoverOffset,
   });
 
   const onListContainerLayout = async () => {
@@ -73,10 +73,10 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
           setOuterScrollEnabled(true);
         }}
         onAnimValInit={(animVals) => {
-          setHoverAnim(animVals.hoverAnim);
+          setListHoverOffset(animVals.hoverOffset);
           setAnimVals({
             ...animVals,
-            hoverAnim: hoverAnimWithOffset,
+            hoverOffset,
           });
           props.onAnimValInit?.(animVals);
         }}

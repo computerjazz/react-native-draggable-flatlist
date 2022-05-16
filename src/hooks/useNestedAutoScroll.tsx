@@ -5,21 +5,21 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
-import { useNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
+import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { SCROLL_POSITION_TOLERANCE } from "../constants";
 
 // This is mostly copied over from the main react-native-draggable-flatlist
 // useAutoScroll hook with a few notable exceptions:
-// - Since Animated.Values are now coming from the caller,
-//   we won't guarantee they exist and default if not.
+// - Since animated values are now coming in via a callback,
+//   we won't guarantee they exist (and default them if not).
 // - Outer scrollable is a ScrollView, not a FlatList
-// TODO: see if we can combine into a single `useAutoScroll()` hook
+// TODO: see if we can combine into a single shared `useAutoScroll()` hook
 
 export function useNestedAutoScroll(params: {
   activeCellSize?: Animated.SharedValue<number>;
   autoscrollSpeed?: number;
   autoscrollThreshold?: number;
-  hoverAnim?: Animated.SharedValue<number>;
+  hoverOffset?: Animated.SharedValue<number>;
   isDraggingCell?: Animated.SharedValue<number>;
   isTouchActiveNative?: Animated.SharedValue<number>;
   panGestureState?: Animated.SharedValue<GestureState | number>;
@@ -29,43 +29,42 @@ export function useNestedAutoScroll(params: {
     containerSize,
     scrollableRef,
     scrollViewSize,
-  } = useNestableScrollContainerContext();
+  } = useSafeNestableScrollContainerContext();
 
   const DUMMY_VAL = useSharedValue(0);
 
   const {
+    hoverOffset = DUMMY_VAL,
     activeCellSize = DUMMY_VAL,
     autoscrollSpeed = 100,
     autoscrollThreshold = 30,
-    hoverAnim = DUMMY_VAL,
     isDraggingCell = DUMMY_VAL,
     isTouchActiveNative = DUMMY_VAL,
   } = params;
 
-  const scrollOffset = outerScrollOffset;
+  const hoverScreenOffset = useDerivedValue(() => {
+    return hoverOffset.value - outerScrollOffset.value;
+  }, []);
 
   const isScrolledUp = useDerivedValue(() => {
-    return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
+    return outerScrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
   }, []);
 
   const isScrolledDown = useDerivedValue(() => {
     return (
-      scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
+      outerScrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
       scrollViewSize.value
     );
   }, []);
 
   const distToTopEdge = useDerivedValue(() => {
-    return Math.max(0, hoverAnim.value - scrollOffset.value);
-  }, [hoverAnim]);
+    return Math.max(0, hoverScreenOffset.value);
+  }, [hoverScreenOffset]);
 
   const distToBottomEdge = useDerivedValue(() => {
-    const hoverMinusScroll = hoverAnim.value - scrollOffset.value;
-    return Math.max(
-      0,
-      containerSize.value - (hoverMinusScroll + activeCellSize.value)
-    );
-  }, []);
+    const dist = containerSize.value - (hoverScreenOffset.value + activeCellSize.value)
+    return Math.max(0, dist);
+  }, [hoverScreenOffset, activeCellSize, containerSize]);
 
   const isAtTopEdge = useDerivedValue(() => {
     return distToTopEdge.value <= autoscrollThreshold;
@@ -83,7 +82,7 @@ export function useNestedAutoScroll(params: {
     },
     (cur, prev) => {
       if (cur && !prev) {
-        scrollTarget.value = scrollOffset.value;
+        scrollTarget.value = outerScrollOffset.value;
       }
     },
     [activeCellSize]
@@ -99,7 +98,7 @@ export function useNestedAutoScroll(params: {
     const bottomDisabled = isAtBottomEdge.value && isScrolledDown.value;
     const isEdgeDisabled = topDisabled || bottomDisabled;
 
-    const scrollTargetDiff = Math.abs(scrollTarget.value - scrollOffset.value);
+    const scrollTargetDiff = Math.abs(scrollTarget.value - outerScrollOffset.value);
     const scrollInProgress = scrollTargetDiff > SCROLL_POSITION_TOLERANCE;
 
     const shouldScroll =
@@ -115,13 +114,12 @@ export function useNestedAutoScroll(params: {
     const speedPct = 1 - distFromEdge / autoscrollThreshold;
     const offset = speedPct * autoscrollSpeed;
     const targetOffset = isAtTopEdge.value
-      ? Math.max(0, scrollOffset.value - offset)
-      : scrollOffset.value + offset;
+      ? Math.max(0, outerScrollOffset.value - offset)
+      : outerScrollOffset.value + offset;
     if (shouldScroll) {
       scrollTarget.value = targetOffset;
       // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
       // scrollTo(scrollViewRef, 0, scrollTarget.value, true)
-      console.log("SCROLL TO!!", targetOffset)
       runOnJS(scrollToInternal)(targetOffset);
     }
   }, [autoscrollSpeed, autoscrollThreshold, isDraggingCell]);

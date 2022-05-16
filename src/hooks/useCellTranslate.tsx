@@ -9,7 +9,7 @@ type Params = {
   cellOffset: Animated.SharedValue<number>;
 };
 
-export function useCellTranslate({ cellIndex, cellSize, cellOffset, key }: Params) {
+export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const {
     activeIndexAnim,
     activeCellSize,
@@ -81,7 +81,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset, key }: Param
 
     // Active cell follows touch
     if (cellIndex.value === activeIndexAnim.value) {
-      if (key === "key-1") console.log('1 is active!!', hoverAnim.value)
       return hoverAnim.value
     };
 

@@ -3,7 +3,8 @@
     "esModuleInterop": true,
     "jsx": "react",
     "lib": ["esnext"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true
   },
   "exclude": ["node_modules"],
   "include": ["src"]
