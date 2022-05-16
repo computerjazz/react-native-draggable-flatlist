@@ -22,7 +22,7 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
   }
 
   const {
-    containerRef,
+    scrollableRef,
     outerScrollOffset,
     setOuterScrollEnabled,
   } = useSafeNestableScrollContainerContext();
@@ -44,8 +44,8 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
 
   const onListContainerLayout = async () => {
     const viewNode = viewRef.current;
-    const nodeHandle = findNodeHandle(containerRef.current);
-
+    const nodeHandle = findNodeHandle(scrollableRef.current);
+  
     const onSuccess = (_x: number, y: number) => {
       listVerticalOffset.value = y;
     };

@@ -12,7 +12,6 @@ function useSetupNestableScrollContextValue() {
   const scrollViewSize = useSharedValue(0);
   const scrollableRef = useRef<ScrollView>(null);
   const outerScrollOffset = useSharedValue(0);
-  const containerRef = useRef<Animated.View>(null);
   const containerSize = useSharedValue(0);
 
   const contextVal = useMemo(
@@ -22,7 +21,6 @@ function useSetupNestableScrollContextValue() {
       outerScrollOffset,
       scrollViewSize,
       scrollableRef,
-      containerRef,
       containerSize,
     }),
     [outerScrollEnabled]
