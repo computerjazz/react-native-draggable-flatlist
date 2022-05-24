@@ -1,5 +1,11 @@
 import React from "react";
-import { FlatListProps, StyleProp, ViewStyle } from "react-native";
+import {
+  FlatListProps,
+  LayoutChangeEvent,
+  StyleProp,
+  ViewPropTypes,
+  ViewStyle,
+} from "react-native";
 import { useAnimatedValues } from "./context/animatedValueContext";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, { WithSpringConfig } from "react-native-reanimated";
@@ -36,6 +42,10 @@ export type DraggableFlatListProps<T> = Modify<
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     outerScrollOffset?: Animated.SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
+    onContainerLayout?: (params: {
+      layout: LayoutChangeEvent["nativeEvent"]["layout"];
+      containerRef: React.RefObject<Animated.View>;
+    }) => void;
   } & Partial<DefaultProps>
 >;
 

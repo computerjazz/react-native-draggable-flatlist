@@ -126,6 +126,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }: LayoutChangeEvent) => {
     const { width, height } = layout;
     containerSize.value = props.horizontal ? width : height;
+    props.onContainerLayout?.({ layout, containerRef });
   };
 
   const onListContentSizeChange = (w: number, h: number) => {
