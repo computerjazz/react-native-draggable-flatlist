@@ -8,8 +8,10 @@ import { DraggableFlatListProps } from "../types";
 import DraggableFlatList from "../components/DraggableFlatList";
 import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
+import { typedMemo } from "../utils";
+import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
 
-export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
+function NestableDraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const hasSuppressedWarnings = useRef(false);
 
   if (!hasSuppressedWarnings.current) {
@@ -42,10 +44,10 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     hoverOffset,
   });
 
-  const onListContainerLayout = async () => {
+  const onListContainerLayout = useIdentityRetainingCallback(async () => {
     const viewNode = viewRef.current;
     const nodeHandle = findNodeHandle(scrollableRef.current);
-  
+
     const onSuccess = (_x: number, y: number) => {
       listVerticalOffset.value = y;
     };
@@ -54,7 +56,7 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     };
     //@ts-ignore
     viewNode.measureLayout(nodeHandle, onSuccess, onFail);
-  };
+  });
 
   return (
     <Animated.View ref={viewRef} onLayout={onListContainerLayout}>
@@ -84,3 +86,7 @@ export function NestableDraggableFlatList<T>(props: DraggableFlatListProps<T>) {
     </Animated.View>
   );
 }
+
+export const NestableDraggableFlatList = typedMemo(
+  NestableDraggableFlatListInner
+);
