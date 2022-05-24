@@ -59,10 +59,10 @@ function useSetupRefs<T>({
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
-  const containerRef = useRef<Animated.View>();
-  const flatlistRefInternal = useRef<FlatList<T>>();
+  const containerRef = useRef<Animated.View>(null);
+  const flatlistRefInternal = useRef<FlatList<T>>(null);
   const flatlistRef = flatListRefProp || flatlistRefInternal;
-  const scrollViewRef = useRef<Animated.ScrollView>();
+  const scrollViewRef = useRef<Animated.ScrollView>(null);
 
   // useEffect(() => {
   //   // This is a workaround for the fact that RN does not respect refs passed in
