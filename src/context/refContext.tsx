@@ -1,10 +1,7 @@
 import React, { useContext } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedRef,
-  WithSpringConfig,
-} from "react-native-reanimated";
+import Animated, { WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
 import { CellData, DraggableFlatListProps } from "../types";
@@ -46,7 +43,7 @@ export function useRefs<T>() {
 function useSetupRefs<T>({
   flatListRef: flatListRefProp,
 }: {
-    flatListRef?: React.ForwardedRef<FlatList<T>> | null;
+  flatListRef?: React.ForwardedRef<FlatList<T>> | null;
 }) {
   const props = useProps<T>();
   const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
@@ -62,10 +59,10 @@ function useSetupRefs<T>({
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
-  const containerRef = useAnimatedRef<Animated.View>();
-  const flatlistRefInternal = useAnimatedRef<FlatList<T>>();
-  const flatlistRef = flatListRefProp || flatlistRefInternal
-  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
+  const containerRef = useRef<Animated.View>();
+  const flatlistRefInternal = useRef<FlatList<T>>();
+  const flatlistRef = flatListRefProp || flatlistRefInternal;
+  const scrollViewRef = useRef<Animated.ScrollView>();
 
   // useEffect(() => {
   //   // This is a workaround for the fact that RN does not respect refs passed in
