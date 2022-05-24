@@ -29,6 +29,7 @@ import DraggableFlatListProvider from "../context/draggableFlatListContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
 import ScrollOffsetListener from "./ScrollOffsetListener";
+import { typedMemo } from "../utils";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
@@ -94,16 +95,16 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   // Reset hover state whenever data changes
   useMemo(() => {
     requestAnimationFrame(() => {
-        activeIndexAnim.value = -1;
-        spacerIndexAnim.value = -1;
-        touchTranslate.value = 0;
-        activeCellSize.value = -1;
-        activeCellOffset.value = -1;
-    })
+      activeIndexAnim.value = -1;
+      spacerIndexAnim.value = -1;
+      touchTranslate.value = 0;
+      activeCellSize.value = -1;
+      activeCellOffset.value = -1;
+    });
   }, [props.data]);
 
   const drag = useIdentityRetainingCallback((activeKey: string) => {
-    if (disabled.value) return
+    if (disabled.value) return;
     const index = keyToIndexRef.current.get(activeKey);
     const cellData = cellDataRef.current.get(activeKey);
     if (cellData) {
@@ -194,7 +195,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         onDragEnd({ from, to, data: newData });
         requestAnimationFrame(() => {
           setActiveKey(null);
-        })
+        });
       }
     }
   );
@@ -224,11 +225,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   >(
     {
       onStart: (evt) => {
-        if (disabled.value) return 
+        if (disabled.value) return;
         panGestureState.value = evt.state;
       },
       onActive: (evt) => {
-        if (disabled.value) return 
+        if (disabled.value) return;
         panGestureState.value = evt.state;
         const translation = horizontalAnim.value
           ? evt.translationX
@@ -246,7 +247,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         panGestureState.value = evt.state;
 
         // Only call onDragEnd if actually dragging a cell
-        if (activeIndexAnim.value === -1 || disabled.value) return
+        if (activeIndexAnim.value === -1 || disabled.value) return;
 
         disabled.value = true;
         runOnJS(onRelease)(activeIndexAnim.value);
@@ -267,11 +268,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     []
   );
 
-  const onScroll = useIdentityRetainingCallback(
-    (scrollOffset: number) => {
-      props.onScrollOffsetChange?.(scrollOffset);
-    },
-  );
+  const onScroll = useIdentityRetainingCallback((scrollOffset: number) => {
+    props.onScrollOffsetChange?.(scrollOffset);
+  });
 
   const scrollHandler = useAnimatedScrollHandler(
     {
@@ -327,10 +326,10 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             removeClippedSubviews={false}
           />
           {!!props.onScrollOffsetChange && (
-            <ScrollOffsetListener 
-              onScrollOffsetChange={props.onScrollOffsetChange} 
+            <ScrollOffsetListener
+              onScrollOffsetChange={props.onScrollOffsetChange}
               scrollOffset={scrollOffset}
-              />
+            />
           )}
         </Animated.View>
       </PanGestureHandler>
@@ -346,12 +345,14 @@ function DraggableFlatList<T>(
     <PropsProvider {...props}>
       <AnimatedValueProvider>
         <RefProvider flatListRef={ref}>
-          <DraggableFlatListInner {...props} />
+          <MemoizedInner {...props} />
         </RefProvider>
       </AnimatedValueProvider>
     </PropsProvider>
   );
 }
+
+const MemoizedInner = typedMemo(DraggableFlatListInner);
 
 // Generic forwarded ref type assertion taken from:
 // https://fettblog.eu/typescript-react-generic-forward-refs/#option-1%3A-type-assertion

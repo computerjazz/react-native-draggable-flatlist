@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
@@ -10,12 +10,13 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { isAndroid, isWeb } from "../constants";
+import { isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
 import { typedMemo } from "../utils";
 import { useRefs } from "../context/refContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import CellProvider from "../context/cellContext";
+import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
 
 type Props<T> = {
   item: T;
@@ -35,9 +36,9 @@ function CellRendererComponent<T>(props: Props<T>) {
     // with the activeIndexAnim, and cause the wrong item to momentarily become the
     // "active item", which causes a flicker.
     requestAnimationFrame(() => {
-      currentIndexAnim.value = index
-    })
-  }, [index])
+      currentIndexAnim.value = index;
+    });
+  }, [index]);
 
   const viewRef = useRef<Animated.View>(null);
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
@@ -59,11 +60,15 @@ function CellRendererComponent<T>(props: Props<T>) {
     cellIndex: currentIndexAnim,
   });
 
-  const isActive = activeKey === key;
-  const dragInProgress = !!activeKey
+  const indexRef = useRef(index);
+  const indexHasChanged = index !== indexRef.current;
+  indexRef.current = index;
+
+  const dragInProgress = !!activeKey && !indexHasChanged;
+  const isActive = dragInProgress && activeKey === key;
 
   const animStyle = useAnimatedStyle(() => {
-    const _translate = dragInProgress ? translate.value : 0
+    const _translate = dragInProgress ? translate.value : 0;
     return {
       transform: [
         horizontalAnim.value
@@ -71,9 +76,9 @@ function CellRendererComponent<T>(props: Props<T>) {
           : { translateY: _translate },
       ],
     };
-  }, [dragInProgress, translate] );
+  }, [dragInProgress, translate]);
 
-  const updateCellMeasurements = useCallback(() => {
+  const updateCellMeasurements = useIdentityRetainingCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
       if (isWeb && horizontal) x += scrollOffset.value;
       const cellOffset = horizontal ? x : y;
@@ -100,17 +105,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       //@ts-ignore
       viewNode.measureLayout(nodeHandle, onSuccess, onFail);
     }
-  }, [
-    cellDataRef,
-    horizontal,
-    index,
-    key,
-    offset,
-    propsRef,
-    size,
-    scrollOffset,
-    containerRef,
-  ]);
+  });
 
   useEffect(() => {
     if (isWeb) {
@@ -119,13 +114,18 @@ function CellRendererComponent<T>(props: Props<T>) {
     }
   }, [index, updateCellMeasurements]);
 
-  const onCellLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      updateCellMeasurements();
-      if (onLayout) onLayout(e);
-    },
-    [updateCellMeasurements, onLayout]
-  );
+  const onCellLayout = useIdentityRetainingCallback((e: LayoutChangeEvent) => {
+    updateCellMeasurements();
+    if (onLayout) onLayout(e);
+  });
+
+  const baseStyle = useMemo(() => {
+    return {
+      elevation: isActive ? 1 : 0,
+      zIndex: isActive ? 999 : 0,
+      flexDirection: horizontal ? ("row" as const) : ("column" as const),
+    };
+  }, [isActive, horizontal]);
 
   // changing zIndex may crash android, but seems to work ok as of RN 68:
   // https://github.com/facebook/react-native/issues/28751
@@ -136,21 +136,13 @@ function CellRendererComponent<T>(props: Props<T>) {
       ref={viewRef}
       onLayout={onCellLayout}
       style={[
-        isAndroid && { elevation: isActive ? 1 : 0 },
-        { flexDirection: horizontal ? "row" : "column" },
-        { zIndex: isActive ? 999 : 0 },
+        props.style,
+        baseStyle,
+        dragInProgress ? animStyle : { transform: [] },
       ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
-      <Animated.View
-        {...rest}
-        // Including both animated styles and non-animated styles 
-        // causes react-native-web to ignore updates in non-animated styles. 
-        // Solution is to separate animated styles from non-animated styles
-        style={[props.style, animStyle]}
-      >
-        <CellProvider isActive={isActive}>{children}</CellProvider>
-      </Animated.View>
+      <CellProvider isActive={isActive}>{children}</CellProvider>
     </Animated.View>
   );
 }

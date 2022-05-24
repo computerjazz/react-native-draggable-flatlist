@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from "react";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useRefs } from "../context/refContext";
+import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
 import { RenderItem } from "../types";
 import { typedMemo } from "../utils";
 
@@ -35,13 +36,18 @@ function RowItem<T>(props: Props<T>) {
   }, []);
 
   const { renderItem, item, itemKey, extraData } = props;
+
+  const getIndex = useIdentityRetainingCallback(() => {
+    return keyToIndexRef.current.get(itemKey);
+  });
+
   return (
     <MemoizedInner
       isActive={activeKey === itemKey}
       drag={drag}
       renderItem={renderItem}
       item={item}
-      index={keyToIndexRef.current.get(itemKey)}
+      getIndex={getIndex}
       extraData={extraData}
     />
   );
@@ -52,13 +58,19 @@ export default typedMemo(RowItem);
 type InnerProps<T> = {
   isActive: boolean;
   item: T;
-  index?: number;
+  getIndex: () => number | undefined;
   drag: () => void;
   renderItem: RenderItem<T>;
   extraData?: any;
 };
 
-function Inner<T>({ isActive, item, drag, index, renderItem }: InnerProps<T>) {
-  return renderItem({ isActive, item, drag, index }) as JSX.Element;
+function Inner<T>({
+  isActive,
+  item,
+  drag,
+  getIndex,
+  renderItem,
+}: InnerProps<T>) {
+  return renderItem({ isActive, item, drag, getIndex }) as JSX.Element;
 }
 const MemoizedInner = typedMemo(Inner);
