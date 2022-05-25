@@ -6,7 +6,6 @@ import {
   State as GestureState,
   GestureEvent,
   PanGestureHandlerEventPayload,
-  GestureEventPayload,
 } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -135,7 +134,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   };
 
   const onContainerTouchStart = () => {
-    isTouchActiveNative.value = true;
+    if (!disabled.value) {
+      isTouchActiveNative.value = true;
+    }
     return false;
   };
 
@@ -222,22 +223,24 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const onGestureEvent = useAnimatedGestureHandler<
     GestureEvent<PanGestureHandlerEventPayload>,
-    { prevState: GestureState }
+    { prevState: GestureState; disabled: boolean }
   >(
     {
-      onStart: (evt) => {
-        if (disabled.value) return;
+      onStart: (evt, ctx) => {
+        ctx.disabled = disabled.value;
+        if (ctx.disabled) return;
         panGestureState.value = evt.state;
       },
-      onActive: (evt) => {
-        if (disabled.value) return;
+      onActive: (evt, ctx) => {
+        if (ctx.disabled) return;
         panGestureState.value = evt.state;
         const translation = horizontalAnim.value
           ? evt.translationX
           : evt.translationY;
         touchTranslate.value = translation;
       },
-      onEnd: (evt) => {
+      onEnd: (evt, ctx) => {
+        if (ctx.disabled) return;
         // Set touch val to current translate val
         isTouchActiveNative.value = false;
         const translation = horizontalAnim.value
@@ -249,7 +252,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
         // Only call onDragEnd if actually dragging a cell
         if (activeIndexAnim.value === -1 || disabled.value) return;
-
         disabled.value = true;
         runOnJS(onRelease)(activeIndexAnim.value);
         const springTo = placeholderOffset.value - activeCellOffset.value;
@@ -261,6 +263,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
               from: activeIndexAnim.value,
               to: spacerIndexAnim.value,
             });
+            console.log("RESET!!");
             disabled.value = false;
           }
         );
