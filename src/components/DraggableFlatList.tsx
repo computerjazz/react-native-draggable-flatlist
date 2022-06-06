@@ -15,7 +15,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS } from "../constants";
+import { DEFAULT_PROPS, isWeb } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -195,9 +195,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           newData.splice(to, 0, data[from]);
         }
         onDragEnd({ from, to, data: newData });
-        requestAnimationFrame(() => {
+        if (isWeb) {
+          // prevent flicker
           setActiveKey(null);
-        });
+        } else {
+          requestAnimationFrame(() => {
+            setActiveKey(null);
+          });
+        }
       }
     }
   );
@@ -263,7 +268,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
               from: activeIndexAnim.value,
               to: spacerIndexAnim.value,
             });
-            console.log("RESET!!");
             disabled.value = false;
           }
         );

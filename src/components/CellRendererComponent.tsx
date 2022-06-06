@@ -110,7 +110,9 @@ function CellRendererComponent<T>(props: Props<T>) {
   useEffect(() => {
     if (isWeb) {
       // onLayout isn't called on web when the cell index changes, so we manually re-measure
-      updateCellMeasurements();
+      requestAnimationFrame(() => {
+        updateCellMeasurements();
+      });
     }
   }, [index, updateCellMeasurements]);
 
