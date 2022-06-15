@@ -132,7 +132,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   };
 
   const onContainerTouchStart = () => {
-    "worklet";
     if (!disabled.value) {
       isTouchActiveNative.value = true;
     }
@@ -140,7 +139,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   };
 
   const onContainerTouchEnd = () => {
-    "worklet";
     isTouchActiveNative.value = false;
   };
 
@@ -261,8 +259,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         }
       );
     })
-    .onTouchesDown(onContainerTouchStart)
-    .onTouchesUp(onContainerTouchEnd);
+    .onTouchesDown(() => {
+      runOnJS(onContainerTouchStart)();
+    })
+    .onTouchesUp(() => {
+      // Turning this into a worklet causes timing issues. We want it to run
+      // just after the finger lifts.
+      runOnJS(onContainerTouchEnd)();
+    });
 
   if (props.hitSlop) panGesture.hitSlop(props.hitSlop);
   if (activationDistanceProp) {
