@@ -2,16 +2,14 @@ import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { ListRenderItem, FlatListProps, LayoutChangeEvent } from "react-native";
 import {
   FlatList,
-  PanGestureHandler,
-  State as GestureState,
-  GestureEvent,
-  PanGestureHandlerEventPayload,
+  Gesture,
+  GestureDetector,
 } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
-  useAnimatedGestureHandler,
   useAnimatedReaction,
   useAnimatedScrollHandler,
+  useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
@@ -134,6 +132,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   };
 
   const onContainerTouchStart = () => {
+    "worklet";
     if (!disabled.value) {
       isTouchActiveNative.value = true;
     }
@@ -141,16 +140,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   };
 
   const onContainerTouchEnd = () => {
+    "worklet";
     isTouchActiveNative.value = false;
   };
-
-  let dynamicProps = {};
-  if (activationDistanceProp) {
-    const activeOffset = [-activationDistanceProp, activationDistanceProp];
-    dynamicProps = props.horizontal
-      ? { activeOffsetX: activeOffset }
-      : { activeOffsetY: activeOffset };
-  }
 
   const extraData = useMemo(
     () => ({
@@ -163,7 +155,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const renderItem: ListRenderItem<T> = useCallback(
     ({ item, index }) => {
       const key = keyExtractor(item, index);
-
       if (index !== keyToIndexRef.current.get(key)) {
         keyToIndexRef.current.set(key, index);
       }
@@ -226,55 +217,62 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     [isTouchActiveNative, onDragEnd]
   );
 
-  const onGestureEvent = useAnimatedGestureHandler<
-    GestureEvent<PanGestureHandlerEventPayload>,
-    { prevState: GestureState; disabled: boolean }
-  >(
-    {
-      onStart: (evt, ctx) => {
-        ctx.disabled = disabled.value;
-        if (ctx.disabled) return;
-        panGestureState.value = evt.state;
-      },
-      onActive: (evt, ctx) => {
-        if (ctx.disabled) return;
-        panGestureState.value = evt.state;
-        const translation = horizontalAnim.value
-          ? evt.translationX
-          : evt.translationY;
-        touchTranslate.value = translation;
-      },
-      onEnd: (evt, ctx) => {
-        if (ctx.disabled) return;
-        // Set touch val to current translate val
-        isTouchActiveNative.value = false;
-        const translation = horizontalAnim.value
-          ? evt.translationX
-          : evt.translationY;
+  const gestureDisabled = useSharedValue(false);
 
-        touchTranslate.value = translation + autoScrollDistance.value;
-        panGestureState.value = evt.state;
+  const panGesture = Gesture.Pan()
+    .onBegin((evt) => {
+      gestureDisabled.value = disabled.value;
+      if (gestureDisabled.value) return;
+      panGestureState.value = evt.state;
+    })
+    .onUpdate((evt) => {
+      if (gestureDisabled.value) return;
+      panGestureState.value = evt.state;
+      const translation = horizontalAnim.value
+        ? evt.translationX
+        : evt.translationY;
+      touchTranslate.value = translation;
+    })
+    .onEnd((evt) => {
+      if (gestureDisabled.value) return;
+      // Set touch val to current translate val
+      isTouchActiveNative.value = false;
+      const translation = horizontalAnim.value
+        ? evt.translationX
+        : evt.translationY;
 
-        // Only call onDragEnd if actually dragging a cell
-        if (activeIndexAnim.value === -1 || disabled.value) return;
-        disabled.value = true;
-        runOnJS(onRelease)(activeIndexAnim.value);
-        const springTo = placeholderOffset.value - activeCellOffset.value;
-        touchTranslate.value = withSpring(
-          springTo,
-          animationConfigRef.current,
-          () => {
-            runOnJS(onDragEnd)({
-              from: activeIndexAnim.value,
-              to: spacerIndexAnim.value,
-            });
-            disabled.value = false;
-          }
-        );
-      },
-    },
-    []
-  );
+      touchTranslate.value = translation + autoScrollDistance.value;
+      panGestureState.value = evt.state;
+
+      // Only call onDragEnd if actually dragging a cell
+      if (activeIndexAnim.value === -1 || disabled.value) return;
+      disabled.value = true;
+      runOnJS(onRelease)(activeIndexAnim.value);
+      const springTo = placeholderOffset.value - activeCellOffset.value;
+      touchTranslate.value = withSpring(
+        springTo,
+        animationConfigRef.current,
+        () => {
+          runOnJS(onDragEnd)({
+            from: activeIndexAnim.value,
+            to: spacerIndexAnim.value,
+          });
+          disabled.value = false;
+        }
+      );
+    })
+    .onTouchesDown(onContainerTouchStart)
+    .onTouchesUp(onContainerTouchEnd);
+
+  if (props.hitSlop) panGesture.hitSlop(props.hitSlop);
+  if (activationDistanceProp) {
+    const activeOffset = [-activationDistanceProp, activationDistanceProp];
+    if (props.horizontal) {
+      panGesture.activeOffsetX(activeOffset);
+    } else {
+      panGesture.activeOffsetY(activeOffset);
+    }
+  }
 
   const onScroll = useIdentityRetainingCallback((scrollOffset: number) => {
     props.onScrollOffsetChange?.(scrollOffset);
@@ -300,20 +298,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       keyExtractor={keyExtractor}
       horizontal={!!props.horizontal}
     >
-      <PanGestureHandler
-        hitSlop={dragHitSlop}
-        onGestureEvent={onGestureEvent}
-        simultaneousHandlers={props.simultaneousHandlers}
-        {...dynamicProps}
-      >
+      <GestureDetector gesture={panGesture}>
         <Animated.View
           style={props.containerStyle}
           ref={containerRef}
           onLayout={onContainerLayout}
-          onTouchEnd={onContainerTouchEnd}
-          onStartShouldSetResponderCapture={onContainerTouchStart}
-          //@ts-ignore
-          onClick={onContainerTouchEnd}
         >
           {props.renderPlaceholder && (
             <PlaceholderItem renderPlaceholder={props.renderPlaceholder} />
@@ -340,7 +329,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             />
           )}
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </DraggableFlatListProvider>
   );
 }
