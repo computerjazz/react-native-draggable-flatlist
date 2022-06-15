@@ -5,9 +5,9 @@ import { useRef, useCallback } from "react";
 // Useful for functions that depend on external state, but
 // should not trigger effects when that external state changes.
 
-export function useIdentityRetainingCallback<
-  T extends (a?: any, b?: any, c?: any) => any
->(fn: T) {
+export function useStableCallback<T extends (a?: any, b?: any, c?: any) => any>(
+  fn: T
+) {
   const fnRef = useRef(fn);
   fnRef.current = fn;
   const identityRetainingFn = useCallback(

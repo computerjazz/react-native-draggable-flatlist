@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useRefs } from "../context/refContext";
-import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
+import { useStableCallback } from "../hooks/useStableCallback";
 import { RenderItem } from "../types";
 import { typedMemo } from "../utils";
 
@@ -23,7 +23,7 @@ function RowItem<T>(props: Props<T>) {
   activeKeyRef.current = activeKey;
   const { keyToIndexRef } = useRefs();
 
-  const drag = useIdentityRetainingCallback(() => {
+  const drag = useStableCallback(() => {
     const { drag, itemKey, debug } = propsRef.current;
     if (activeKeyRef.current) {
       // already dragging an item, noop
@@ -37,7 +37,7 @@ function RowItem<T>(props: Props<T>) {
 
   const { renderItem, item, itemKey, extraData } = props;
 
-  const getIndex = useIdentityRetainingCallback(() => {
+  const getIndex = useStableCallback(() => {
     return keyToIndexRef.current.get(itemKey);
   });
 

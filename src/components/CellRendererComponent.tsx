@@ -16,7 +16,7 @@ import { typedMemo } from "../utils";
 import { useRefs } from "../context/refContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import CellProvider from "../context/cellContext";
-import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
+import { useStableCallback } from "../hooks/useStableCallback";
 
 type Props<T> = {
   item: T;
@@ -78,7 +78,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
   }, [dragInProgress, translate]);
 
-  const updateCellMeasurements = useIdentityRetainingCallback(() => {
+  const updateCellMeasurements = useStableCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
       if (isWeb && horizontal) x += scrollOffset.value;
       const cellOffset = horizontal ? x : y;
@@ -116,7 +116,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     }
   }, [index, updateCellMeasurements]);
 
-  const onCellLayout = useIdentityRetainingCallback((e: LayoutChangeEvent) => {
+  const onCellLayout = useStableCallback((e: LayoutChangeEvent) => {
     updateCellMeasurements();
     if (onLayout) onLayout(e);
   });

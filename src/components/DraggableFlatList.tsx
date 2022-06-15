@@ -24,7 +24,7 @@ import AnimatedValueProvider, {
 import RefProvider, { useRefs } from "../context/refContext";
 import DraggableFlatListProvider from "../context/draggableFlatListContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
-import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
+import { useStableCallback } from "../hooks/useStableCallback";
 import ScrollOffsetListener from "./ScrollOffsetListener";
 import { typedMemo } from "../utils";
 
@@ -73,14 +73,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const keyExtractor = useIdentityRetainingCallback(
-    (item: T, index: number) => {
-      if (!props.keyExtractor) {
-        throw new Error("You must provide a keyExtractor to DraggableFlatList");
-      }
-      return props.keyExtractor(item, index);
+  const keyExtractor = useStableCallback((item: T, index: number) => {
+    if (!props.keyExtractor) {
+      throw new Error("You must provide a keyExtractor to DraggableFlatList");
     }
-  );
+    return props.keyExtractor(item, index);
+  });
 
   useLayoutEffect(() => {
     props.data.forEach((d, i) => {
@@ -100,7 +98,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     });
   }, [props.data]);
 
-  const drag = useIdentityRetainingCallback((activeKey: string) => {
+  const drag = useStableCallback((activeKey: string) => {
     if (disabled.value) return;
     const index = keyToIndexRef.current.get(activeKey);
     const cellData = cellDataRef.current.get(activeKey);
@@ -170,11 +168,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     [props.renderItem, props.extraData, drag, keyExtractor]
   );
 
-  const onRelease = useIdentityRetainingCallback((index: number) => {
+  const onRelease = useStableCallback((index: number) => {
     props.onRelease?.(index);
   });
 
-  const onDragEnd = useIdentityRetainingCallback(
+  const onDragEnd = useStableCallback(
     ({ from, to }: { from: number; to: number }) => {
       const { onDragEnd, data } = props;
       if (onDragEnd) {
@@ -278,7 +276,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     }
   }
 
-  const onScroll = useIdentityRetainingCallback((scrollOffset: number) => {
+  const onScroll = useStableCallback((scrollOffset: number) => {
     props.onScrollOffsetChange?.(scrollOffset);
   });
 

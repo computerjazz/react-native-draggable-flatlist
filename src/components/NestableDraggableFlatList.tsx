@@ -9,7 +9,7 @@ import DraggableFlatList from "../components/DraggableFlatList";
 import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
 import { typedMemo } from "../utils";
-import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
+import { useStableCallback } from "../hooks/useStableCallback";
 
 function NestableDraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const hasSuppressedWarnings = useRef(false);
@@ -43,36 +43,34 @@ function NestableDraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     hoverOffset,
   });
 
-  const onListContainerLayout = useIdentityRetainingCallback(
-    async ({ containerRef }) => {
-      const nodeHandle = findNodeHandle(scrollableRef.current);
+  const onListContainerLayout = useStableCallback(async ({ containerRef }) => {
+    const nodeHandle = findNodeHandle(scrollableRef.current);
 
-      const onSuccess = (_x: number, y: number) => {
-        listVerticalOffset.value = y;
-      };
-      const onFail = () => {
-        console.log("## nested draggable list measure fail");
-      };
-      //@ts-ignore
-      containerRef.current.measureLayout(nodeHandle, onSuccess, onFail);
-    }
-  );
+    const onSuccess = (_x: number, y: number) => {
+      listVerticalOffset.value = y;
+    };
+    const onFail = () => {
+      console.log("## nested draggable list measure fail");
+    };
+    //@ts-ignore
+    containerRef.current.measureLayout(nodeHandle, onSuccess, onFail);
+  });
 
-  const onDragBegin: DraggableFlatListProps<T>["onDragBegin"] = useIdentityRetainingCallback(
+  const onDragBegin: DraggableFlatListProps<T>["onDragBegin"] = useStableCallback(
     (params) => {
       setOuterScrollEnabled(false);
       props.onDragBegin?.(params);
     }
   );
 
-  const onDragEnd: DraggableFlatListProps<T>["onDragEnd"] = useIdentityRetainingCallback(
+  const onDragEnd: DraggableFlatListProps<T>["onDragEnd"] = useStableCallback(
     (params) => {
       setOuterScrollEnabled(true);
       props.onDragEnd?.(params);
     }
   );
 
-  const onAnimValInit: DraggableFlatListProps<T>["onAnimValInit"] = useIdentityRetainingCallback(
+  const onAnimValInit: DraggableFlatListProps<T>["onAnimValInit"] = useStableCallback(
     (params) => {
       setListHoverOffset(params.hoverOffset);
       setAnimVals({

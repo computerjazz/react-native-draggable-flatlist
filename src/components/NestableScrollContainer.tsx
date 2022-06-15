@@ -6,7 +6,7 @@ import {
   NestableScrollContainerProvider,
   useSafeNestableScrollContainerContext,
 } from "../context/nestableScrollContainerContext";
-import { useIdentityRetainingCallback } from "../hooks/useIdentityRetainingCallback";
+import { useStableCallback } from "../hooks/useStableCallback";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -25,19 +25,17 @@ function NestableScrollContainerInner(props: ScrollViewProps) {
     },
   });
 
-  const onLayout = useIdentityRetainingCallback((event: LayoutChangeEvent) => {
+  const onLayout = useStableCallback((event: LayoutChangeEvent) => {
     const {
       nativeEvent: { layout },
     } = event;
     containerSize.value = layout.height;
   });
 
-  const onContentSizeChange = useIdentityRetainingCallback(
-    (w: number, h: number) => {
-      scrollViewSize.value = h;
-      props.onContentSizeChange?.(w, h);
-    }
-  );
+  const onContentSizeChange = useStableCallback((w: number, h: number) => {
+    scrollViewSize.value = h;
+    props.onContentSizeChange?.(w, h);
+  });
 
   return (
     <AnimatedScrollView
