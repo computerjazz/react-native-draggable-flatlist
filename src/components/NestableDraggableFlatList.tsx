@@ -10,8 +10,12 @@ import { useSafeNestableScrollContainerContext } from "../context/nestableScroll
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
 import { typedMemo } from "../utils";
 import { useStableCallback } from "../hooks/useStableCallback";
+import { FlatList } from "react-native-gesture-handler";
 
-function NestableDraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+function NestableDraggableFlatListInner<T>(
+  props: DraggableFlatListProps<T>,
+  ref?: React.ForwardedRef<FlatList<T>>
+) {
   const hasSuppressedWarnings = useRef(false);
 
   if (!hasSuppressedWarnings.current) {
@@ -83,6 +87,7 @@ function NestableDraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   return (
     <DraggableFlatList
+      ref={ref}
       onContainerLayout={onListContainerLayout}
       activationDistance={props.activationDistance || 20}
       scrollEnabled={false}
@@ -95,6 +100,10 @@ function NestableDraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   );
 }
 
-export const NestableDraggableFlatList = typedMemo(
+// Generic forwarded ref type assertion taken from:
+// https://fettblog.eu/typescript-react-generic-forward-refs/#option-1%3A-type-assertion
+export const NestableDraggableFlatList = React.forwardRef(
   NestableDraggableFlatListInner
-);
+) as <T>(
+  props: DraggableFlatListProps<T> & { ref?: React.ForwardedRef<FlatList<T>> }
+) => ReturnType<typeof NestableDraggableFlatListInner>;

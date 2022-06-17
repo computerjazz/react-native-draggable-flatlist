@@ -5,12 +5,19 @@ import Animated, { useSharedValue } from "react-native-reanimated";
 type NestableScrollContainerContextVal = ReturnType<
   typeof useSetupNestableScrollContextValue
 >;
-const NestableScrollContainerContext = React.createContext<NestableScrollContainerContextVal | undefined>(undefined);
+const NestableScrollContainerContext = React.createContext<
+  NestableScrollContainerContextVal | undefined
+>(undefined);
 
-function useSetupNestableScrollContextValue() {
+function useSetupNestableScrollContextValue({
+  forwardedRef,
+}: {
+  forwardedRef?: React.MutableRefObject<ScrollView>;
+}) {
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
   const scrollViewSize = useSharedValue(0);
-  const scrollableRef = useRef<ScrollView>(null);
+  const scrollableRefInner = useRef<ScrollView>(null);
+  const scrollableRef = forwardedRef || scrollableRefInner;
   const outerScrollOffset = useSharedValue(0);
   const containerSize = useSharedValue(0);
 
@@ -31,10 +38,12 @@ function useSetupNestableScrollContextValue() {
 
 export function NestableScrollContainerProvider({
   children,
+  forwardedRef,
 }: {
   children: React.ReactNode;
+  forwardedRef?: React.MutableRefObject<ScrollView>;
 }) {
-  const contextVal = useSetupNestableScrollContextValue();
+  const contextVal = useSetupNestableScrollContextValue({ forwardedRef });
   return (
     <NestableScrollContainerContext.Provider value={contextVal}>
       {children}
@@ -50,7 +59,9 @@ export function useNestableScrollContainerContext() {
 export function useSafeNestableScrollContainerContext() {
   const value = useNestableScrollContainerContext();
   if (!value) {
-    throw new Error("useSafeNestableScrollContainerContext must be called within a NestableScrollContainerContext.Provider")
+    throw new Error(
+      "useSafeNestableScrollContainerContext must be called within a NestableScrollContainerContext.Provider"
+    );
   }
   return value;
 }

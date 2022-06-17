@@ -50,10 +50,16 @@ function NestableScrollContainerInner(props: ScrollViewProps) {
   );
 }
 
-export function NestableScrollContainer(props: ScrollViewProps) {
-  return (
-    <NestableScrollContainerProvider>
-      <NestableScrollContainerInner {...props} />
-    </NestableScrollContainerProvider>
-  );
-}
+export const NestableScrollContainer = React.forwardRef(
+  (props: ScrollViewProps, forwardedRef?: React.ForwardedRef<ScrollView>) => {
+    return (
+      <NestableScrollContainerProvider
+        forwardedRef={
+          (forwardedRef as React.MutableRefObject<ScrollView>) || undefined
+        }
+      >
+        <NestableScrollContainerInner {...props} />
+      </NestableScrollContainerProvider>
+    );
+  }
+);
