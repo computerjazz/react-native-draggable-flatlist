@@ -4,10 +4,7 @@ import {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
-import {
-  DEFAULT_PROPS,
-  SCROLL_POSITION_TOLERANCE,
-} from "../constants";
+import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "../constants";
 import { useProps } from "../context/propsContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useRefs } from "../context/refContext";
@@ -89,7 +86,7 @@ export function useAutoScroll() {
     const cellIsActive = activeIndexAnim.value >= 0;
 
     return hasScrolledToTarget && isAtEdge && !isEdgeDisabled && cellIsActive;
-  });
+  }, []);
 
   function scrollToInternal(offset: number) {
     if (flatlistRef && "current" in flatlistRef) {
@@ -107,7 +104,10 @@ export function useAutoScroll() {
     const offset = speedPct * autoscrollSpeed;
     const targetOffset = isAtTopEdge.value
       ? Math.max(0, scrollOffset.value - offset)
-      : scrollOffset.value + offset;
+      : Math.min(
+          scrollOffset.value + offset,
+          scrollViewSize.value - containerSize.value
+        );
 
     scrollTarget.value = targetOffset;
     // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
