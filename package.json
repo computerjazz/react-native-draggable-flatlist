@@ -80,7 +80,12 @@
           "configFile": "./babel.config.js"
         }
       ],
-      "module",
+      [
+        "module",
+        {
+          "configFile": "./babel.config.js"
+        }
+      ],
       "typescript"
     ]
   },
