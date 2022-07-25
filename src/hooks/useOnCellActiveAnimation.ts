@@ -1,53 +1,37 @@
+import { useRef } from "react";
 import Animated, {
-  block,
-  clockRunning,
-  cond,
-  onChange,
-  set,
-  startClock,
-  stopClock,
-  useCode,
+  useDerivedValue,
+  withSpring,
+  WithSpringConfig,
 } from "react-native-reanimated";
+import { DEFAULT_ANIMATION_CONFIG } from "../constants";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useIsActive } from "../context/cellContext";
-import { springFill } from "../procs";
-import { useSpring } from "./useSpring";
 
 type Params = {
-  animationConfig: Partial<Animated.SpringConfig>;
+  animationConfig: Partial<WithSpringConfig>;
 };
 
 export function useOnCellActiveAnimation(
   { animationConfig }: Params = { animationConfig: {} }
 ) {
-  const { clock, state, config } = useSpring({ config: animationConfig });
+  const animationConfigRef = useRef(animationConfig);
+  animationConfigRef.current = animationConfig;
 
-  const { isDraggingCell } = useAnimatedValues();
   const isActive = useIsActive();
 
-  useCode(
-    () =>
-      block([
-        onChange(isDraggingCell, [
-          //@ts-ignore
-          set(config.toValue, cond(isDraggingCell, 1, 0)),
-          startClock(clock),
-        ]),
-        cond(clockRunning(clock), [
-          springFill(clock, state, config),
-          cond(state.finished, [
-            stopClock(clock),
-            set(state.finished, 0),
-            set(state.time, 0),
-            set(state.velocity, 0),
-          ]),
-        ]),
-      ]),
-    []
-  );
+  const { isTouchActiveNative } = useAnimatedValues();
+
+  const onActiveAnim = useDerivedValue(() => {
+    const toVal = isActive && isTouchActiveNative.value ? 1 : 0;
+    return withSpring(toVal, {
+      ...DEFAULT_ANIMATION_CONFIG,
+      ...animationConfigRef.current,
+    });
+  }, [isActive]);
 
   return {
     isActive,
-    onActiveAnim: state.position,
+    onActiveAnim,
   };
 }

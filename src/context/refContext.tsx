@@ -1,25 +1,19 @@
 import React, { useContext } from "react";
 import { useMemo, useRef } from "react";
-import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import { FlatList } from "react-native-gesture-handler";
+import Animated, { WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
-import { useAnimatedValues } from "./animatedValueContext";
 import { CellData, DraggableFlatListProps } from "../types";
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
-  animationConfigRef: React.MutableRefObject<Animated.SpringConfig>;
+  animationConfigRef: React.MutableRefObject<WithSpringConfig>;
   cellDataRef: React.MutableRefObject<Map<string, CellData>>;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   containerRef: React.RefObject<Animated.View>;
-  flatListRef: React.RefObject<FlatList<T>> | React.ForwardedRef<FlatList<T>>;
-  panGestureHandlerRef: React.RefObject<PanGestureHandler>;
-  scrollOffsetRef: React.MutableRefObject<number>;
-  isTouchActiveRef: React.MutableRefObject<{
-    native: Animated.Value<number>;
-    js: boolean;
-  }>;
+  flatlistRef: React.RefObject<FlatList<T>> | React.ForwardedRef<FlatList<T>>;
+  scrollViewRef: React.RefObject<Animated.ScrollView>;
 };
 const RefContext = React.createContext<RefContextValue<any> | undefined>(
   undefined
@@ -30,7 +24,7 @@ export default function RefProvider<T>({
   flatListRef,
 }: {
   children: React.ReactNode;
-  flatListRef: React.ForwardedRef<FlatList<T>>;
+  flatListRef?: React.ForwardedRef<FlatList<T>> | null;
 }) {
   const value = useSetupRefs<T>({ flatListRef });
   return <RefContext.Provider value={value}>{children}</RefContext.Provider>;
@@ -49,45 +43,48 @@ export function useRefs<T>() {
 function useSetupRefs<T>({
   flatListRef: flatListRefProp,
 }: {
-  flatListRef: React.ForwardedRef<FlatList<T>>;
+  flatListRef?: React.ForwardedRef<FlatList<T>> | null;
 }) {
   const props = useProps<T>();
   const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
-
-  const { isTouchActiveNative } = useAnimatedValues();
 
   const propsRef = useRef(props);
   propsRef.current = props;
   const animConfig = {
     ...DEFAULT_PROPS.animationConfig,
     ...animationConfig,
-  } as Animated.SpringConfig;
+  } as WithSpringConfig;
   const animationConfigRef = useRef(animConfig);
   animationConfigRef.current = animConfig;
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
   const containerRef = useRef<Animated.View>(null);
-  const flatListRefInner = useRef<FlatList<T>>(null);
-  const flatListRef = flatListRefProp || flatListRefInner;
-  const panGestureHandlerRef = useRef<PanGestureHandler>(null);
-  const scrollOffsetRef = useRef(0);
-  const isTouchActiveRef = useRef({
-    native: isTouchActiveNative,
-    js: false,
-  });
+  const flatlistRefInternal = useRef<FlatList<T>>(null);
+  const flatlistRef = flatListRefProp || flatlistRefInternal;
+  const scrollViewRef = useRef<Animated.ScrollView>(null);
+
+  // useEffect(() => {
+  //   // This is a workaround for the fact that RN does not respect refs passed in
+  //   // to renderScrollViewComponent underlying ScrollView (currently not used but
+  //   // may need to add if we want to use reanimated scrollTo in the future)
+  //   //@ts-ignore
+  //   const scrollRef = flatlistRef.current?.getNativeScrollRef();
+  //   if (!scrollViewRef.current) {
+  //     //@ts-ignore
+  //     scrollViewRef(scrollRef);
+  //   }
+  // }, []);
 
   const refs = useMemo(
     () => ({
       animationConfigRef,
       cellDataRef,
       containerRef,
-      flatListRef,
-      isTouchActiveRef,
+      flatlistRef,
       keyToIndexRef,
-      panGestureHandlerRef,
       propsRef,
-      scrollOffsetRef,
+      scrollViewRef,
     }),
     []
   );

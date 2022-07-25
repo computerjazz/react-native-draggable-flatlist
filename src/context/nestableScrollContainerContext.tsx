@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useRef, useState } from "react";
 import { ScrollView } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import Animated, { useSharedValue } from "react-native-reanimated";
 
 type NestableScrollContainerContextVal = ReturnType<
   typeof useSetupNestableScrollContextValue
@@ -9,13 +9,17 @@ const NestableScrollContainerContext = React.createContext<
   NestableScrollContainerContextVal | undefined
 >(undefined);
 
-function useSetupNestableScrollContextValue() {
+function useSetupNestableScrollContextValue({
+  forwardedRef,
+}: {
+  forwardedRef?: React.MutableRefObject<ScrollView>;
+}) {
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
-  const scrollViewSize = useMemo(() => new Animated.Value<number>(0), []);
-  const scrollableRef = useRef<ScrollView>(null);
-  const outerScrollOffset = useMemo(() => new Animated.Value<number>(0), []);
-  const containerRef = useRef<Animated.View>(null);
-  const containerSize = useMemo(() => new Animated.Value<number>(0), []);
+  const scrollViewSize = useSharedValue(0);
+  const scrollableRefInner = useRef<ScrollView>(null);
+  const scrollableRef = forwardedRef || scrollableRefInner;
+  const outerScrollOffset = useSharedValue(0);
+  const containerSize = useSharedValue(0);
 
   const contextVal = useMemo(
     () => ({
@@ -24,7 +28,6 @@ function useSetupNestableScrollContextValue() {
       outerScrollOffset,
       scrollViewSize,
       scrollableRef,
-      containerRef,
       containerSize,
     }),
     [outerScrollEnabled]
@@ -35,10 +38,12 @@ function useSetupNestableScrollContextValue() {
 
 export function NestableScrollContainerProvider({
   children,
+  forwardedRef,
 }: {
   children: React.ReactNode;
+  forwardedRef?: React.MutableRefObject<ScrollView>;
 }) {
-  const contextVal = useSetupNestableScrollContextValue();
+  const contextVal = useSetupNestableScrollContextValue({ forwardedRef });
   return (
     <NestableScrollContainerContext.Provider value={contextVal}>
       {children}
@@ -48,9 +53,14 @@ export function NestableScrollContainerProvider({
 
 export function useNestableScrollContainerContext() {
   const value = useContext(NestableScrollContainerContext);
+  return value;
+}
+
+export function useSafeNestableScrollContainerContext() {
+  const value = useNestableScrollContainerContext();
   if (!value) {
     throw new Error(
-      "useNestableScrollContainerContext must be called from within NestableScrollContainerContext Provider!"
+      "useSafeNestableScrollContainerContext must be called within a NestableScrollContainerContext.Provider"
     );
   }
   return value;

@@ -1,4 +1,5 @@
 import React, { useContext, useMemo } from "react";
+import { typedMemo } from "../utils";
 
 type CellContextValue = {
   isActive: boolean;
@@ -13,7 +14,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export default function CellProvider({ isActive, children }: Props) {
+export function CellProvider({ isActive, children }: Props) {
   const value = useMemo(
     () => ({
       isActive,
@@ -22,6 +23,8 @@ export default function CellProvider({ isActive, children }: Props) {
   );
   return <CellContext.Provider value={value}>{children}</CellContext.Provider>;
 }
+
+export default typedMemo(CellProvider);
 
 export function useIsActive() {
   const value = useContext(CellContext);

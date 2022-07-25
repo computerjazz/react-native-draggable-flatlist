@@ -24,7 +24,6 @@ export const DEFAULT_PROPS = {
   dragHitSlop: 0 as PanGestureHandlerProperties["hitSlop"],
   activationDistance: 0,
   dragItemOverflow: false,
-  outerScrollOffset: new Animated.Value<number>(0),
 };
 
 export const isIOS = Platform.OS === "ios";
@@ -35,7 +34,7 @@ export const isWeb = Platform.OS === "web";
 export const isReanimatedV2 = !!useSharedValue;
 
 if (!isReanimatedV2) {
-  console.warn(
-    "Your version of react-native-reanimated is too old for react-native-draggable-flatlist. It may not work as expected."
+  throw new Error(
+    "Your version of react-native-reanimated is too old for react-native-draggable-flatlist!"
   );
 }

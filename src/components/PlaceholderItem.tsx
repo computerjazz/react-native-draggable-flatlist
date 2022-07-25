@@ -1,19 +1,13 @@
-import React, { useCallback, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
 import Animated, {
-  call,
-  useCode,
-  onChange,
-  greaterThan,
-  cond,
-  sub,
-  block,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
 } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { useProps } from "../context/propsContext";
 import { useRefs } from "../context/refContext";
-import { useNode } from "../hooks/useNode";
 import { RenderPlaceholder } from "../types";
 import { typedMemo } from "../utils";
 
@@ -22,51 +16,28 @@ type Props<T> = {
 };
 
 function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
+  const [size, setSize] = useState(0);
   const {
     activeCellSize,
     placeholderOffset,
     spacerIndexAnim,
+    horizontalAnim,
     scrollOffset,
   } = useAnimatedValues();
-  const [placeholderSize, setPlaceholderSize] = useState(0);
-
   const { keyToIndexRef, propsRef } = useRefs<T>();
+  const { activeKey, horizontal } = useDraggableFlatListContext();
 
-  const { activeKey } = useDraggableFlatListContext();
-  const { horizontal } = useProps();
-
-  const onPlaceholderIndexChange = useCallback(
-    (index: number) => {
-      propsRef.current.onPlaceholderIndexChange?.(index);
+  // Size does not seem to be respected when it is an animated style
+  useAnimatedReaction(
+    () => {
+      return activeCellSize.value;
     },
-    [propsRef]
+    (cur, prev) => {
+      if (cur !== prev) {
+        runOnJS(setSize)(cur);
+      }
+    }
   );
-
-  useCode(
-    () =>
-      block([
-        onChange(
-          activeCellSize,
-          call([activeCellSize], ([size]) => {
-            // Using animated values to set height caused a bug where item wouldn't correctly update
-            // so instead we mirror the animated value in component state.
-            setPlaceholderSize(size);
-          })
-        ),
-        onChange(
-          spacerIndexAnim,
-          call([spacerIndexAnim], ([i]) => {
-            onPlaceholderIndexChange(i);
-            if (i === -1) setPlaceholderSize(0);
-          })
-        ),
-      ]),
-    []
-  );
-
-  const translateKey = horizontal ? "translateX" : "translateY";
-  const sizeKey = horizontal ? "width" : "height";
-  const opacity = useNode(cond(greaterThan(spacerIndexAnim, -1), 1, 0));
 
   const activeIndex = activeKey
     ? keyToIndexRef.current.get(activeKey)
@@ -74,18 +45,28 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
   const activeItem =
     activeIndex === undefined ? null : propsRef.current?.data[activeIndex];
 
-  const animStyle = {
-    opacity,
-    [sizeKey]: placeholderSize,
-    transform: ([
-      { [translateKey]: sub(placeholderOffset, scrollOffset) },
-    ] as unknown) as Animated.AnimatedTransform,
-  };
+  const animStyle = useAnimatedStyle(() => {
+    const offset = placeholderOffset.value - scrollOffset.value
+    return {
+        opacity: size >= 0 ? 1 : 0,
+        overflow: 'hidden',
+        transform: [
+          horizontalAnim.value
+            ? { translateX: offset }
+            : { translateY: offset },
+        ],
+      };
+
+  }, [spacerIndexAnim, placeholderOffset, horizontalAnim, scrollOffset, size]);
+
+  const extraStyle = useMemo(() => {
+    return horizontal ? { width: size } : { height: size };
+  }, [horizontal, size])
 
   return (
     <Animated.View
       pointerEvents={activeKey ? "auto" : "none"}
-      style={[StyleSheet.absoluteFill, animStyle]}
+      style={[StyleSheet.absoluteFill, animStyle, extraStyle]}
     >
       {!activeItem || activeIndex === undefined
         ? null

@@ -2,7 +2,6 @@ import React, { useContext, useMemo } from "react";
 
 type Props<T> = {
   activeKey: string | null;
-  onDragEnd: ([from, to]: readonly number[]) => void;
   keyExtractor: (item: T, index: number) => string;
   horizontal: boolean;
   children: React.ReactNode;
@@ -16,7 +15,6 @@ const DraggableFlatListContext = React.createContext<
 
 export default function DraggableFlatListProvider<T>({
   activeKey,
-  onDragEnd,
   keyExtractor,
   horizontal,
   children,
@@ -25,10 +23,9 @@ export default function DraggableFlatListProvider<T>({
     () => ({
       activeKey,
       keyExtractor,
-      onDragEnd,
       horizontal,
     }),
-    [activeKey, onDragEnd, keyExtractor, horizontal]
+    [activeKey, keyExtractor, horizontal]
   );
 
   return (

@@ -1,13 +1,18 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { findNodeHandle, LogBox } from "react-native";
-import Animated, { add } from "react-native-reanimated";
+import Animated, {
+  useDerivedValue,
+  useSharedValue,
+} from "react-native-reanimated";
 import { DraggableFlatListProps } from "../types";
 import DraggableFlatList from "../components/DraggableFlatList";
-import { useNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
+import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
+import { typedMemo } from "../utils";
+import { useStableCallback } from "../hooks/useStableCallback";
 import { FlatList } from "react-native-gesture-handler";
 
-export function NestableDraggableFlatListInner<T>(
+function NestableDraggableFlatListInner<T>(
   props: DraggableFlatListProps<T>,
   ref?: React.ForwardedRef<FlatList<T>>
 ) {
@@ -23,57 +28,75 @@ export function NestableDraggableFlatListInner<T>(
   }
 
   const {
-    containerRef,
+    scrollableRef,
     outerScrollOffset,
     setOuterScrollEnabled,
-  } = useNestableScrollContainerContext();
+  } = useSafeNestableScrollContainerContext();
 
-  const listVerticalOffset = useMemo(() => new Animated.Value<number>(0), []);
-  const viewRef = useRef<Animated.View>(null);
+  const listVerticalOffset = useSharedValue(0);
   const [animVals, setAnimVals] = useState({});
+  const defaultHoverOffset = useSharedValue(0);
+  const [listHoverOffset, setListHoverOffset] = useState(defaultHoverOffset);
 
-  useNestedAutoScroll(animVals);
+  const hoverOffset = useDerivedValue(() => {
+    return listHoverOffset.value + listVerticalOffset.value;
+  }, [listHoverOffset]);
 
-  const onListContainerLayout = async () => {
-    const viewNode = viewRef.current;
-    const nodeHandle = findNodeHandle(containerRef.current);
+  useNestedAutoScroll({
+    ...animVals,
+    hoverOffset,
+  });
+
+  const onListContainerLayout = useStableCallback(async ({ containerRef }) => {
+    const nodeHandle = findNodeHandle(scrollableRef.current);
 
     const onSuccess = (_x: number, y: number) => {
-      listVerticalOffset.setValue(y);
+      listVerticalOffset.value = y;
     };
     const onFail = () => {
       console.log("## nested draggable list measure fail");
     };
     //@ts-ignore
-    viewNode.measureLayout(nodeHandle, onSuccess, onFail);
-  };
+    containerRef.current.measureLayout(nodeHandle, onSuccess, onFail);
+  });
+
+  const onDragBegin: DraggableFlatListProps<T>["onDragBegin"] = useStableCallback(
+    (params) => {
+      setOuterScrollEnabled(false);
+      props.onDragBegin?.(params);
+    }
+  );
+
+  const onDragEnd: DraggableFlatListProps<T>["onDragEnd"] = useStableCallback(
+    (params) => {
+      setOuterScrollEnabled(true);
+      props.onDragEnd?.(params);
+    }
+  );
+
+  const onAnimValInit: DraggableFlatListProps<T>["onAnimValInit"] = useStableCallback(
+    (params) => {
+      setListHoverOffset(params.hoverOffset);
+      setAnimVals({
+        ...params,
+        hoverOffset,
+      });
+      props.onAnimValInit?.(params);
+    }
+  );
 
   return (
-    <Animated.View ref={viewRef} onLayout={onListContainerLayout}>
-      <DraggableFlatList
-        ref={ref}
-        activationDistance={20}
-        autoscrollSpeed={50}
-        scrollEnabled={false}
-        {...props}
-        outerScrollOffset={outerScrollOffset}
-        onDragBegin={(...args) => {
-          setOuterScrollEnabled(false);
-          props.onDragBegin?.(...args);
-        }}
-        onDragEnd={(...args) => {
-          props.onDragEnd?.(...args);
-          setOuterScrollEnabled(true);
-        }}
-        onAnimValInit={(animVals) => {
-          setAnimVals({
-            ...animVals,
-            hoverAnim: add(animVals.hoverAnim, listVerticalOffset),
-          });
-          props.onAnimValInit?.(animVals);
-        }}
-      />
-    </Animated.View>
+    <DraggableFlatList
+      ref={ref}
+      onContainerLayout={onListContainerLayout}
+      activationDistance={props.activationDistance || 20}
+      scrollEnabled={false}
+      {...props}
+      outerScrollOffset={outerScrollOffset}
+      onDragBegin={onDragBegin}
+      onDragEnd={onDragEnd}
+      onAnimValInit={onAnimValInit}
+    />
   );
 }
 

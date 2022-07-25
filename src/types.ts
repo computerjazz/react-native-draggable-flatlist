@@ -1,8 +1,14 @@
 import React from "react";
-import { FlatListProps, StyleProp, ViewStyle } from "react-native";
+import {
+  FlatListProps,
+  LayoutChangeEvent,
+  StyleProp,
+  ViewPropTypes,
+  ViewStyle,
+} from "react-native";
 import { useAnimatedValues } from "./context/animatedValueContext";
 import { FlatList } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import Animated, { WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
 
 export type DragEndParams<T> = {
@@ -19,7 +25,7 @@ export type DraggableFlatListProps<T> = Modify<
   {
     data: T[];
     activationDistance?: number;
-    animationConfig?: Partial<Animated.SpringConfig>;
+    animationConfig?: Partial<WithSpringConfig>;
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
     containerStyle?: StyleProp<ViewStyle>;
@@ -34,8 +40,12 @@ export type DraggableFlatListProps<T> = Modify<
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
-    outerScrollOffset?: Animated.Node<number>;
+    outerScrollOffset?: Animated.SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
+    onContainerLayout?: (params: {
+      layout: LayoutChangeEvent["nativeEvent"]["layout"];
+      containerRef: React.RefObject<Animated.View>;
+    }) => void;
   } & Partial<DefaultProps>
 >;
 
@@ -46,7 +56,7 @@ export type RenderPlaceholder<T> = (params: {
 
 export type RenderItemParams<T> = {
   item: T;
-  index?: number; // This is technically a "last known index" since cells don't necessarily rerender when their index changes
+  getIndex: () => number | undefined; // This is technically a "last known index" since cells don't necessarily rerender when their index changes
   drag: () => void;
   isActive: boolean;
 };

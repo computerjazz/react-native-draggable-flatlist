@@ -1,15 +1,11 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "target": "es5",
-    "module": "commonjs",
-    "declaration": true,
-    "outDir": "./lib",
-    "strict": true,
     "jsx": "react",
     "lib": ["esnext"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "include": ["src"]
 }
