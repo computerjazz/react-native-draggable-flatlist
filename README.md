@@ -1,5 +1,8 @@
 
-⚠️ NOTE: You are viewing the README for version 3, [version 2 README here](https://github.com/computerjazz/react-native-draggable-flatlist/blob/b60c23035fc0371a735cde1d000e9ad7f8e0f049/README.md)
+⚠️ You are viewing the README for v4 (view
+[v3](https://github.com/computerjazz/react-native-draggable-flatlist/blob/17897b3b5d771e854c9ccbd952332f5deabbd85d/README.md),
+[v2](https://github.com/computerjazz/react-native-draggable-flatlist/blob/b60c23035fc0371a735cde1d000e9ad7f8e0f049/README.md)
+)
 
 # React Native Draggable FlatList
 
@@ -11,7 +14,7 @@ To use swipeable list items in a DraggableFlatList see [React Native Swipeable I
 
 ## Install
 
-1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler). RNGH requires you to make changes to `MainActivity.java`. Be sure to [follow all Android instructions!](https://docs.swmansion.com/react-native-gesture-handler/docs/#android)
+1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler). RNGH may require you to make changes to `MainActivity.java`. Be sure to [follow all Android instructions!](https://docs.swmansion.com/react-native-gesture-handler/docs/#android)
 2. Install this package using `npm` or `yarn`
 
 with `npm`:
@@ -40,13 +43,13 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `ref`                     | `React.RefObject<FlatList<T>>`                                                                                     | FlatList ref to be forwarded to the underlying FlatList.                                                                                                                                                                                      |
 | `renderItem`               | `(params: { item: T, getIndex: () => number \| undefined, drag: () => void, isActive: boolean}) => JSX.Element` | Call `drag` when the row should become active (i.e. in an `onLongPress` or `onPressIn`).                                                                                                                           |
 | `renderPlaceholder`        | `(params: { item: T, index: number }) => React.ReactNode`                                 | Component to be rendered underneath the hovering component                                                                                                                                                         |
-| `keyExtractor`             | `(item: T, index: number) => string`                                                      | Unique key for each item                                                                                                                                                                                           |
+| `keyExtractor`             | `(item: T, index: number) => string`                                                      | Unique key for each item (required)                                                                                                                                                                                          |
 | `onDragBegin`              | `(index: number) => void`                                                                 | Called when row becomes active.                                                                                                                                                                                    |
 | `onRelease`                | `(index: number) => void`                                                                 | Called when active row touch ends.                                                                                                                                                                                 |
 | `onDragEnd`                | `(params: { data: T[], from: number, to: number }) => void`                               | Called after animation has completed. Returns updated ordering of `data`                                                                                                                                           |
 | `autoscrollThreshold`      | `number`                                                                                  | Distance from edge of container where list begins to autoscroll when dragging.                                                                                                                                     |
 | `autoscrollSpeed`          | `number`                                                                                  | Determines how fast the list autoscrolls.                                                                                                                                                                          |
-| `animationConfig`          | `Partial<Animated.SpringConfig>`                                                          | Configure list animations. See [reanimated spring config](https://github.com/software-mansion/react-native-reanimated/blob/12093cbe04d978b2ef619531755ef7d472242cd9/react-native-reanimated.d.ts#L198-L206)                                          |
+| `animationConfig`          | `Partial<WithSpringConfig>`                                                          | Configure list animations. See [reanimated spring config](https://docs.swmansion.com/react-native-reanimated/docs/api/animations/withSpring/#options-object)                                          |
 | `activationDistance`       | `number`                                                                                  | Distance a finger must travel before the gesture handler activates. Useful when using a draggable list within a TabNavigator so that the list does not capture navigator gestures.                                 |
 | `onScrollOffsetChange`     | `(offset: number) => void`                                                                | Called with scroll offset. Stand-in for `onScroll`.                                                                                                                                                                |
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                                                   |
