@@ -13,7 +13,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS } from "../constants";
+import { DEFAULT_PROPS, isWeb } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -170,14 +170,18 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           newData.splice(from, 1);
           newData.splice(to, 0, data[from]);
         }
-        setTimeout(() => {
+        const reset = () => {
           activeIndexAnim.value = -1;
           spacerIndexAnim.value = -1;
           touchTranslate.value = 0;
           activeCellSize.value = -1;
           activeCellOffset.value = -1;
           setActiveKey(null);
-        });
+        };
+
+        if (isWeb) reset();
+        else setTimeout(reset);
+
         onDragEnd({ from, to, data: newData });
       }
     }
