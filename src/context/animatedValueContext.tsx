@@ -37,7 +37,7 @@ export function useAnimatedValues() {
 function useSetupAnimatedValues<T>() {
   const props = useProps<T>();
 
-  const DEFAULT_VAL = useSharedValue(0)
+  const DEFAULT_VAL = useSharedValue(0);
 
   const containerSize = useSharedValue(0);
   const scrollViewSize = useSharedValue(0);
@@ -63,18 +63,25 @@ function useSetupAnimatedValues<T>() {
   const scrollOffset = useSharedValue(0);
   const scrollInit = useSharedValue(0);
 
+  const viewableIndexMin = useSharedValue(0);
+  const viewableIndexMax = useSharedValue(0);
+
   // If list is nested there may be an outer scrollview
   const outerScrollOffset = props.outerScrollOffset || DEFAULT_VAL;
   const outerScrollInit = useSharedValue(0);
 
-  useAnimatedReaction(() => {
-    return activeIndexAnim.value
-  }, (cur, prev) => {
+  useAnimatedReaction(
+    () => {
+      return activeIndexAnim.value;
+    },
+    (cur, prev) => {
       if (cur !== prev && cur >= 0) {
         scrollInit.value = scrollOffset.value;
         outerScrollInit.value = outerScrollOffset.value;
       }
-  }, [outerScrollOffset]);
+    },
+    [outerScrollOffset]
+  );
 
   const placeholderOffset = useSharedValue(0);
 
@@ -83,10 +90,10 @@ function useSetupAnimatedValues<T>() {
   }, []);
 
   const autoScrollDistance = useDerivedValue(() => {
-    if (!isDraggingCell.value) return 0
+    if (!isDraggingCell.value) return 0;
     const innerScrollDiff = scrollOffset.value - scrollInit.value;
     // If list is nested there may be an outer scroll diff
-    const outerScrollDiff = outerScrollOffset.value - outerScrollInit.value
+    const outerScrollDiff = outerScrollOffset.value - outerScrollInit.value;
     const scrollDiff = innerScrollDiff + outerScrollDiff;
     return scrollDiff;
   }, []);
@@ -99,7 +106,6 @@ function useSetupAnimatedValues<T>() {
   }, []);
 
   const touchPositionDiffConstrained = useDerivedValue(() => {
-
     const containerMinusActiveCell =
       containerSize.value - activeCellSize.value + scrollOffset.value;
 
@@ -122,7 +128,6 @@ function useSetupAnimatedValues<T>() {
     return props.dragItemOverflow
       ? touchPositionDiff.value
       : touchPositionDiffConstrained.value;
-
   }, []);
 
   const hoverOffset = useDerivedValue(() => {
@@ -164,6 +169,8 @@ function useSetupAnimatedValues<T>() {
       touchPositionDiff,
       touchTranslate,
       autoScrollDistance,
+      viewableIndexMin,
+      viewableIndexMax,
     }),
     [
       activeCellOffset,
@@ -185,9 +192,11 @@ function useSetupAnimatedValues<T>() {
       touchPositionDiff,
       touchTranslate,
       autoScrollDistance,
+      viewableIndexMin,
+      viewableIndexMax,
     ]
   );
-  
+
   useEffect(() => {
     props.onAnimValInit?.(value);
   }, [value]);

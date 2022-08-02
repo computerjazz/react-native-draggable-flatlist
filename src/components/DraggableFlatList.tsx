@@ -35,6 +35,11 @@ type RNGHFlatListProps<T> = Animated.AnimateProps<
   }
 >;
 
+type OnViewableItemsChangedCallback<T> = Exclude<
+  FlatListProps<T>["onViewableItemsChanged"],
+  undefined | null
+>;
+
 const AnimatedFlatList = (Animated.createAnimatedComponent(
   FlatList
 ) as unknown) as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
@@ -62,6 +67,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     autoScrollDistance,
     panGestureState,
     isTouchActiveNative,
+    viewableIndexMin,
+    viewableIndexMax,
     disabled,
   } = useAnimatedValues();
 
@@ -287,6 +294,21 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   useAutoScroll();
 
+  const onViewableItemsChanged = useStableCallback<
+    OnViewableItemsChangedCallback<T>
+  >((info) => {
+    const viewableIndices = info.viewableItems
+      .filter((item) => item.isViewable)
+      .map((item) => item.index)
+      .filter((index): index is number => typeof index === "number");
+
+    const min = Math.min(...viewableIndices);
+    const max = Math.max(...viewableIndices);
+    viewableIndexMin.value = min;
+    viewableIndexMax.value = max;
+    props.onViewableItemsChanged?.(info);
+  });
+
   return (
     <DraggableFlatListProvider
       activeKey={activeKey}
@@ -305,6 +327,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           <AnimatedFlatList
             {...props}
             data={props.data}
+            onViewableItemsChanged={onViewableItemsChanged}
             CellRendererComponent={CellRendererComponent}
             ref={flatlistRef}
             onContentSizeChange={onListContentSizeChange}

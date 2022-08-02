@@ -17,6 +17,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     spacerIndexAnim,
     placeholderOffset,
     hoverAnim,
+    viewableIndexMin,
+    viewableIndexMax,
   } = useAnimatedValues();
 
   const { activeKey } = useDraggableFlatListContext();
@@ -24,7 +26,14 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const { animationConfigRef } = useRefs();
 
   const translate = useDerivedValue(() => {
-    if (!activeKey || activeIndexAnim.value < 0) return 0;
+    const isActiveCell = cellIndex === activeIndexAnim.value;
+    const isOutsideViewableRange =
+      !isActiveCell &&
+      (cellIndex < viewableIndexMin.value ||
+        cellIndex > viewableIndexMax.value);
+    if (!activeKey || activeIndexAnim.value < 0 || isOutsideViewableRange) {
+      return 0;
+    }
 
     // Determining spacer index is hard to visualize. See diagram: https://i.imgur.com/jRPf5t3.jpg
     const isBeforeActive = cellIndex < activeIndexAnim.value;
@@ -80,7 +89,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     if (activeIndexAnim.value < 0) return 0;
 
     // Active cell follows touch
-    if (cellIndex === activeIndexAnim.value) {
+    if (isActiveCell) {
       return hoverAnim.value;
     }
 
@@ -96,7 +105,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       : 0;
 
     return withSpring(translationAmt, animationConfigRef.current);
-  }, [activeKey]);
+  }, [activeKey, cellIndex]);
 
   return translate;
 }

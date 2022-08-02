@@ -5,14 +5,14 @@ import { useRef, useCallback } from "react";
 // Useful for functions that depend on external state, but
 // should not trigger effects when that external state changes.
 
-export function useStableCallback<T extends (a?: any, b?: any, c?: any) => any>(
-  fn: T
-) {
-  const fnRef = useRef(fn);
-  fnRef.current = fn;
-  const identityRetainingFn = useCallback(
-    (...args: Parameters<T>) => fnRef.current(...args),
+export function useStableCallback<
+  T extends (arg1?: any, arg2?: any, arg3?: any) => any
+>(cb: T) {
+  const cbRef = useRef(cb);
+  cbRef.current = cb;
+  const identityRetainingCb = useCallback(
+    (...args: Parameters<T>) => cbRef.current(...args),
     []
   );
-  return identityRetainingFn as T;
+  return identityRetainingCb as T;
 }
