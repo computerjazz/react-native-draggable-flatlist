@@ -29,17 +29,6 @@ type Props<T> = {
 function CellRendererComponent<T>(props: Props<T>) {
   const { item, index, onLayout, children, ...rest } = props;
 
-  const currentIndexAnim = useSharedValue(index);
-
-  useEffect(() => {
-    // If we set the index immediately the newly-ordered data can get out of sync
-    // with the activeIndexAnim, and cause the wrong item to momentarily become the
-    // "active item", which causes a flicker.
-    requestAnimationFrame(() => {
-      currentIndexAnim.value = index;
-    });
-  }, [index]);
-
   const viewRef = useRef<Animated.View>(null);
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
 
@@ -57,26 +46,20 @@ function CellRendererComponent<T>(props: Props<T>) {
   const translate = useCellTranslate({
     cellOffset: offset,
     cellSize: size,
-    cellIndex: currentIndexAnim,
+    cellIndex: index,
   });
 
-  const indexRef = useRef(index);
-  const indexHasChanged = index !== indexRef.current;
-  indexRef.current = index;
-
-  const dragInProgress = !!activeKey && !indexHasChanged;
-  const isActive = dragInProgress && activeKey === key;
+  const isActive = activeKey === key;
 
   const animStyle = useAnimatedStyle(() => {
-    const _translate = dragInProgress ? translate.value : 0;
     return {
       transform: [
         horizontalAnim.value
-          ? { translateX: _translate }
-          : { translateY: _translate },
+          ? { translateX: translate.value }
+          : { translateY: translate.value },
       ],
     };
-  }, [dragInProgress, translate]);
+  }, [translate]);
 
   const updateCellMeasurements = useStableCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
@@ -107,19 +90,19 @@ function CellRendererComponent<T>(props: Props<T>) {
     }
   });
 
+  const onCellLayout = useStableCallback((e?: LayoutChangeEvent) => {
+    updateCellMeasurements();
+    if (onLayout && e) onLayout(e);
+  });
+
   useEffect(() => {
     if (isWeb) {
       // onLayout isn't called on web when the cell index changes, so we manually re-measure
       requestAnimationFrame(() => {
-        updateCellMeasurements();
+        onCellLayout();
       });
     }
-  }, [index, updateCellMeasurements]);
-
-  const onCellLayout = useStableCallback((e: LayoutChangeEvent) => {
-    updateCellMeasurements();
-    if (onLayout) onLayout(e);
-  });
+  }, [index, onCellLayout]);
 
   const baseStyle = useMemo(() => {
     return {
@@ -137,11 +120,7 @@ function CellRendererComponent<T>(props: Props<T>) {
       {...rest}
       ref={viewRef}
       onLayout={onCellLayout}
-      style={[
-        props.style,
-        baseStyle,
-        dragInProgress ? animStyle : { transform: [] },
-      ]}
+      style={[props.style, baseStyle, animStyle]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
       <CellProvider isActive={isActive}>{children}</CellProvider>

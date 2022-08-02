@@ -13,7 +13,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isWeb } from "../constants";
+import { DEFAULT_PROPS } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -86,17 +86,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       keyToIndexRef.current.set(key, i);
     });
   }, [props.data, keyExtractor, keyToIndexRef]);
-
-  // Reset hover state whenever data changes
-  useMemo(() => {
-    requestAnimationFrame(() => {
-      activeIndexAnim.value = -1;
-      spacerIndexAnim.value = -1;
-      touchTranslate.value = 0;
-      activeCellSize.value = -1;
-      activeCellOffset.value = -1;
-    });
-  }, [props.data]);
 
   const drag = useStableCallback((activeKey: string) => {
     if (disabled.value) return;
@@ -181,15 +170,15 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           newData.splice(from, 1);
           newData.splice(to, 0, data[from]);
         }
-        onDragEnd({ from, to, data: newData });
-        if (isWeb) {
-          // prevent flicker
+        setTimeout(() => {
+          activeIndexAnim.value = -1;
+          spacerIndexAnim.value = -1;
+          touchTranslate.value = 0;
+          activeCellSize.value = -1;
+          activeCellOffset.value = -1;
           setActiveKey(null);
-        } else {
-          requestAnimationFrame(() => {
-            setActiveKey(null);
-          });
-        }
+        });
+        onDragEnd({ from, to, data: newData });
       }
     }
   );
@@ -266,7 +255,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       runOnJS(onContainerTouchEnd)();
     });
 
-  if (props.hitSlop) panGesture.hitSlop(props.hitSlop);
+  if (dragHitSlop) panGesture.hitSlop(dragHitSlop);
   if (activationDistanceProp) {
     const activeOffset = [-activationDistanceProp, activationDistanceProp];
     if (props.horizontal) {
