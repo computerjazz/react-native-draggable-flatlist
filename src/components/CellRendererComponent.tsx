@@ -3,6 +3,7 @@ import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
   StyleProp,
+  StyleSheet,
   ViewStyle,
 } from "react-native";
 import Animated, {
@@ -42,6 +43,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   const key = keyExtractor(item, index);
   const offset = useSharedValue(-1);
   const size = useSharedValue(-1);
+  const heldTanslate = useSharedValue(0);
 
   const translate = useCellTranslate({
     cellOffset: offset,
@@ -52,14 +54,17 @@ function CellRendererComponent<T>(props: Props<T>) {
   const isActive = activeKey === key;
 
   const animStyle = useAnimatedStyle(() => {
+    // When activeKey becomes null at the end of a drag and the list reorders,
+    // the animated style may apply before the next paint, causing a flicker.
+    // Solution is to hold over the last animated value until the next onLayout.
+    if (translate.value) {
+      heldTanslate.value = translate.value;
+    }
+    const t = activeKey ? translate.value : heldTanslate.value;
     return {
-      transform: [
-        horizontalAnim.value
-          ? { translateX: translate.value }
-          : { translateY: translate.value },
-      ],
+      transform: [horizontalAnim.value ? { translateX: t } : { translateY: t }],
     };
-  }, [translate]);
+  }, [translate, activeKey]);
 
   const updateCellMeasurements = useStableCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
@@ -91,6 +96,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   });
 
   const onCellLayout = useStableCallback((e?: LayoutChangeEvent) => {
+    heldTanslate.value = 0;
     updateCellMeasurements();
     if (onLayout && e) onLayout(e);
   });
@@ -112,15 +118,16 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
   }, [isActive, horizontal]);
 
-  // changing zIndex may crash android, but seems to work ok as of RN 68:
-  // https://github.com/facebook/react-native/issues/28751
-
   return (
     <Animated.View
       {...rest}
       ref={viewRef}
       onLayout={onCellLayout}
-      style={[props.style, baseStyle, animStyle]}
+      style={[
+        props.style,
+        baseStyle,
+        activeKey ? animStyle : styles.zeroTranslate,
+      ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
       <CellProvider isActive={isActive}>{children}</CellProvider>
@@ -129,3 +136,9 @@ function CellRendererComponent<T>(props: Props<T>) {
 }
 
 export default typedMemo(CellRendererComponent);
+
+const styles = StyleSheet.create({
+  zeroTranslate: {
+    transform: [{ translateX: 0 }, { translateY: 0 }],
+  },
+});

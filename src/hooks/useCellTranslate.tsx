@@ -85,9 +85,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       placeholderOffset.value = newPlaceholderOffset;
     }
 
-    // If no active cell, translation is already 0
-    if (activeIndexAnim.value < 0) return 0;
-
     // Active cell follows touch
     if (isActiveCell) {
       return hoverAnim.value;

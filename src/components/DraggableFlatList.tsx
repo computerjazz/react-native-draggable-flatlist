@@ -1,4 +1,10 @@
-import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ListRenderItem, FlatListProps, LayoutChangeEvent } from "react-native";
 import {
   FlatList,
@@ -72,13 +78,22 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     disabled,
   } = useAnimatedValues();
 
+  const reset = useStableCallback(() => {
+    activeIndexAnim.value = -1;
+    spacerIndexAnim.value = -1;
+    touchTranslate.value = 0;
+    activeCellSize.value = -1;
+    activeCellOffset.value = -1;
+    setActiveKey(null);
+  });
+
   const {
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
     scrollEnabled = DEFAULT_PROPS.scrollEnabled,
     activationDistance: activationDistanceProp = DEFAULT_PROPS.activationDistance,
   } = props;
 
-  const [activeKey, setActiveKey] = useState<string | null>(null);
+  let [activeKey, setActiveKey] = useState<string | null>(null);
 
   const keyExtractor = useStableCallback((item: T, index: number) => {
     if (!props.keyExtractor) {
@@ -86,6 +101,16 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     }
     return props.keyExtractor(item, index);
   });
+
+  const dataRef = useRef(props.data);
+  const dataHasChanged =
+    dataRef.current.map(keyExtractor).join("") !==
+    props.data.map(keyExtractor).join("");
+  dataRef.current = props.data;
+  if (dataHasChanged) {
+    // When data changes make sure `activeKey` is nulled out in the same render pass
+    activeKey = null;
+  }
 
   useLayoutEffect(() => {
     props.data.forEach((d, i) => {
@@ -178,19 +203,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         newData.splice(to, 0, data[from]);
       }
 
-      const reset = () => {
-        activeIndexAnim.value = -1;
-        spacerIndexAnim.value = -1;
-        touchTranslate.value = 0;
-        activeCellSize.value = -1;
-        activeCellOffset.value = -1;
-        setActiveKey(null);
-      };
-
-      if (isWeb) reset();
-      else setTimeout(reset);
-
       onDragEnd?.({ from, to, data: newData });
+      reset();
     }
   );
 
