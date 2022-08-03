@@ -171,26 +171,26 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const onDragEnd = useStableCallback(
     ({ from, to }: { from: number; to: number }) => {
       const { onDragEnd, data } = props;
-      if (onDragEnd) {
-        const newData = [...data];
-        if (from !== to) {
-          newData.splice(from, 1);
-          newData.splice(to, 0, data[from]);
-        }
-        const reset = () => {
-          activeIndexAnim.value = -1;
-          spacerIndexAnim.value = -1;
-          touchTranslate.value = 0;
-          activeCellSize.value = -1;
-          activeCellOffset.value = -1;
-          setActiveKey(null);
-        };
 
-        if (isWeb) reset();
-        else setTimeout(reset);
-
-        onDragEnd({ from, to, data: newData });
+      const newData = [...data];
+      if (from !== to) {
+        newData.splice(from, 1);
+        newData.splice(to, 0, data[from]);
       }
+
+      const reset = () => {
+        activeIndexAnim.value = -1;
+        spacerIndexAnim.value = -1;
+        touchTranslate.value = 0;
+        activeCellSize.value = -1;
+        activeCellOffset.value = -1;
+        setActiveKey(null);
+      };
+
+      if (isWeb) reset();
+      else setTimeout(reset);
+
+      onDragEnd?.({ from, to, data: newData });
     }
   );
 
