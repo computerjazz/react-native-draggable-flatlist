@@ -118,11 +118,20 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
   }, [isActive, horizontal]);
 
+  const {
+    itemEnteringAnimation,
+    itemExitingAnimation,
+    itemLayoutAnimation,
+  } = propsRef.current;
+
   return (
     <Animated.View
       {...rest}
       ref={viewRef}
       onLayout={onCellLayout}
+      entering={itemEnteringAnimation}
+      exiting={itemExitingAnimation}
+      layout={itemLayoutAnimation}
       style={[
         props.style,
         baseStyle,
