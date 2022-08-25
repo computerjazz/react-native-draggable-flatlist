@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -94,6 +95,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   } = props;
 
   let [activeKey, setActiveKey] = useState<string | null>(null);
+  const [layoutAnimationDisabled, setLayoutAnimationDisabled] = useState(
+    !propsRef.current.enableLayoutAnimationExperimental
+  );
 
   const keyExtractor = useStableCallback((item: T, index: number) => {
     if (!props.keyExtractor) {
@@ -111,6 +115,19 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     // When data changes make sure `activeKey` is nulled out in the same render pass
     activeKey = null;
   }
+
+  useEffect(() => {
+    if (!propsRef.current.enableLayoutAnimationExperimental) return;
+    if (activeKey) {
+      setLayoutAnimationDisabled(true);
+    } else {
+      // setTimeout result of trial-and-error to determine how long to wait before
+      // re-enabling layout animations so that a drag reorder does not trigger it.
+      setTimeout(() => {
+        setLayoutAnimationDisabled(false);
+      }, 100);
+    }
+  }, [activeKey]);
 
   useLayoutEffect(() => {
     props.data.forEach((d, i) => {
@@ -328,6 +345,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       activeKey={activeKey}
       keyExtractor={keyExtractor}
       horizontal={!!props.horizontal}
+      layoutAnimationDisabled={layoutAnimationDisabled}
     >
       <GestureDetector gesture={panGesture}>
         <Animated.View

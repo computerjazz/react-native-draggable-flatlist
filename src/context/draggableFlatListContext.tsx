@@ -4,6 +4,7 @@ type Props<T> = {
   activeKey: string | null;
   keyExtractor: (item: T, index: number) => string;
   horizontal: boolean;
+  layoutAnimationDisabled: boolean;
   children: React.ReactNode;
 };
 
@@ -17,6 +18,7 @@ export default function DraggableFlatListProvider<T>({
   activeKey,
   keyExtractor,
   horizontal,
+  layoutAnimationDisabled,
   children,
 }: Props<T>) {
   const value = useMemo(
@@ -24,8 +26,9 @@ export default function DraggableFlatListProvider<T>({
       activeKey,
       keyExtractor,
       horizontal,
+      layoutAnimationDisabled,
     }),
-    [activeKey, keyExtractor, horizontal]
+    [activeKey, keyExtractor, horizontal, layoutAnimationDisabled]
   );
 
   return (

@@ -60,7 +60,8 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `simultaneousHandlers`     | `React.Ref<any>` or `React.Ref<any>[]`                                                    | References to other gesture handlers, mainly useful when using this component within a `ScrollView`. See [Cross handler interactions](https://docs.swmansion.com/react-native-gesture-handler/docs/interactions/). |
 |`itemEnteringAnimation`| Reanimated `AnimationBuilder` ([docs](https://docs.swmansion.com/react-native-reanimated/docs/api/LayoutAnimations/entryAnimations)) | Animation when item is added to list.|
 |`itemExitingAnimation`| Reanimated `AnimationBuilder` ([docs](https://docs.swmansion.com/react-native-reanimated/docs/api/LayoutAnimations/exitAnimations))| Animation when item is removed from list.|
-|`itemLayoutAnimation`| Reanimated `AnimationBuilder` ([docs](https://docs.swmansion.com/react-native-reanimated/docs/api/LayoutAnimations/layoutTransitions))| Animation when list items change position.|
+|`itemLayoutAnimation`| Reanimated `AnimationBuilder` ([docs](https://docs.swmansion.com/react-native-reanimated/docs/api/LayoutAnimations/layoutTransitions))| Animation when list items change position (`enableLayoutAnimationExperimental` prop must be `true`).|
+|`enableLayoutAnimationExperimental`| `boolean`| Flag to turn on experimental support for `itemLayoutAnimation`.|
 
 
 

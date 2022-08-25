@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import {
+  findNodeHandle,
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
   StyleProp,
@@ -7,6 +8,7 @@ import {
   ViewStyle,
 } from "react-native";
 import Animated, {
+  runOnUI,
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
@@ -38,6 +40,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     activeKey,
     keyExtractor,
     horizontal,
+    layoutAnimationDisabled,
   } = useDraggableFlatListContext<T>();
 
   const key = keyExtractor(item, index);
@@ -124,6 +127,24 @@ function CellRendererComponent<T>(props: Props<T>) {
     itemLayoutAnimation,
   } = propsRef.current;
 
+  useEffect(() => {
+    if (!propsRef.current.enableLayoutAnimationExperimental) return;
+    const tag = findNodeHandle(viewRef.current);
+
+    runOnUI((t: number | null, _layoutDisabled) => {
+      "worklet";
+      if (!t) return;
+      const config = global.LayoutAnimationRepository.configs[t];
+      if (config) stashConfig(t, config);
+      const stashedConfig = getStashedConfig(t);
+      if (_layoutDisabled) {
+        global.LayoutAnimationRepository.removeConfig(t);
+      } else if (stashedConfig) {
+        global.LayoutAnimationRepository.registerConfig(t, stashedConfig);
+      }
+    })(tag, layoutAnimationDisabled);
+  }, [layoutAnimationDisabled]);
+
   return (
     <Animated.View
       {...rest}
@@ -131,7 +152,11 @@ function CellRendererComponent<T>(props: Props<T>) {
       onLayout={onCellLayout}
       entering={itemEnteringAnimation}
       exiting={itemExitingAnimation}
-      layout={itemLayoutAnimation}
+      layout={
+        propsRef.current.enableLayoutAnimationExperimental
+          ? itemLayoutAnimation
+          : undefined
+      }
       style={[
         props.style,
         baseStyle,
@@ -151,3 +176,29 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 0 }, { translateY: 0 }],
   },
 });
+
+declare global {
+  namespace NodeJS {
+    interface Global {
+      RNDFLLayoutAnimationConfigStash: Record<string, unknown>;
+    }
+  }
+}
+
+runOnUI(() => {
+  "worklet";
+  global.RNDFLLayoutAnimationConfigStash = {};
+})();
+
+function stashConfig(tag: number, config: unknown) {
+  "worklet";
+  if (!global.RNDFLLayoutAnimationConfigStash)
+    global.RNDFLLayoutAnimationConfigStash = {};
+  global.RNDFLLayoutAnimationConfigStash[tag] = config;
+}
+
+function getStashedConfig(tag: number) {
+  "worklet";
+  if (!global.RNDFLLayoutAnimationConfigStash) return null;
+  return global.RNDFLLayoutAnimationConfigStash[tag] as Record<string, unknown>;
+}

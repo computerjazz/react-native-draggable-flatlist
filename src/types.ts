@@ -48,6 +48,7 @@ export type DraggableFlatListProps<T> = Modify<
     itemEnteringAnimation?: AnimateProps<Animated.View>["entering"];
     itemExitingAnimation?: AnimateProps<Animated.View>["exiting"];
     itemLayoutAnimation?: AnimateProps<Animated.View>["layout"];
+    enableLayoutAnimationExperimental?: boolean;
     onContainerLayout?: (params: {
       layout: LayoutChangeEvent["nativeEvent"]["layout"];
       containerRef: React.RefObject<Animated.View>;
