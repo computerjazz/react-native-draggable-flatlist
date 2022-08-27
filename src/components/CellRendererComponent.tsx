@@ -60,7 +60,8 @@ function CellRendererComponent<T>(props: Props<T>) {
     // When activeKey becomes null at the end of a drag and the list reorders,
     // the animated style may apply before the next paint, causing a flicker.
     // Solution is to hold over the last animated value until the next onLayout.
-    if (translate.value) {
+    // (Not required in web)
+    if (translate.value && !isWeb) {
       heldTanslate.value = translate.value;
     }
     const t = activeKey ? translate.value : heldTanslate.value;
