@@ -109,18 +109,28 @@ function useSetupAnimatedValues<T>() {
     const containerMinusActiveCell =
       containerSize.value - activeCellSize.value + scrollOffset.value;
 
+    const offsetRelativeToScrollTop =
+      touchPositionDiff.value + activeCellOffset.value;
     const constrained = Math.min(
       containerMinusActiveCell,
-      Math.max(
-        scrollOffset.value,
-        touchPositionDiff.value + activeCellOffset.value
-      )
+      Math.max(scrollOffset.value, offsetRelativeToScrollTop)
     );
+
+    const maxTranslateNegative = -activeCellOffset.value;
+    const maxTranslatePositive =
+      scrollViewSize.value - (activeCellOffset.value + activeCellSize.value);
+
     // Only constrain the touch position while the finger is on the screen. This allows the active cell
     // to snap above/below the fold once let go, if the drag ends at the top/bottom of the screen.
-    return isTouchActiveNative.value
+    const constrainedBase = isTouchActiveNative.value
       ? constrained - activeCellOffset.value
       : touchPositionDiff.value;
+
+    // Make sure item is constrained to the boundaries of the scrollview
+    return Math.min(
+      Math.max(constrainedBase, maxTranslateNegative),
+      maxTranslatePositive
+    );
   }, []);
 
   const hoverAnim = useDerivedValue(() => {
