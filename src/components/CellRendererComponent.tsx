@@ -129,6 +129,8 @@ function CellRendererComponent<T>(props: Props<T>) {
   } = propsRef.current;
 
   useEffect(() => {
+    // NOTE: keep an eye on reanimated LayoutAnimation refactor:
+    // https://github.com/software-mansion/react-native-reanimated/pull/3332/files
     if (!propsRef.current.enableLayoutAnimationExperimental) return;
     const tag = findNodeHandle(viewRef.current);
 
