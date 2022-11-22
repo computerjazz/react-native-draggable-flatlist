@@ -3,7 +3,6 @@ import {
   FlatListProps,
   LayoutChangeEvent,
   StyleProp,
-  ViewPropTypes,
   ViewStyle,
 } from "react-native";
 import { useAnimatedValues } from "./context/animatedValueContext";
