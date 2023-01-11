@@ -225,6 +225,10 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     }
   );
 
+  const onPlaceholderIndexChange = useStableCallback((index: number) => {
+    props.onPlaceholderIndexChange?.(index);
+  });
+
   // Handle case where user ends drag without moving their finger.
   useAnimatedReaction(
     () => {
@@ -242,6 +246,18 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       }
     },
     [isTouchActiveNative, onDragEnd]
+  );
+
+  useAnimatedReaction(
+    () => {
+      return spacerIndexAnim.value;
+    },
+    (cur, prev) => {
+      if (cur !== prev && cur >= 0 && prev >= 0) {
+        runOnJS(onPlaceholderIndexChange)(cur)
+      }
+    },
+    [spacerIndexAnim]
   );
 
   const gestureDisabled = useSharedValue(false);
