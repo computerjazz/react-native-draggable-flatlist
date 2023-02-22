@@ -246,7 +246,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         }
       }
     },
-    [isTouchActiveNative, onDragEnd]
+    [isTouchActiveNative, onDragEnd, onRelease]
   );
 
   useAnimatedReaction(
@@ -254,8 +254,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       return spacerIndexAnim.value;
     },
     (cur, prev) => {
-      if (cur !== prev && cur >= 0 && prev >= 0) {
-        runOnJS(onPlaceholderIndexChange)(cur)
+      if (prev !== null && cur !== prev && cur >= 0 && prev >= 0) {
+        runOnJS(onPlaceholderIndexChange)(cur);
       }
     },
     [spacerIndexAnim]
