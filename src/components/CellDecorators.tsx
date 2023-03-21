@@ -39,12 +39,16 @@ type ShadowProps = {
   elevation?: number;
   radius?: number;
   color?: string;
+  inactiveBackgroundColor?: string;
+  activeBackgroundColor?: string;
   opacity?: number;
 };
 
 export const ShadowDecorator = ({
   elevation = 10,
   color = "black",
+  inactiveBackgroundColor = "white",
+  activeBackgroundColor = "white",
   opacity = 0.25,
   radius = 5,
   children,
@@ -59,6 +63,9 @@ export const ShadowDecorator = ({
       shadowRadius: isActive ? radius : 0,
       shadowColor: isActive ? color : "transparent",
       shadowOpacity: isActive ? shadowOpacity : 0,
+      backgroundColor: isActive
+        ? activeBackgroundColor
+        : inactiveBackgroundColor,
     };
   }, [isActive, onActiveAnim]);
 
