@@ -17,7 +17,7 @@ const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 type NestableScrollContainerInnerProps = {
   onScrollOffsetChange?: (scrollOffset: number) => void;
-} & ScrollViewProps;
+} & Omit<ScrollViewProps, "onScroll">;
 
 function NestableScrollContainerInner(
   props: NestableScrollContainerInnerProps
