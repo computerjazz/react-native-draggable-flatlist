@@ -39,6 +39,7 @@ type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
     ref: React.Ref<FlatList<T>>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
+    waitFor?: React.Ref<unknown> | React.Ref<unknown>[];
   }
 >;
 
@@ -59,6 +60,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     keyToIndexRef,
     propsRef,
     animationConfigRef,
+    panRef,
   } = useRefs<T>();
   const {
     activeCellOffset,
@@ -264,6 +266,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const gestureDisabled = useSharedValue(false);
 
   const panGesture = Gesture.Pan()
+    .withRef(panRef)
     .onBegin((evt) => {
       gestureDisabled.value = disabled.value;
       if (gestureDisabled.value) return;
@@ -386,6 +389,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             keyExtractor={keyExtractor}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
+            waitFor={panRef}
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
           />
