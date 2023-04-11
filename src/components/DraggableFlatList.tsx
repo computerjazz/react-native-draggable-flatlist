@@ -59,6 +59,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     keyToIndexRef,
     propsRef,
     animationConfigRef,
+    panRef,
   } = useRefs<T>();
   const {
     activeCellOffset,
@@ -264,9 +265,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const gestureDisabled = useSharedValue(false);
 
   const panGesture = Gesture.Pan()
+    .withRef(panRef)
     .onBegin((evt) => {
       gestureDisabled.value = disabled.value;
       if (gestureDisabled.value) return;
+      runOnJS(reset)();
       panGestureState.value = evt.state;
     })
     .onUpdate((evt) => {
@@ -386,7 +389,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             keyExtractor={keyExtractor}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
-            simultaneousHandlers={props.simultaneousHandlers}
+            simultaneousHandlers={([panRef] as React.Ref<any>[]).concat(
+              props.simultaneousHandlers ?? []
+            )}
             removeClippedSubviews={false}
           />
           {!!props.onScrollOffsetChange && (

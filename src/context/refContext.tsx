@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { useMemo, useRef } from "react";
-import { FlatList } from "react-native-gesture-handler";
+import { FlatList, GestureType } from "react-native-gesture-handler";
 import Animated, { WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
@@ -14,6 +14,7 @@ type RefContextValue<T> = {
   containerRef: React.RefObject<Animated.View>;
   flatlistRef: React.RefObject<FlatList<T>> | React.ForwardedRef<FlatList<T>>;
   scrollViewRef: React.RefObject<Animated.ScrollView>;
+  panRef: React.MutableRefObject<GestureType | undefined>;
 };
 const RefContext = React.createContext<RefContextValue<any> | undefined>(
   undefined
@@ -63,6 +64,7 @@ function useSetupRefs<T>({
   const flatlistRefInternal = useRef<FlatList<T>>(null);
   const flatlistRef = flatListRefProp || flatlistRefInternal;
   const scrollViewRef = useRef<Animated.ScrollView>(null);
+  const panRef = useRef<GestureType | undefined>(undefined);
 
   // useEffect(() => {
   //   // This is a workaround for the fact that RN does not respect refs passed in
@@ -85,6 +87,7 @@ function useSetupRefs<T>({
       keyToIndexRef,
       propsRef,
       scrollViewRef,
+      panRef,
     }),
     []
   );
