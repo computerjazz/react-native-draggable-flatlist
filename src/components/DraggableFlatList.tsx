@@ -263,6 +263,13 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const gestureDisabled = useSharedValue(false);
 
+  // WORKAROUND: There is a slight delay after the animation is completed in Android, so let it send 100ms and change the flag.
+  const disabledToFalseWithDelay = () => {
+    setTimeout(() => {
+      disabled.value = false;
+    }, 100);
+  };
+
   const panGesture = Gesture.Pan()
     .onBegin((evt) => {
       gestureDisabled.value = disabled.value;
@@ -301,7 +308,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             from: activeIndexAnim.value,
             to: spacerIndexAnim.value,
           });
-          disabled.value = false;
+          runOnJS(disabledToFalseWithDelay)();
         }
       );
     })
