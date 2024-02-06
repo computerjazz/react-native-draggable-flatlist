@@ -79,6 +79,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     disabled,
   } = useAnimatedValues();
 
+  const enabled = useSharedValue(false);
+
   const reset = useStableCallback(() => {
     activeIndexAnim.value = -1;
     spacerIndexAnim.value = -1;
@@ -138,6 +140,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const drag = useStableCallback((activeKey: string) => {
     if (disabled.value) return;
+
     const index = keyToIndexRef.current.get(activeKey);
     const cellData = cellDataRef.current.get(activeKey);
     if (cellData) {
@@ -199,6 +202,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           itemKey={key}
           renderItem={props.renderItem}
           drag={drag}
+          enabled={enabled}
+          panGesture={panGesture}
           extraData={props.extraData}
         />
       );
@@ -264,6 +269,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const gestureDisabled = useSharedValue(false);
 
   const panGesture = Gesture.Pan()
+    .manualActivation(true)
+    .onTouchesMove((evt, state) => {
+      if (enabled.value) {
+        state.activate();
+      } else {
+        state.fail();
+      }
+    })
     .onBegin((evt) => {
       gestureDisabled.value = disabled.value;
       if (gestureDisabled.value) return;
@@ -311,6 +324,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     .onTouchesUp(() => {
       // Turning this into a worklet causes timing issues. We want it to run
       // just after the finger lifts.
+      enabled.value = false;
       runOnJS(onContainerTouchEnd)();
     });
 

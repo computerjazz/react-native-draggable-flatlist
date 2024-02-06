@@ -7,6 +7,7 @@ import {
   useSafeNestableScrollContainerContext,
 } from "../context/nestableScrollContainerContext";
 import { useStableCallback } from "../hooks/useStableCallback";
+import useKeyboardListener from "../hooks/useKeyboardListener";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -18,6 +19,8 @@ function NestableScrollContainerInner(props: ScrollViewProps) {
     scrollableRef,
     outerScrollEnabled,
   } = useSafeNestableScrollContainerContext();
+
+  useKeyboardListener();
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: ({ contentOffset }) => {
