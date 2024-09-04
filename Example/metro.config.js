@@ -5,18 +5,12 @@
  * @format
  */
 const path = require("path");
-const { mergeConfig } = require("metro-config");
-const { getDefaultConfig } = require("expo/metro-config");
-
-const baseConfig = getDefaultConfig(__dirname);
-
 const extraNodeModules = {
   "react-native-draggable-flatlist": path.resolve(__dirname + "/../src"),
 };
 const watchFolders = [path.resolve(__dirname + "/../src")];
-const config = {
+module.exports = {
   transformer: {
-    assetPlugins: ["expo-asset/tools/hashAssetFiles"],
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,
@@ -35,5 +29,3 @@ const config = {
   },
   watchFolders,
 };
-
-module.exports = mergeConfig(baseConfig, config);
