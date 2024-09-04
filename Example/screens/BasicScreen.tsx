@@ -6,6 +6,7 @@ import DraggableFlatList, {
   OpacityDecorator,
   RenderItemParams,
 } from "react-native-draggable-flatlist";
+import { FadeInUp, FadeOutUp, LinearTransition } from "react-native-reanimated";
 
 import { mapIndexToData, Item } from "../utils";
 
@@ -16,6 +17,10 @@ const initialData: Item[] = [...Array(NUM_ITEMS)].map(mapIndexToData);
 export default function Basic() {
   const [data, setData] = useState(initialData);
 
+  const remove = (key: string) => {
+    setData((data) => data.filter((value) => value.key !== key));
+  };
+
   const renderItem = useCallback(
     ({ item, drag, isActive }: RenderItemParams<Item>) => {
       return (
@@ -24,6 +29,7 @@ export default function Basic() {
             <OpacityDecorator>
               <TouchableOpacity
                 activeOpacity={1}
+                onPress={() => remove(item.key)}
                 onLongPress={drag}
                 disabled={isActive}
                 style={[
@@ -50,6 +56,10 @@ export default function Basic() {
       renderPlaceholder={() => (
         <View style={{ flex: 1, backgroundColor: "tomato" }} />
       )}
+      itemLayoutAnimation={LinearTransition}
+      itemEnteringAnimation={FadeInUp}
+      itemExitingAnimation={FadeOutUp}
+      enableLayoutAnimationExperimental
     />
   );
 }

@@ -20,7 +20,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isWeb } from "../constants";
+import { DEFAULT_PROPS } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -272,10 +272,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     .onUpdate((evt) => {
       if (gestureDisabled.value) return;
       panGestureState.value = evt.state;
-      const translation = horizontalAnim.value
+      touchTranslate.value = horizontalAnim.value
         ? evt.translationX
         : evt.translationY;
-      touchTranslate.value = translation;
     })
     .onEnd((evt) => {
       if (gestureDisabled.value) return;
