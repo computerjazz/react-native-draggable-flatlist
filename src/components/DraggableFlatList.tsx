@@ -47,9 +47,9 @@ type OnViewableItemsChangedCallback<T> = Exclude<
   undefined | null
 >;
 
-const AnimatedFlatList = (Animated.createAnimatedComponent(
+const AnimatedFlatList = Animated.createAnimatedComponent(
   FlatList
-) as unknown) as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
+) as unknown as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
 
 function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
@@ -91,7 +91,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
     scrollEnabled = DEFAULT_PROPS.scrollEnabled,
-    activationDistance: activationDistanceProp = DEFAULT_PROPS.activationDistance,
+    activationDistance:
+      activationDistanceProp = DEFAULT_PROPS.activationDistance,
   } = props;
 
   let [activeKey, setActiveKey] = useState<string | null>(null);
@@ -269,9 +270,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     .onUpdate((evt) => {
       if (gestureDisabled.value) return;
       panGestureState.value = evt.state;
-      touchTranslate.value = horizontalAnim.value
+      const translation = horizontalAnim.value
         ? evt.translationX
         : evt.translationY;
+
+      touchTranslate.value = translation;
     })
     .onEnd((evt) => {
       if (gestureDisabled.value) return;

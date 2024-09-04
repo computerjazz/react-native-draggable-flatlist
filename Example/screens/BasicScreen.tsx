@@ -59,7 +59,6 @@ export default function Basic() {
       itemLayoutAnimation={LinearTransition}
       itemEnteringAnimation={FadeInUp}
       itemExitingAnimation={FadeOutUp}
-      enableLayoutAnimationExperimental
     />
   );
 }
