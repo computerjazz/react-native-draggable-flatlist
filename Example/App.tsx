@@ -1,5 +1,4 @@
 import { StatusBar } from "expo-status-bar";
-import { AppRegistry } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
