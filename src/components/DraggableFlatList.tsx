@@ -273,7 +273,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       const translation = horizontalAnim.value
         ? evt.translationX
         : evt.translationY;
-
       touchTranslate.value = translation;
     })
     .onEnd((evt) => {
