@@ -95,9 +95,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   } = props;
 
   let [activeKey, setActiveKey] = useState<string | null>(null);
-  const [layoutAnimationDisabled, setLayoutAnimationDisabled] = useState(
-    !propsRef.current.enableLayoutAnimationExperimental
-  );
+  const [layoutAnimationDisabled, setLayoutAnimationDisabled] = useState(false);
 
   const keyExtractor = useStableCallback((item: T, index: number) => {
     if (!props.keyExtractor) {
@@ -117,7 +115,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }
 
   useEffect(() => {
-    if (!propsRef.current.enableLayoutAnimationExperimental) return;
     if (activeKey) {
       setLayoutAnimationDisabled(true);
     } else {
