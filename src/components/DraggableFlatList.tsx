@@ -295,7 +295,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       const springTo = placeholderOffset.value - activeCellOffset.value;
       touchTranslate.value = withSpring(
         springTo,
-        animationConfigRef.current,
+        animationConfigRef.value,
         () => {
           runOnJS(onDragEnd)({
             from: activeIndexAnim.value,
