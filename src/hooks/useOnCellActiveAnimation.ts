@@ -1,9 +1,9 @@
-
-import {
+import { useEffect } from "react";
+import Animated, {
   useDerivedValue,
+  useSharedValue,
   withSpring,
   WithSpringConfig,
-  useSharedValue,
 } from "react-native-reanimated";
 import { DEFAULT_ANIMATION_CONFIG } from "../constants";
 import { useAnimatedValues } from "../context/animatedValueContext";
@@ -17,7 +17,10 @@ export function useOnCellActiveAnimation(
   { animationConfig }: Params = { animationConfig: {} }
 ) {
   const animationConfigRef = useSharedValue(animationConfig);
-  animationConfigRef.value = animationConfig;
+
+  useEffect(() => {
+    animationConfigRef.value = animationConfig;
+  }, [animationConfig]);
 
   const isActive = useIsActive();
 
@@ -28,7 +31,7 @@ export function useOnCellActiveAnimation(
     return withSpring(toVal, {
       ...DEFAULT_ANIMATION_CONFIG,
       ...animationConfigRef.value,
-    });
+    } as WithSpringConfig);
   }, [isActive]);
 
   return {

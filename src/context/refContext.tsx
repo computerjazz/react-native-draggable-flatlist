@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, { type SharedValue, useSharedValue, WithSpringConfig } from "react-native-reanimated";
@@ -50,12 +50,18 @@ function useSetupRefs<T>({
 
   const propsRef = useRef(props);
   propsRef.current = props;
-  const animConfig = {
-    ...DEFAULT_PROPS.animationConfig,
-    ...animationConfig,
-  } as WithSpringConfig;
+  const animConfig = useMemo(
+    () => ({
+      ...DEFAULT_PROPS.animationConfig,
+      ...animationConfig,
+    } as WithSpringConfig),
+    [animationConfig]
+  );
+
   const animationConfigRef = useSharedValue(animConfig);
-  animationConfigRef.value = animConfig;
+  useEffect(() => {
+    animationConfigRef.value = animConfig;
+  }, [animConfig]);
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
