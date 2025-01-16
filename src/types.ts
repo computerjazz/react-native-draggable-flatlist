@@ -25,7 +25,7 @@ type DefaultProps = Readonly<typeof DEFAULT_PROPS>;
 export type DraggableFlatListProps<T> = Modify<
   FlatListProps<T>,
   {
-    data: T[];
+    data: T[] | readonly T[];
     activationDistance?: number;
     animationConfig?: Partial<WithSpringConfig>;
     autoscrollSpeed?: number;
