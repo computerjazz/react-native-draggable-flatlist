@@ -1,14 +1,14 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useMemo, useRef } from "react";
 import { FlatList } from "react-native-gesture-handler";
-import Animated, { WithSpringConfig } from "react-native-reanimated";
+import Animated, { type SharedValue, useSharedValue, WithSpringConfig } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "../constants";
 import { useProps } from "./propsContext";
 import { CellData, DraggableFlatListProps } from "../types";
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
-  animationConfigRef: React.MutableRefObject<WithSpringConfig>;
+  animationConfigRef: SharedValue<WithSpringConfig>;
   cellDataRef: React.MutableRefObject<Map<string, CellData>>;
   keyToIndexRef: React.MutableRefObject<Map<string, number>>;
   containerRef: React.RefObject<Animated.View>;
@@ -50,12 +50,18 @@ function useSetupRefs<T>({
 
   const propsRef = useRef(props);
   propsRef.current = props;
-  const animConfig = {
-    ...DEFAULT_PROPS.animationConfig,
-    ...animationConfig,
-  } as WithSpringConfig;
-  const animationConfigRef = useRef(animConfig);
-  animationConfigRef.current = animConfig;
+  const animConfig = useMemo(
+    () => ({
+      ...DEFAULT_PROPS.animationConfig,
+      ...animationConfig,
+    } as WithSpringConfig),
+    [animationConfig]
+  );
+
+  const animationConfigRef = useSharedValue(animConfig);
+  useEffect(() => {
+    animationConfigRef.value = animConfig;
+  }, [animConfig]);
 
   const cellDataRef = useRef(new Map<string, CellData>());
   const keyToIndexRef = useRef(new Map<string, number>());
