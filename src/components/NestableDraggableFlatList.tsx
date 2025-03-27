@@ -48,7 +48,7 @@ function NestableDraggableFlatListInner<T>(
   });
 
   const onListContainerLayout = useStableCallback(async ({ containerRef }) => {
-    const nodeHandle = findNodeHandle(scrollableRef.current);
+    const nodeHandle = scrollableRef.current
 
     const onSuccess = (_x: number, y: number) => {
       listVerticalOffset.value = y;
