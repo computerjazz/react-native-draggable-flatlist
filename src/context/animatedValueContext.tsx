@@ -61,7 +61,7 @@ function useSetupAnimatedValues<T>() {
   const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
 
   const scrollOffset = useSharedValue(0);
-  const scrollInit = useSharedValue(0);
+  const scrollInit = useSharedValue(-1);
 
   const viewableIndexMin = useSharedValue(0);
   const viewableIndexMax = useSharedValue(0);
@@ -90,7 +90,8 @@ function useSetupAnimatedValues<T>() {
   }, []);
 
   const autoScrollDistance = useDerivedValue(() => {
-    if (!isDraggingCell.value) return 0;
+    const scrollInitIsNotSet = scrollInit.value === -1;
+    if (!isDraggingCell.value || scrollInitIsNotSet) return 0;
     const innerScrollDiff = scrollOffset.value - scrollInit.value;
     // If list is nested there may be an outer scroll diff
     const outerScrollDiff = outerScrollOffset.value - outerScrollInit.value;
@@ -174,6 +175,7 @@ function useSetupAnimatedValues<T>() {
       panGestureState,
       placeholderOffset,
       resetTouchedCell,
+      scrollInit,
       scrollOffset,
       scrollViewSize,
       spacerIndexAnim,
@@ -197,6 +199,7 @@ function useSetupAnimatedValues<T>() {
       panGestureState,
       placeholderOffset,
       resetTouchedCell,
+      scrollInit,
       scrollOffset,
       scrollViewSize,
       spacerIndexAnim,
