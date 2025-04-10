@@ -1,7 +1,12 @@
 import React from "react";
+
 import { LayoutChangeEvent, ScrollViewProps } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+} from "react-native-reanimated";
+
 import {
   NestableScrollContainerProvider,
   useSafeNestableScrollContainerContext,
@@ -10,7 +15,13 @@ import { useStableCallback } from "../hooks/useStableCallback";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
-function NestableScrollContainerInner(props: ScrollViewProps) {
+type NestableScrollContainerInnerProps = {
+  onScrollOffsetChange?: (scrollOffset: number) => void;
+} & Omit<ScrollViewProps, "onScroll">;
+
+function NestableScrollContainerInner(
+  props: NestableScrollContainerInnerProps
+) {
   const {
     outerScrollOffset,
     containerSize,
@@ -19,9 +30,14 @@ function NestableScrollContainerInner(props: ScrollViewProps) {
     outerScrollEnabled,
   } = useSafeNestableScrollContainerContext();
 
-  const onScroll = useAnimatedScrollHandler({
-    onScroll: ({ contentOffset }) => {
-      outerScrollOffset.value = contentOffset.y;
+  const onScroll = useStableCallback((scrollOffset: number) => {
+    props.onScrollOffsetChange?.(scrollOffset);
+  });
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      outerScrollOffset.value = event.contentOffset.y;
+      runOnJS(onScroll)(event.contentOffset.y);
     },
   });
 
@@ -45,13 +61,16 @@ function NestableScrollContainerInner(props: ScrollViewProps) {
       scrollEnabled={outerScrollEnabled}
       ref={scrollableRef}
       scrollEventThrottle={1}
-      onScroll={onScroll}
+      onScroll={scrollHandler}
     />
   );
 }
 
 export const NestableScrollContainer = React.forwardRef(
-  (props: ScrollViewProps, forwardedRef?: React.ForwardedRef<ScrollView>) => {
+  (
+    props: NestableScrollContainerInnerProps,
+    forwardedRef?: React.ForwardedRef<ScrollView>
+  ) => {
     return (
       <NestableScrollContainerProvider
         forwardedRef={
