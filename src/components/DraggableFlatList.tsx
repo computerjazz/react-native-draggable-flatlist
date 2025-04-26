@@ -314,7 +314,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   if (dragHitSlop) panGesture.hitSlop(dragHitSlop);
   if (activationDistanceProp) {
-    const activeOffset = [-activationDistanceProp, activationDistanceProp];
+    const activeOffset: [number, number] = [-activationDistanceProp, activationDistanceProp];
     if (props.horizontal) {
       panGesture.activeOffsetX(activeOffset);
     } else {
