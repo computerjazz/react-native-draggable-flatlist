@@ -11,6 +11,7 @@ export const mapIndexToData = (_d: any, index: number, arr: any[]) => {
     key: `key-${index}`,
     backgroundColor,
     height: 75,
+    width: 100,
   };
 };
 

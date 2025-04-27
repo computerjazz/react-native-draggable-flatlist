@@ -35,12 +35,11 @@ import { useStableCallback } from "../hooks/useStableCallback";
 import ScrollOffsetListener from "./ScrollOffsetListener";
 import { typedMemo } from "../utils";
 
-type RNGHFlatListProps<T> = Animated.AnimateProps<
+type RNGHFlatListProps<T> = React.ComponentProps<typeof Animated.View> &
   FlatListProps<T> & {
     ref: React.Ref<FlatList<T>>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
-  }
->;
+  };
 
 type OnViewableItemsChangedCallback<T> = Exclude<
   FlatListProps<T>["onViewableItemsChanged"],

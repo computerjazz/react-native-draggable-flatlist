@@ -15,14 +15,24 @@ const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       Root: {
         screens: {
-          TabOne: {
+          Basic: {
             screens: {
               Basic: "basic",
             },
           },
-          TabTwo: {
+          Swipeable: {
             screens: {
               Swipeable: "swipeable",
+            },
+          },
+          Nested: {
+            screens: {
+              Nested: "nested",
+            },
+          },
+          Horizontal: {
+            screens: {
+              Horizontal: "horizontal",
             },
           },
         },

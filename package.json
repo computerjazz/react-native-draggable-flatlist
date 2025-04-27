@@ -67,8 +67,9 @@
     "react": "18.3.1",
     "react-native": "0.76.9",
     "react-native-builder-bob": "^0.20.0",
-    "react-native-gesture-handler": "^2.12.0",
-    "react-native-reanimated": "^3.16.7",
+    "react-native-gesture-handler": "~2.20.0",
+    "react-native-reanimated": "~3.16.7",
+    "react-native-svg-transformer": "^1.5.0",
     "react-test-renderer": "18.3.1",
     "typescript": "^5.0.0"
   },
@@ -87,9 +88,6 @@
     ]
   },
   "dependencies": {
-    "@babel/preset-typescript": "^7.23.0",
-    "expo": "~52.0.46",
-    "react": "18.3.1",
-    "react-native": "0.76.9"
+    "@babel/preset-typescript": "^7.23.0"
   }
 }

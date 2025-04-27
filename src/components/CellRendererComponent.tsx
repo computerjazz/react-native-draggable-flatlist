@@ -134,14 +134,17 @@ function CellRendererComponent<T>(props: Props<T>) {
       entering={itemEnteringAnimation}
       exiting={itemExitingAnimation}
       layout={!layoutAnimationDisabled ? itemLayoutAnimation : undefined}
-      style={[
-        props.style,
-        baseStyle,
-        activeKey ? animStyle : styles.zeroTranslate,
-      ]}
-      pointerEvents={activeKey ? "none" : "auto"}
     >
-      <CellProvider isActive={isActive}>{children}</CellProvider>
+      <Animated.View
+        style={[
+          props.style,
+          baseStyle,
+          activeKey ? animStyle : styles.zeroTranslate,
+        ]}
+        pointerEvents={activeKey ? "none" : "auto"}
+      >
+        <CellProvider isActive={isActive}>{children}</CellProvider>
+      </Animated.View>
     </Animated.View>
   );
 }
