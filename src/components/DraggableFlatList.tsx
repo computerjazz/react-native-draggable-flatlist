@@ -20,7 +20,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isWeb } from "../constants";
+import { DEFAULT_PROPS } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -35,21 +35,20 @@ import { useStableCallback } from "../hooks/useStableCallback";
 import ScrollOffsetListener from "./ScrollOffsetListener";
 import { typedMemo } from "../utils";
 
-type RNGHFlatListProps<T> = Animated.AnimateProps<
+type RNGHFlatListProps<T> = React.ComponentProps<typeof Animated.View> &
   FlatListProps<T> & {
     ref: React.Ref<FlatList<T>>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
-  }
->;
+  };
 
 type OnViewableItemsChangedCallback<T> = Exclude<
   FlatListProps<T>["onViewableItemsChanged"],
   undefined | null
 >;
 
-const AnimatedFlatList = (Animated.createAnimatedComponent(
+const AnimatedFlatList = Animated.createAnimatedComponent(
   FlatList
-) as unknown) as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
+) as unknown as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
 
 function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
@@ -91,13 +90,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
     scrollEnabled = DEFAULT_PROPS.scrollEnabled,
-    activationDistance: activationDistanceProp = DEFAULT_PROPS.activationDistance,
+    activationDistance:
+      activationDistanceProp = DEFAULT_PROPS.activationDistance,
   } = props;
 
   let [activeKey, setActiveKey] = useState<string | null>(null);
-  const [layoutAnimationDisabled, setLayoutAnimationDisabled] = useState(
-    !propsRef.current.enableLayoutAnimationExperimental
-  );
+  const [layoutAnimationDisabled, setLayoutAnimationDisabled] = useState(false);
 
   const keyExtractor = useStableCallback((item: T, index: number) => {
     if (!props.keyExtractor) {
@@ -117,7 +115,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }
 
   useEffect(() => {
-    if (!propsRef.current.enableLayoutAnimationExperimental) return;
     if (activeKey) {
       setLayoutAnimationDisabled(true);
     } else {
@@ -316,7 +313,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   if (dragHitSlop) panGesture.hitSlop(dragHitSlop);
   if (activationDistanceProp) {
-    const activeOffset = [-activationDistanceProp, activationDistanceProp];
+    const activeOffset: [number, number] = [-activationDistanceProp, activationDistanceProp];
     if (props.horizontal) {
       panGesture.activeOffsetX(activeOffset);
     } else {

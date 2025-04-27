@@ -10,19 +10,29 @@ import * as Linking from "expo-linking";
 import { RootStackParamList } from "../types";
 
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: [Linking.makeUrl("/")],
+  prefixes: [Linking.createURL("/")],
   config: {
     screens: {
       Root: {
         screens: {
-          TabOne: {
+          Basic: {
             screens: {
               Basic: "basic",
             },
           },
-          TabTwo: {
+          Swipeable: {
             screens: {
               Swipeable: "swipeable",
+            },
+          },
+          Nested: {
+            screens: {
+              Nested: "nested",
+            },
+          },
+          Horizontal: {
+            screens: {
+              Horizontal: "horizontal",
             },
           },
         },

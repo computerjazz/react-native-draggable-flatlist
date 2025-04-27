@@ -8,7 +8,7 @@ import {
 import { useAnimatedValues } from "./context/animatedValueContext";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, {
-  AnimateProps,
+  SharedValue,
   WithSpringConfig,
 } from "react-native-reanimated";
 import { DEFAULT_PROPS } from "./constants";
@@ -42,12 +42,11 @@ export type DraggableFlatListProps<T> = Modify<
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
-    outerScrollOffset?: Animated.SharedValue<number>;
+    outerScrollOffset?: SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
-    itemEnteringAnimation?: AnimateProps<Animated.View>["entering"];
-    itemExitingAnimation?: AnimateProps<Animated.View>["exiting"];
-    itemLayoutAnimation?: AnimateProps<Animated.View>["layout"];
-    enableLayoutAnimationExperimental?: boolean;
+    itemEnteringAnimation?: React.ComponentProps<typeof Animated.View>["entering"];
+    itemExitingAnimation?: React.ComponentProps<typeof Animated.View>["exiting"];
+    itemLayoutAnimation?: React.ComponentProps<typeof Animated.View>["layout"];
     onContainerLayout?: (params: {
       layout: LayoutChangeEvent["nativeEvent"]["layout"];
       containerRef: React.RefObject<Animated.View>;
@@ -70,12 +69,11 @@ export type RenderItemParams<T> = {
 export type RenderItem<T> = (params: RenderItemParams<T>) => React.ReactNode;
 
 export type AnimatedFlatListType = <T>(
-  props: Animated.AnimateProps<
+  props: React.ComponentProps<typeof Animated.View> & 
     FlatListProps<T> & {
       ref: React.Ref<FlatList<T>>;
       simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     }
-  >
 ) => React.ReactElement;
 
 export type CellData = {

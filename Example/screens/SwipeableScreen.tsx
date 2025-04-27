@@ -73,8 +73,8 @@ function RowItem({ item, itemRefs, drag, onPressDelete }: RowItemProps) {
             itemRefs.current.set(item.key, ref);
           }
         }}
-        onChange={({ open }) => {
-          if (open) {
+        onChange={({ openDirection }) => {
+          if (openDirection !== null) {
             // Close all other open items
             [...itemRefs.current.entries()].forEach(([key, ref]) => {
               if (key !== item.key && ref) ref.close();
@@ -133,7 +133,7 @@ function UnderlayRight() {
   const { close } = useSwipeableItemParams<Item>();
   return (
     <Animated.View style={[styles.row, styles.underlayRight]}>
-      <TouchableOpacity onPressOut={close}>
+      <TouchableOpacity onPress={() => close()}>
         <Text style={styles.text}>CLOSE</Text>
       </TouchableOpacity>
     </Animated.View>

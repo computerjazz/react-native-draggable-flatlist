@@ -31,7 +31,7 @@ function NestedDraggableListScreen() {
     );
   }, []);
 
-  const keyExtractor = (item) => item.key;
+  const keyExtractor = (item: Item) => item.key;
 
   return (
     <View style={styles.container}>
