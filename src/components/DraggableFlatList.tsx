@@ -6,7 +6,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { ListRenderItem, FlatListProps, LayoutChangeEvent } from "react-native";
+import {
+  ListRenderItem,
+  FlatListProps,
+  LayoutChangeEvent,
+  InteractionManager,
+} from "react-native";
 import {
   FlatList,
   Gesture,
@@ -20,7 +25,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import CellRendererComponent from "./CellRendererComponent";
-import { DEFAULT_PROPS, isWeb } from "../constants";
+import { DEFAULT_PROPS } from "../constants";
 import PlaceholderItem from "./PlaceholderItem";
 import RowItem from "./RowItem";
 import { DraggableFlatListProps } from "../types";
@@ -114,6 +119,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   if (dataHasChanged) {
     // When data changes make sure `activeKey` is nulled out in the same render pass
     activeKey = null;
+    InteractionManager.runAfterInteractions(() => {
+      reset();
+    });
   }
 
   useEffect(() => {
@@ -221,7 +229,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       }
 
       onDragEnd?.({ from, to, data: newData });
-      reset();
+
+      setActiveKey(null);
     }
   );
 
