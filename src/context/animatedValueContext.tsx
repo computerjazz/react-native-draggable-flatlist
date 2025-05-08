@@ -89,6 +89,19 @@ function useSetupAnimatedValues<T>() {
     return isTouchActiveNative.value && activeIndexAnim.value >= 0;
   }, []);
 
+  useAnimatedReaction(
+    () => {
+      return outerScrollOffset.value;
+    },
+    (cur, prev) => {
+      if (isDraggingCell.value) {
+        return;
+      }
+      outerScrollInit.value = cur;
+    },
+    [outerScrollInit, isDraggingCell]
+  );
+
   const autoScrollDistance = useDerivedValue(() => {
     if (!isDraggingCell.value) return 0;
     const innerScrollDiff = scrollOffset.value - scrollInit.value;
