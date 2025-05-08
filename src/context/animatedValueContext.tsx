@@ -60,7 +60,7 @@ function useSetupAnimatedValues<T>() {
   const activeCellSize = useSharedValue(0); // Height or width of acctive cell
   const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
 
-  const footerSize = useSharedValue(0); // Height of list footer
+  const footerSize = useSharedValue(0);
   const scrollOffset = useSharedValue(0);
   const scrollInit = useSharedValue(0);
 

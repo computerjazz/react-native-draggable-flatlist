@@ -171,11 +171,11 @@ function DraggableFlatListInner<T>({ListFooterComponent, ...props}: DraggableFla
     props.onContainerLayout?.({ layout, containerRef });
   };
 
-  // make height of footer available for use in drag contraints
+  // make size of footer available for use in drag contraints
   const onFooterLayout = ({
     nativeEvent: { layout },
   }: LayoutChangeEvent) => {
-    footerSize.value = layout.height
+    footerSize.value = props.horizontal ? layout.width : layout.height
   };
 
 
@@ -376,13 +376,14 @@ function DraggableFlatListInner<T>({ListFooterComponent, ...props}: DraggableFla
   });
 
   // Wrap the provided ListFooterComponent to add an onLayout
-  const wrappedListFooterComponent = 
-  <Animated.View 
-    style={props.ListFooterComponentStyle}
-    onLayout={onFooterLayout}
-    >
-      {ListFooterComponent}
-  </Animated.View>
+  const wrappedListFooterComponent = ListFooterComponent ?
+    <Animated.View 
+      style={props.ListFooterComponentStyle}
+      onLayout={onFooterLayout}
+      >
+        {ListFooterComponent}
+    </Animated.View>
+  : undefined
 
   return (
     <DraggableFlatListProvider
