@@ -60,7 +60,7 @@ function useSetupAnimatedValues<T>() {
   const activeCellSize = useSharedValue(0); // Height or width of acctive cell
   const activeCellOffset = useSharedValue(0); // Distance between active cell and edge of container
 
-  const footerHeight = useSharedValue(0); // Height of list footer
+  const footerSize = useSharedValue(0); // Height of list footer
   const scrollOffset = useSharedValue(0);
   const scrollInit = useSharedValue(0);
 
@@ -119,7 +119,7 @@ function useSetupAnimatedValues<T>() {
 
     const maxTranslateNegative = -activeCellOffset.value;
     const maxTranslatePositive =
-      scrollViewSize.value - (activeCellOffset.value + activeCellSize.value + footerHeight.value);
+      scrollViewSize.value - (activeCellOffset.value + activeCellSize.value + footerSize.value);
 
     // Only constrain the touch position while the finger is on the screen. This allows the active cell
     // to snap above/below the fold once let go, if the drag ends at the top/bottom of the screen.
@@ -176,7 +176,7 @@ function useSetupAnimatedValues<T>() {
       placeholderOffset,
       resetTouchedCell,
       scrollOffset,
-      footerHeight,
+      footerSize,
       scrollViewSize,
       spacerIndexAnim,
       touchPositionDiff,
@@ -200,7 +200,7 @@ function useSetupAnimatedValues<T>() {
       placeholderOffset,
       resetTouchedCell,
       scrollOffset,
-      footerHeight,
+      footerSize,
       scrollViewSize,
       spacerIndexAnim,
       touchPositionDiff,

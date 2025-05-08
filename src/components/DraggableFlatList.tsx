@@ -70,7 +70,7 @@ function DraggableFlatListInner<T>({ListFooterComponent, ...props}: DraggableFla
     activeCellSize,
     activeIndexAnim,
     containerSize,
-    footerHeight,
+    footerSize,
     scrollOffset,
     scrollViewSize,
     spacerIndexAnim,
@@ -175,7 +175,7 @@ function DraggableFlatListInner<T>({ListFooterComponent, ...props}: DraggableFla
   const onFooterLayout = ({
     nativeEvent: { layout },
   }: LayoutChangeEvent) => {
-    footerHeight.value = layout.height
+    footerSize.value = layout.height
   };
 
 
