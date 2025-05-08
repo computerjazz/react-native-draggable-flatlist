@@ -366,6 +366,13 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     props.onViewableItemsChanged?.(info);
   });
 
+  const memoCellRendererComponent = useCallback(
+    (cellProps) => (
+      <CellRendererComponent {...cellProps} onCellMoved={props.onCellMoved} />
+    ),
+    []
+  );
+
   return (
     <DraggableFlatListProvider
       activeKey={activeKey}
@@ -386,7 +393,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             {...props}
             data={props.data}
             onViewableItemsChanged={onViewableItemsChanged}
-            CellRendererComponent={CellRendererComponent}
+            CellRendererComponent={memoCellRendererComponent}
             ref={flatlistRef}
             onContentSizeChange={onListContentSizeChange}
             scrollEnabled={!activeKey && scrollEnabled}

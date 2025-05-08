@@ -26,10 +26,11 @@ type Props<T> = {
   children: React.ReactNode;
   onLayout?: (e: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
+  onCellMoved?: () => void;
 };
 
 function CellRendererComponent<T>(props: Props<T>) {
-  const { item, index, onLayout, children, ...rest } = props;
+  const { item, index, onLayout, children, onCellMoved, ...rest } = props;
 
   const viewRef = useRef<Animated.View>(null);
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
@@ -51,6 +52,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     cellOffset: offset,
     cellSize: size,
     cellIndex: index,
+    onCellMoved: onCellMoved,
   });
 
   const isActive = activeKey === key;
