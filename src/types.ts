@@ -52,6 +52,7 @@ export type DraggableFlatListProps<T> = Modify<
       layout: LayoutChangeEvent["nativeEvent"]["layout"];
       containerRef: React.RefObject<Animated.View>;
     }) => void;
+    ListFooterComponent?: React.ReactElement;
   } & Partial<DefaultProps>
 >;
 

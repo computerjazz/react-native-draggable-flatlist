@@ -56,7 +56,7 @@ const AnimatedFlatList = (Animated.createAnimatedComponent(
   FlatList
 ) as unknown) as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
 
-function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+function DraggableFlatListInner<T>({ListFooterComponent, ...props}: DraggableFlatListProps<T>) {
   const {
     cellDataRef,
     containerRef,
@@ -70,6 +70,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     activeCellSize,
     activeIndexAnim,
     containerSize,
+    footerSize,
     scrollOffset,
     scrollViewSize,
     spacerIndexAnim,
@@ -169,6 +170,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     containerSize.value = props.horizontal ? width : height;
     props.onContainerLayout?.({ layout, containerRef });
   };
+
+  // make size of footer available for use in drag contraints
+  const onFooterLayout = ({
+    nativeEvent: { layout },
+  }: LayoutChangeEvent) => {
+    footerSize.value = props.horizontal ? layout.width : layout.height
+  };
+
 
   const onListContentSizeChange = (w: number, h: number) => {
     scrollViewSize.value = props.horizontal ? w : h;
@@ -366,6 +375,16 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     props.onViewableItemsChanged?.(info);
   });
 
+  // Wrap the provided ListFooterComponent to add an onLayout
+  const wrappedListFooterComponent = ListFooterComponent ?
+    <Animated.View 
+      style={props.ListFooterComponentStyle}
+      onLayout={onFooterLayout}
+      >
+        {ListFooterComponent}
+    </Animated.View>
+  : undefined
+
   return (
     <DraggableFlatListProvider
       activeKey={activeKey}
@@ -397,6 +416,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
             scrollEventThrottle={16}
             simultaneousHandlers={props.simultaneousHandlers}
             removeClippedSubviews={false}
+            ListFooterComponent={wrappedListFooterComponent}
           />
           {!!props.onScrollOffsetChange && (
             <ScrollOffsetListener
