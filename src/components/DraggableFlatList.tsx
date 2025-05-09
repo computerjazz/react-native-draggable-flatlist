@@ -411,14 +411,14 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 }
 
 function DraggableFlatList<T>(
-  props: DraggableFlatListProps<T>,
+  {ListFooterComponent, ListHeaderComponent, ...props}: DraggableFlatListProps<T>,
   ref?: React.ForwardedRef<FlatList<T>> | null
 ) {
   return (
     <PropsProvider {...props}>
       <AnimatedValueProvider>
         <RefProvider flatListRef={ref}>
-          <MemoizedInner {...props} />
+          <MemoizedInner {...props} ListFooterComponent={ListFooterComponent} ListHeaderComponent={ListHeaderComponent} />
         </RefProvider>
       </AnimatedValueProvider>
     </PropsProvider>
