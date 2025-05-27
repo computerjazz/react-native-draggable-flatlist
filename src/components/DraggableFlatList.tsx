@@ -70,6 +70,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     activeCellSize,
     activeIndexAnim,
     containerSize,
+    scrollInit,
     scrollOffset,
     scrollViewSize,
     spacerIndexAnim,
@@ -90,6 +91,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     touchTranslate.value = 0;
     activeCellSize.value = -1;
     activeCellOffset.value = -1;
+    scrollInit.value = -1;
     setActiveKey(null);
   });
 
