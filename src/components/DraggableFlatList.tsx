@@ -117,7 +117,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     props.data.map(keyExtractor).join("");
   dataRef.current = props.data;
   if (dataHasChanged) {
-    // When data changes make sure `activeKey` is nulled out in the same render pass
     activeKey = null;
     InteractionManager.runAfterInteractions(() => {
       reset();
@@ -129,8 +128,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     if (activeKey) {
       setLayoutAnimationDisabled(true);
     } else {
-      // setTimeout result of trial-and-error to determine how long to wait before
-      // re-enabling layout animations so that a drag reorder does not trigger it.
       setTimeout(() => {
         setLayoutAnimationDisabled(false);
       }, 100);
@@ -238,7 +235,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     props.onPlaceholderIndexChange?.(index);
   });
 
-  // Handle case where user ends drag without moving their finger.
   useAnimatedReaction(
     () => {
       return isTouchActiveNative.value;
@@ -288,7 +284,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     })
     .onEnd((evt) => {
       if (gestureDisabled.value) return;
-      // Set touch val to current translate val
       isTouchActiveNative.value = false;
       const translation = horizontalAnim.value
         ? evt.translationX
@@ -297,7 +292,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       touchTranslate.value = translation + autoScrollDistance.value;
       panGestureState.value = evt.state;
 
-      // Only call onDragEnd if actually dragging a cell
       if (activeIndexAnim.value === -1 || disabled.value) return;
       disabled.value = true;
       runOnJS(onRelease)(activeIndexAnim.value);
@@ -318,8 +312,6 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       runOnJS(onContainerTouchStart)();
     })
     .onTouchesUp(() => {
-      // Turning this into a worklet causes timing issues. We want it to run
-      // just after the finger lifts.
       runOnJS(onContainerTouchEnd)();
     });
 
@@ -427,8 +419,6 @@ function DraggableFlatList<T>(
 
 const MemoizedInner = typedMemo(DraggableFlatListInner);
 
-// Generic forwarded ref type assertion taken from:
-// https://fettblog.eu/typescript-react-generic-forward-refs/#option-1%3A-type-assertion
 export default React.forwardRef(DraggableFlatList) as <T>(
   props: DraggableFlatListProps<T> & { ref?: React.ForwardedRef<FlatList<T>> }
 ) => ReturnType<typeof DraggableFlatList>;

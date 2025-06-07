@@ -8,13 +8,6 @@ import { State as GestureState } from "react-native-gesture-handler";
 import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { SCROLL_POSITION_TOLERANCE } from "../constants";
 
-// This is mostly copied over from the main react-native-draggable-flatlist
-// useAutoScroll hook with a few notable exceptions:
-// - Since animated values are now coming in via a callback,
-//   we won't guarantee they exist (and default them if not).
-// - Outer scrollable is a ScrollView, not a FlatList
-// TODO: see if we can combine into a single shared `useAutoScroll()` hook
-
 export function useNestedAutoScroll(params: {
   activeCellSize?: Animated.SharedValue<number>;
   autoscrollSpeed?: number;
@@ -118,8 +111,6 @@ export function useNestedAutoScroll(params: {
       : outerScrollOffset.value + offset;
     if (shouldScroll) {
       scrollTarget.value = targetOffset;
-      // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
-      // scrollTo(scrollViewRef, 0, scrollTarget.value, true)
       runOnJS(scrollToInternal)(targetOffset);
     }
   }, [autoscrollSpeed, autoscrollThreshold, isDraggingCell]);
