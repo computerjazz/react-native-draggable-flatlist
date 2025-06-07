@@ -56,10 +56,6 @@ function CellRendererComponent<T>(props: Props<T>) {
   const isActive = activeKey === key;
 
   const animStyle = useAnimatedStyle(() => {
-    // When activeKey becomes null at the end of a drag and the list reorders,
-    // the animated style may apply before the next paint, causing a flicker.
-    // Solution is to hold over the last animated value until the next onLayout.
-    // (Not required in web)
     if (translate.value && !isWeb) {
       heldTanslate.value = translate.value;
     }
@@ -106,7 +102,6 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   useEffect(() => {
     if (isWeb) {
-      // onLayout isn't called on web when the cell index changes, so we manually re-measure
       requestAnimationFrame(() => {
         onCellLayout();
       });
@@ -128,24 +123,19 @@ function CellRendererComponent<T>(props: Props<T>) {
   } = propsRef.current;
 
   useEffect(() => {
-    // NOTE: Keep an eye on reanimated LayoutAnimation refactor:
-    // https://github.com/software-mansion/react-native-reanimated/pull/3332/files
-    // We might have to change the way we register/unregister LayouAnimations:
-    // - get native module: https://github.com/software-mansion/react-native-reanimated/blob/cf59766460d05eb30357913455318d8a95909468/src/reanimated2/NativeReanimated/NativeReanimated.ts#L18
-    // - register layout animation for tag: https://github.com/software-mansion/react-native-reanimated/blob/cf59766460d05eb30357913455318d8a95909468/src/reanimated2/NativeReanimated/NativeReanimated.ts#L99
     if (!propsRef.current.enableLayoutAnimationExperimental) return;
     const tag = findNodeHandle(viewRef.current);
 
-    runOnUI((t: number | null, _layoutDisabled) => {
-      "worklet";
+    runOnUI((t: number | null, _layoutDisabled: boolean) => {
+      'worklet';
       if (!t) return;
-      const config = global.LayoutAnimationRepository.configs[t];
+      const config = global.LayoutAnimationRepository?.configs?.[t];
       if (config) stashConfig(t, config);
       const stashedConfig = getStashedConfig(t);
       if (_layoutDisabled) {
-        global.LayoutAnimationRepository.removeConfig(t);
+        global.LayoutAnimationRepository?.removeConfig?.(t);
       } else if (stashedConfig) {
-        global.LayoutAnimationRepository.registerConfig(t, stashedConfig);
+        global.LayoutAnimationRepository?.registerConfig?.(t, stashedConfig);
       }
     })(tag, layoutAnimationDisabled);
   }, [layoutAnimationDisabled]);
@@ -176,24 +166,41 @@ declare global {
   namespace NodeJS {
     interface Global {
       RNDFLLayoutAnimationConfigStash: Record<string, unknown>;
+      LayoutAnimationRepository: {
+        configs: Record<string, unknown>;
+        removeConfig: (tag: number) => void;
+        registerConfig: (tag: number, config: unknown) => void;
+      };
     }
   }
+  var RNDFLLayoutAnimationConfigStash: Record<string, unknown>;
+  var LayoutAnimationRepository: {
+    configs: Record<string, unknown>;
+    removeConfig: (tag: number) => void;
+    registerConfig: (tag: number, config: unknown) => void;
+  };
 }
 
 runOnUI(() => {
-  "worklet";
-  global.RNDFLLayoutAnimationConfigStash = {};
+  'worklet';
+  if (typeof global !== 'undefined') {
+    global.RNDFLLayoutAnimationConfigStash = global.RNDFLLayoutAnimationConfigStash || {};
+  }
 })();
 
 function stashConfig(tag: number, config: unknown) {
-  "worklet";
-  if (!global.RNDFLLayoutAnimationConfigStash)
-    global.RNDFLLayoutAnimationConfigStash = {};
-  global.RNDFLLayoutAnimationConfigStash[tag] = config;
+  'worklet';
+  if (typeof global !== 'undefined') {
+    if (!global.RNDFLLayoutAnimationConfigStash)
+      global.RNDFLLayoutAnimationConfigStash = {};
+    global.RNDFLLayoutAnimationConfigStash[tag] = config;
+  }
 }
 
 function getStashedConfig(tag: number) {
-  "worklet";
-  if (!global.RNDFLLayoutAnimationConfigStash) return null;
-  return global.RNDFLLayoutAnimationConfigStash[tag] as Record<string, unknown>;
+  'worklet';
+  if (typeof global !== 'undefined' && global.RNDFLLayoutAnimationConfigStash) {
+    return global.RNDFLLayoutAnimationConfigStash[tag] as Record<string, unknown>;
+  }
+  return null;
 }
