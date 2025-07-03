@@ -1,9 +1,3 @@
-
-⚠️ You are viewing the README for v4 (view
-[v3](https://github.com/computerjazz/react-native-draggable-flatlist/blob/17897b3b5d771e854c9ccbd952332f5deabbd85d/README.md),
-[v2](https://github.com/computerjazz/react-native-draggable-flatlist/blob/b60c23035fc0371a735cde1d000e9ad7f8e0f049/README.md)
-)
-
 # React Native Draggable FlatList
 
 A drag-and-drop-enabled FlatList component for React Native.<br />
