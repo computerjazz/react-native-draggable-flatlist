@@ -4,6 +4,7 @@ import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
   StyleProp,
+  StyleSheet,
   ViewStyle,
 } from "react-native";
 import Animated, {
@@ -162,7 +163,11 @@ function CellRendererComponent<T>(props: Props<T>) {
           ? itemLayoutAnimation
           : undefined
       }
-      style={[props.style, baseStyle, animStyle]}
+      style={[
+        props.style,
+        baseStyle,
+        activeKey ? animStyle : styles.zeroTranslate,
+      ]}
       pointerEvents={activeKey ? "none" : "auto"}
     >
       <CellProvider isActive={isActive}>{children}</CellProvider>
@@ -171,6 +176,12 @@ function CellRendererComponent<T>(props: Props<T>) {
 }
 
 export default typedMemo(CellRendererComponent);
+
+const styles = StyleSheet.create({
+  zeroTranslate: {
+    transform: [{ translateX: 0 }, { translateY: 0 }],
+  },
+});
 
 declare global {
   namespace NodeJS {
