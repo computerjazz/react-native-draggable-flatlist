@@ -1,35 +1,19 @@
-import React, { useMemo, useEffect, useCallback, useContext } from "react";
-import {
-  useAnimatedReaction,
-  useDerivedValue,
-  useSharedValue,
-} from "react-native-reanimated";
-import { State as GestureState } from "react-native-gesture-handler";
-import { useProps } from "./propsContext";
+import React, { useMemo, useEffect, useCallback, useContext } from 'react';
+import { useAnimatedReaction, useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import { State as GestureState } from 'react-native-gesture-handler';
+import { useProps } from './propsContext';
 
-const AnimatedValueContext = React.createContext<
-  ReturnType<typeof useSetupAnimatedValues> | undefined
->(undefined);
+const AnimatedValueContext = React.createContext<ReturnType<typeof useSetupAnimatedValues> | undefined>(undefined);
 
-export default function AnimatedValueProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AnimatedValueProvider({ children }: { children: React.ReactNode }) {
   const value = useSetupAnimatedValues();
-  return (
-    <AnimatedValueContext.Provider value={value}>
-      {children}
-    </AnimatedValueContext.Provider>
-  );
+  return <AnimatedValueContext.Provider value={value}>{children}</AnimatedValueContext.Provider>;
 }
 
 export function useAnimatedValues() {
   const value = useContext(AnimatedValueContext);
   if (!value) {
-    throw new Error(
-      "useAnimatedValues must be called from within AnimatedValueProvider!"
-    );
+    throw new Error('useAnimatedValues must be called from within AnimatedValueProvider!');
   }
   return value;
 }
@@ -42,9 +26,7 @@ function useSetupAnimatedValues<T>() {
   const containerSize = useSharedValue(0);
   const scrollViewSize = useSharedValue(0);
 
-  const panGestureState = useSharedValue<GestureState>(
-    GestureState.UNDETERMINED
-  );
+  const panGestureState = useSharedValue<GestureState>(GestureState.UNDETERMINED);
   const touchTranslate = useSharedValue(0);
 
   const isTouchActiveNative = useSharedValue(false);
@@ -66,6 +48,9 @@ function useSetupAnimatedValues<T>() {
   const viewableIndexMin = useSharedValue(0);
   const viewableIndexMax = useSharedValue(0);
 
+  // Shared fixed indices; default empty
+  const fixedIndices = useSharedValue<number[]>([]);
+
   // If list is nested there may be an outer scrollview
   const outerScrollOffset = props.outerScrollOffset || DEFAULT_VAL;
   const outerScrollInit = useSharedValue(0);
@@ -80,7 +65,7 @@ function useSetupAnimatedValues<T>() {
         outerScrollInit.value = outerScrollOffset.value;
       }
     },
-    [outerScrollOffset]
+    [outerScrollOffset],
   );
 
   const placeholderOffset = useSharedValue(0);
@@ -99,46 +84,31 @@ function useSetupAnimatedValues<T>() {
   }, []);
 
   const touchPositionDiff = useDerivedValue(() => {
-    const extraTranslate = isTouchActiveNative.value
-      ? autoScrollDistance.value
-      : 0;
+    const extraTranslate = isTouchActiveNative.value ? autoScrollDistance.value : 0;
     return touchTranslate.value + extraTranslate;
   }, []);
 
   const touchPositionDiffConstrained = useDerivedValue(() => {
-    const containerMinusActiveCell =
-      containerSize.value - activeCellSize.value + scrollOffset.value;
+    const containerMinusActiveCell = containerSize.value - activeCellSize.value + scrollOffset.value;
 
-    const offsetRelativeToScrollTop =
-      touchPositionDiff.value + activeCellOffset.value;
-    const constrained = Math.min(
-      containerMinusActiveCell,
-      Math.max(scrollOffset.value, offsetRelativeToScrollTop)
-    );
+    const offsetRelativeToScrollTop = touchPositionDiff.value + activeCellOffset.value;
+    const constrained = Math.min(containerMinusActiveCell, Math.max(scrollOffset.value, offsetRelativeToScrollTop));
 
     const maxTranslateNegative = -activeCellOffset.value;
-    const maxTranslatePositive =
-      scrollViewSize.value - (activeCellOffset.value + activeCellSize.value);
+    const maxTranslatePositive = scrollViewSize.value - (activeCellOffset.value + activeCellSize.value);
 
     // Only constrain the touch position while the finger is on the screen. This allows the active cell
     // to snap above/below the fold once let go, if the drag ends at the top/bottom of the screen.
-    const constrainedBase = isTouchActiveNative.value
-      ? constrained - activeCellOffset.value
-      : touchPositionDiff.value;
+    const constrainedBase = isTouchActiveNative.value ? constrained - activeCellOffset.value : touchPositionDiff.value;
 
     // Make sure item is constrained to the boundaries of the scrollview
-    return Math.min(
-      Math.max(constrainedBase, maxTranslateNegative),
-      maxTranslatePositive
-    );
+    return Math.min(Math.max(constrainedBase, maxTranslateNegative), maxTranslatePositive);
   }, []);
 
   const dragItemOverflow = props.dragItemOverflow;
   const hoverAnim = useDerivedValue(() => {
     if (activeIndexAnim.value < 0) return 0;
-    return dragItemOverflow
-      ? touchPositionDiff.value
-      : touchPositionDiffConstrained.value;
+    return dragItemOverflow ? touchPositionDiff.value : touchPositionDiffConstrained.value;
   }, []);
 
   const hoverOffset = useDerivedValue(() => {
@@ -161,6 +131,7 @@ function useSetupAnimatedValues<T>() {
 
   const value = useMemo(
     () => ({
+      fixedIndices,
       activeCellOffset,
       activeCellSize,
       activeIndexAnim,
@@ -184,6 +155,7 @@ function useSetupAnimatedValues<T>() {
       viewableIndexMax,
     }),
     [
+      fixedIndices,
       activeCellOffset,
       activeCellSize,
       activeIndexAnim,
@@ -205,7 +177,7 @@ function useSetupAnimatedValues<T>() {
       autoScrollDistance,
       viewableIndexMin,
       viewableIndexMax,
-    ]
+    ],
   );
 
   useEffect(() => {

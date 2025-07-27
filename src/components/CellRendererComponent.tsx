@@ -1,24 +1,14 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import {
-  findNodeHandle,
-  LayoutChangeEvent,
-  MeasureLayoutOnSuccessCallback,
-  StyleProp,
-  ViewStyle,
-} from "react-native";
-import Animated, {
-  runOnUI,
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
-import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { isWeb } from "../constants";
-import { useCellTranslate } from "../hooks/useCellTranslate";
-import { typedMemo } from "../utils";
-import { useRefs } from "../context/refContext";
-import { useAnimatedValues } from "../context/animatedValueContext";
-import CellProvider from "../context/cellContext";
-import { useStableCallback } from "../hooks/useStableCallback";
+import React, { useEffect, useMemo, useRef } from 'react';
+import { findNodeHandle, LayoutChangeEvent, MeasureLayoutOnSuccessCallback, StyleProp, ViewStyle } from 'react-native';
+import Animated, { runOnUI, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useDraggableFlatListContext } from '../context/draggableFlatListContext';
+import { isWeb } from '../constants';
+import { useCellTranslate } from '../hooks/useCellTranslate';
+import { typedMemo } from '../utils';
+import { useRefs } from '../context/refContext';
+import { useAnimatedValues } from '../context/animatedValueContext';
+import CellProvider from '../context/cellContext';
+import { useStableCallback } from '../hooks/useStableCallback';
 
 type Props<T> = {
   item: T;
@@ -35,12 +25,7 @@ function CellRendererComponent<T>(props: Props<T>) {
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
 
   const { horizontalAnim, scrollOffset } = useAnimatedValues();
-  const {
-    activeKey,
-    keyExtractor,
-    horizontal,
-    layoutAnimationDisabled,
-  } = useDraggableFlatListContext<T>();
+  const { activeKey, keyExtractor, horizontal, layoutAnimationDisabled } = useDraggableFlatListContext<T>();
 
   const key = keyExtractor(item, index);
   const offset = useSharedValue(-1);
@@ -117,15 +102,11 @@ function CellRendererComponent<T>(props: Props<T>) {
     return {
       elevation: isActive ? 1 : 0,
       zIndex: isActive ? 999 : 0,
-      flexDirection: horizontal ? ("row" as const) : ("column" as const),
+      flexDirection: horizontal ? ('row' as const) : ('column' as const),
     };
   }, [isActive, horizontal]);
 
-  const {
-    itemEnteringAnimation,
-    itemExitingAnimation,
-    itemLayoutAnimation,
-  } = propsRef.current;
+  const { itemEnteringAnimation, itemExitingAnimation, itemLayoutAnimation } = propsRef.current;
 
   useEffect(() => {
     // NOTE: Keep an eye on reanimated LayoutAnimation refactor:
@@ -137,7 +118,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     const tag = findNodeHandle(viewRef.current);
 
     runOnUI((t: number | null, _layoutDisabled) => {
-      "worklet";
+      'worklet';
       if (!t) return;
       const config = global.LayoutAnimationRepository.configs[t];
       if (config) stashConfig(t, config);
@@ -157,13 +138,9 @@ function CellRendererComponent<T>(props: Props<T>) {
       onLayout={onCellLayout}
       entering={itemEnteringAnimation}
       exiting={itemExitingAnimation}
-      layout={
-        propsRef.current.enableLayoutAnimationExperimental
-          ? itemLayoutAnimation
-          : undefined
-      }
+      layout={propsRef.current.enableLayoutAnimationExperimental ? itemLayoutAnimation : undefined}
       style={[props.style, baseStyle, animStyle]}
-      pointerEvents={activeKey ? "none" : "auto"}
+      pointerEvents={activeKey ? 'none' : 'auto'}
     >
       <CellProvider isActive={isActive}>{children}</CellProvider>
     </Animated.View>
@@ -181,19 +158,18 @@ declare global {
 }
 
 runOnUI(() => {
-  "worklet";
+  'worklet';
   global.RNDFLLayoutAnimationConfigStash = {};
 })();
 
 function stashConfig(tag: number, config: unknown) {
-  "worklet";
-  if (!global.RNDFLLayoutAnimationConfigStash)
-    global.RNDFLLayoutAnimationConfigStash = {};
+  'worklet';
+  if (!global.RNDFLLayoutAnimationConfigStash) global.RNDFLLayoutAnimationConfigStash = {};
   global.RNDFLLayoutAnimationConfigStash[tag] = config;
 }
 
 function getStashedConfig(tag: number) {
-  "worklet";
+  'worklet';
   if (!global.RNDFLLayoutAnimationConfigStash) return null;
   return global.RNDFLLayoutAnimationConfigStash[tag] as Record<string, unknown>;
 }

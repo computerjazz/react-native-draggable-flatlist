@@ -1,10 +1,10 @@
-import React, { useContext, useEffect } from "react";
-import { useMemo, useRef } from "react";
-import { FlatList } from "react-native-gesture-handler";
-import Animated, { type SharedValue, useSharedValue, WithSpringConfig } from "react-native-reanimated";
-import { DEFAULT_PROPS } from "../constants";
-import { useProps } from "./propsContext";
-import { CellData, DraggableFlatListProps } from "../types";
+import React, { useContext, useEffect } from 'react';
+import { useMemo, useRef } from 'react';
+import { FlatList } from 'react-native-gesture-handler';
+import Animated, { type SharedValue, useSharedValue, WithSpringConfig } from 'react-native-reanimated';
+import { DEFAULT_PROPS } from '../constants';
+import { useProps } from './propsContext';
+import { CellData, DraggableFlatListProps } from '../types';
 
 type RefContextValue<T> = {
   propsRef: React.MutableRefObject<DraggableFlatListProps<T>>;
@@ -15,9 +15,7 @@ type RefContextValue<T> = {
   flatlistRef: React.RefObject<FlatList<T>> | React.ForwardedRef<FlatList<T>>;
   scrollViewRef: React.RefObject<Animated.ScrollView>;
 };
-const RefContext = React.createContext<RefContextValue<any> | undefined>(
-  undefined
-);
+const RefContext = React.createContext<RefContextValue<any> | undefined>(undefined);
 
 export default function RefProvider<T>({
   children,
@@ -33,29 +31,24 @@ export default function RefProvider<T>({
 export function useRefs<T>() {
   const value = useContext(RefContext);
   if (!value) {
-    throw new Error(
-      "useRefs must be called from within a RefContext.Provider!"
-    );
+    throw new Error('useRefs must be called from within a RefContext.Provider!');
   }
   return value as RefContextValue<T>;
 }
 
-function useSetupRefs<T>({
-  flatListRef: flatListRefProp,
-}: {
-  flatListRef?: React.ForwardedRef<FlatList<T>> | null;
-}) {
+function useSetupRefs<T>({ flatListRef: flatListRefProp }: { flatListRef?: React.ForwardedRef<FlatList<T>> | null }) {
   const props = useProps<T>();
   const { animationConfig = DEFAULT_PROPS.animationConfig } = props;
 
   const propsRef = useRef(props);
   propsRef.current = props;
   const animConfig = useMemo(
-    () => ({
-      ...DEFAULT_PROPS.animationConfig,
-      ...animationConfig,
-    } as WithSpringConfig),
-    [animationConfig]
+    () =>
+      ({
+        ...DEFAULT_PROPS.animationConfig,
+        ...animationConfig,
+      }) as WithSpringConfig,
+    [animationConfig],
   );
 
   const animationConfigRef = useSharedValue(animConfig);
@@ -92,7 +85,7 @@ function useSetupRefs<T>({
       propsRef,
       scrollViewRef,
     }),
-    []
+    [],
   );
 
   return refs;

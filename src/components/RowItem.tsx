@@ -1,9 +1,9 @@
-import React, { useRef } from "react";
-import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
-import { useRefs } from "../context/refContext";
-import { useStableCallback } from "../hooks/useStableCallback";
-import { RenderItem } from "../types";
-import { typedMemo } from "../utils";
+import React, { useRef } from 'react';
+import { useDraggableFlatListContext } from '../context/draggableFlatListContext';
+import { useRefs } from '../context/refContext';
+import { useStableCallback } from '../hooks/useStableCallback';
+import { RenderItem } from '../types';
+import { typedMemo } from '../utils';
 
 type Props<T> = {
   extraData?: any;
@@ -27,10 +27,7 @@ function RowItem<T>(props: Props<T>) {
     const { drag, itemKey, debug } = propsRef.current;
     if (activeKeyRef.current) {
       // already dragging an item, noop
-      if (debug)
-        console.log(
-          "## attempt to drag item while another item is already active, noop"
-        );
+      if (debug) console.log('## attempt to drag item while another item is already active, noop');
     }
     drag(itemKey);
   });

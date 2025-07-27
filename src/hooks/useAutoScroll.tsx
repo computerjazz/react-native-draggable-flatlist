@@ -1,30 +1,15 @@
-import {
-  runOnJS,
-  useAnimatedReaction,
-  useDerivedValue,
-  useSharedValue,
-} from "react-native-reanimated";
-import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "../constants";
-import { useProps } from "../context/propsContext";
-import { useAnimatedValues } from "../context/animatedValueContext";
-import { useRefs } from "../context/refContext";
+import { runOnJS, useAnimatedReaction, useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from '../constants';
+import { useProps } from '../context/propsContext';
+import { useAnimatedValues } from '../context/animatedValueContext';
+import { useRefs } from '../context/refContext';
 
 export function useAutoScroll() {
   const { flatlistRef } = useRefs();
 
-  const {
-    autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
-    autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
-  } = useProps();
+  const { autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold, autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed } = useProps();
 
-  const {
-    scrollOffset,
-    scrollViewSize,
-    containerSize,
-    activeCellSize,
-    hoverOffset,
-    activeIndexAnim,
-  } = useAnimatedValues();
+  const { scrollOffset, scrollViewSize, containerSize, activeCellSize, hoverOffset, activeIndexAnim } = useAnimatedValues();
 
   const hoverScreenOffset = useDerivedValue(() => {
     return hoverOffset.value - scrollOffset.value;
@@ -35,10 +20,7 @@ export function useAutoScroll() {
   }, []);
 
   const isScrolledDown = useDerivedValue(() => {
-    return (
-      scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
-      scrollViewSize.value
-    );
+    return scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >= scrollViewSize.value;
   }, []);
 
   const distToTopEdge = useDerivedValue(() => {
@@ -71,7 +53,7 @@ export function useAutoScroll() {
       if (cur && !prev) {
         scrollTarget.value = scrollOffset.value;
       }
-    }
+    },
   );
 
   const shouldAutoScroll = useDerivedValue(() => {
@@ -89,7 +71,7 @@ export function useAutoScroll() {
   }, []);
 
   function scrollToInternal(offset: number) {
-    if (flatlistRef && "current" in flatlistRef) {
+    if (flatlistRef && 'current' in flatlistRef) {
       flatlistRef.current?.scrollToOffset({ offset, animated: true });
     }
   }
@@ -97,17 +79,12 @@ export function useAutoScroll() {
   useDerivedValue(() => {
     if (!shouldAutoScroll.value) return;
 
-    const distFromEdge = isAtTopEdge.value
-      ? distToTopEdge.value
-      : distToBottomEdge.value;
+    const distFromEdge = isAtTopEdge.value ? distToTopEdge.value : distToBottomEdge.value;
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
     const offset = speedPct * autoscrollSpeed;
     const targetOffset = isAtTopEdge.value
       ? Math.max(0, scrollOffset.value - offset)
-      : Math.min(
-          scrollOffset.value + offset,
-          scrollViewSize.value - containerSize.value
-        );
+      : Math.min(scrollOffset.value + offset, scrollViewSize.value - containerSize.value);
 
     scrollTarget.value = targetOffset;
     // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.

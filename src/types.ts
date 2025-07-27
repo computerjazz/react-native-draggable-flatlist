@@ -1,17 +1,9 @@
-import React from "react";
-import {
-  FlatListProps,
-  LayoutChangeEvent,
-  StyleProp,
-  ViewStyle,
-} from "react-native";
-import { useAnimatedValues } from "./context/animatedValueContext";
-import { FlatList } from "react-native-gesture-handler";
-import Animated, {
-  AnimateProps,
-  WithSpringConfig,
-} from "react-native-reanimated";
-import { DEFAULT_PROPS } from "./constants";
+import React from 'react';
+import { FlatListProps, LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
+import { useAnimatedValues } from './context/animatedValueContext';
+import { FlatList } from 'react-native-gesture-handler';
+import Animated, { AnimateProps, WithSpringConfig } from 'react-native-reanimated';
+import { DEFAULT_PROPS } from './constants';
 
 export type DragEndParams<T> = {
   data: T[];
@@ -22,10 +14,15 @@ type Modify<T, R> = Omit<T, keyof R> & R;
 
 type DefaultProps = Readonly<typeof DEFAULT_PROPS>;
 
+export type FixedMode = 'passthrough';
+
 export type DraggableFlatListProps<T> = Modify<
   FlatListProps<T>,
   {
     data: T[];
+    fixedKeys?: string[];
+    fixedItemMode?: FixedMode;
+    stickyHeaderIndices?: number[];
     activationDistance?: number;
     animationConfig?: Partial<WithSpringConfig>;
     autoscrollSpeed?: number;
@@ -44,21 +41,18 @@ export type DraggableFlatListProps<T> = Modify<
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     outerScrollOffset?: Animated.SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
-    itemEnteringAnimation?: AnimateProps<Animated.View>["entering"];
-    itemExitingAnimation?: AnimateProps<Animated.View>["exiting"];
-    itemLayoutAnimation?: AnimateProps<Animated.View>["layout"];
+    itemEnteringAnimation?: AnimateProps<Animated.View>['entering'];
+    itemExitingAnimation?: AnimateProps<Animated.View>['exiting'];
+    itemLayoutAnimation?: AnimateProps<Animated.View>['layout'];
     enableLayoutAnimationExperimental?: boolean;
     onContainerLayout?: (params: {
-      layout: LayoutChangeEvent["nativeEvent"]["layout"];
+      layout: LayoutChangeEvent['nativeEvent']['layout'];
       containerRef: React.RefObject<Animated.View>;
     }) => void;
   } & Partial<DefaultProps>
 >;
 
-export type RenderPlaceholder<T> = (params: {
-  item: T;
-  index: number;
-}) => JSX.Element;
+export type RenderPlaceholder<T> = (params: { item: T; index: number }) => JSX.Element;
 
 export type RenderItemParams<T> = {
   item: T;
@@ -75,7 +69,7 @@ export type AnimatedFlatListType = <T>(
       ref: React.Ref<FlatList<T>>;
       simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     }
-  >
+  >,
 ) => React.ReactElement;
 
 export type CellData = {
