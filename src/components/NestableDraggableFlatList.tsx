@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
-import { findNodeHandle, LogBox } from "react-native";
+import { LogBox } from "react-native";
+import { findNodeHandle } from "../utils";
 import Animated, {
   useDerivedValue,
   useSharedValue,
