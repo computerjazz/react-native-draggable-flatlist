@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import {
-  findNodeHandle,
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { findNodeHandle } from "../utils";
 import Animated, {
   runOnUI,
   useAnimatedStyle,
