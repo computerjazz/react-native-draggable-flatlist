@@ -66,6 +66,9 @@ function useSetupAnimatedValues<T>() {
   const viewableIndexMin = useSharedValue(0);
   const viewableIndexMax = useSharedValue(0);
 
+  const lockedIndicesAnim = useSharedValue<boolean[]>([]);
+  const cellSizesAnim = useSharedValue<number[]>([]);
+
   // If list is nested there may be an outer scrollview
   const outerScrollOffset = props.outerScrollOffset || DEFAULT_VAL;
   const outerScrollInit = useSharedValue(0);
@@ -182,6 +185,8 @@ function useSetupAnimatedValues<T>() {
       autoScrollDistance,
       viewableIndexMin,
       viewableIndexMax,
+      lockedIndicesAnim,
+      cellSizesAnim,
     }),
     [
       activeCellOffset,
@@ -205,6 +210,8 @@ function useSetupAnimatedValues<T>() {
       autoScrollDistance,
       viewableIndexMin,
       viewableIndexMax,
+      lockedIndicesAnim,
+      cellSizesAnim,
     ]
   );
 

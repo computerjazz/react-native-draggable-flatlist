@@ -19,6 +19,8 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     hoverAnim,
     viewableIndexMin,
     viewableIndexMax,
+    lockedIndicesAnim,
+    cellSizesAnim,
   } = useAnimatedValues();
 
   const { activeKey } = useDraggableFlatListContext();
@@ -32,6 +34,11 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       (cellIndex < viewableIndexMin.value ||
         cellIndex > viewableIndexMax.value);
     if (!activeKey || activeIndexAnim.value < 0 || isOutsideViewableRange) {
+      return 0;
+    }
+
+    const isLockedCell = lockedIndicesAnim.value[cellIndex] === true;
+    if (isLockedCell && !isActiveCell) {
       return 0;
     }
 
@@ -74,8 +81,31 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       }
     }
 
-    if (result !== -1 && result !== spacerIndexAnim.value) {
-      spacerIndexAnim.value = result;
+    if (result !== -1) {
+      const len = lockedIndicesAnim.value.length;
+      if (len === 0) {
+        if (result !== spacerIndexAnim.value) {
+          spacerIndexAnim.value = result;
+        }
+      } else {
+        let adjusted = result;
+        const movingForward = result >= activeIndexAnim.value;
+        while (
+          adjusted >= 0 &&
+          adjusted < len &&
+          lockedIndicesAnim.value[adjusted] === true
+        ) {
+          adjusted = movingForward ? adjusted + 1 : adjusted - 1;
+        }
+        if (
+          adjusted >= 0 &&
+          adjusted < len &&
+          lockedIndicesAnim.value[adjusted] !== true &&
+          adjusted !== spacerIndexAnim.value
+        ) {
+          spacerIndexAnim.value = adjusted;
+        }
+      }
     }
 
     if (spacerIndexAnim.value === cellIndex) {
@@ -97,10 +127,33 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       ? cellIndex <= spacerIndexAnim.value
       : cellIndex >= spacerIndexAnim.value;
 
-    const translationAmt = shouldTranslate
-      ? activeCellSize.value * (isAfterActive ? -1 : 1)
-      : 0;
+    if (!shouldTranslate) {
+      return withSpring(0, animationConfigRef.value);
+    }
 
+    if (lockedIndicesAnim.value.length === 0) {
+      const translationAmt = activeCellSize.value * (isAfterActive ? -1 : 1);
+      return withSpring(translationAmt, animationConfigRef.value);
+    }
+
+    const searchStep = isAfterActive ? -1 : 1;
+    let targetIndex = cellIndex;
+    let j = cellIndex + searchStep;
+    while (j >= 0 && j < lockedIndicesAnim.value.length) {
+      if (lockedIndicesAnim.value[j] !== true) {
+        targetIndex = j;
+        break;
+      }
+      j += searchStep;
+    }
+
+    let translationAmt = activeCellSize.value;
+    const from = Math.min(cellIndex, targetIndex);
+    const to = Math.max(cellIndex, targetIndex);
+    for (let k = from + 1; k < to; k++) {
+      translationAmt += cellSizesAnim.value[k] ?? activeCellSize.value;
+    }
+    translationAmt *= isAfterActive ? -1 : 1;
     return withSpring(translationAmt, animationConfigRef.value);
   }, [activeKey, cellIndex]);
 

@@ -34,13 +34,9 @@ function CellRendererComponent<T>(props: Props<T>) {
   const viewRef = useRef<Animated.View>(null);
   const { cellDataRef, propsRef, containerRef } = useRefs<T>();
 
-  const { horizontalAnim, scrollOffset } = useAnimatedValues();
-  const {
-    activeKey,
-    keyExtractor,
-    horizontal,
-    layoutAnimationDisabled,
-  } = useDraggableFlatListContext<T>();
+  const { horizontalAnim, scrollOffset, cellSizesAnim } = useAnimatedValues();
+  const { activeKey, keyExtractor, horizontal, layoutAnimationDisabled } =
+    useDraggableFlatListContext<T>();
 
   const key = keyExtractor(item, index);
   const offset = useSharedValue(-1);
@@ -80,6 +76,12 @@ function CellRendererComponent<T>(props: Props<T>) {
 
       size.value = cellSize;
       offset.value = cellOffset;
+      runOnUI(() => {
+        "worklet";
+        const newSizes = [...cellSizesAnim.value];
+        newSizes[index] = cellSize;
+        cellSizesAnim.value = newSizes;
+      })();
     };
 
     const onFail = () => {
@@ -121,11 +123,8 @@ function CellRendererComponent<T>(props: Props<T>) {
     };
   }, [isActive, horizontal]);
 
-  const {
-    itemEnteringAnimation,
-    itemExitingAnimation,
-    itemLayoutAnimation,
-  } = propsRef.current;
+  const { itemEnteringAnimation, itemExitingAnimation, itemLayoutAnimation } =
+    propsRef.current;
 
   useEffect(() => {
     // NOTE: Keep an eye on reanimated LayoutAnimation refactor:

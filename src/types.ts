@@ -41,6 +41,7 @@ export type DraggableFlatListProps<T> = Modify<
     onScrollOffsetChange?: (scrollOffset: number) => void;
     renderItem: RenderItem<T>;
     renderPlaceholder?: RenderPlaceholder<T>;
+    isItemLocked?: (item: T, index: number) => boolean;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     outerScrollOffset?: Animated.SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
@@ -65,6 +66,7 @@ export type RenderItemParams<T> = {
   getIndex: () => number | undefined; // This is technically a "last known index" since cells don't necessarily rerender when their index changes
   drag: () => void;
   isActive: boolean;
+  isLocked: boolean;
 };
 
 export type RenderItem<T> = (params: RenderItemParams<T>) => React.ReactNode;

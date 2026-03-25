@@ -12,6 +12,7 @@ type Props<T> = {
   renderItem: RenderItem<T>;
   itemKey: string;
   debug?: boolean;
+  isLocked: boolean;
 };
 
 function RowItem<T>(props: Props<T>) {
@@ -35,7 +36,7 @@ function RowItem<T>(props: Props<T>) {
     drag(itemKey);
   });
 
-  const { renderItem, item, itemKey, extraData } = props;
+  const { renderItem, item, itemKey, extraData, isLocked } = props;
 
   const getIndex = useStableCallback(() => {
     return keyToIndexRef.current.get(itemKey);
@@ -49,6 +50,7 @@ function RowItem<T>(props: Props<T>) {
       item={item}
       getIndex={getIndex}
       extraData={extraData}
+      isLocked={isLocked}
     />
   );
 }
@@ -62,6 +64,7 @@ type InnerProps<T> = {
   drag: () => void;
   renderItem: RenderItem<T>;
   extraData?: any;
+  isLocked: boolean;
 };
 
 function Inner<T>({ renderItem, extraData, ...rest }: InnerProps<T>) {

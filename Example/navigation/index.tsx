@@ -12,11 +12,10 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
-import { ColorSchemeName, Pressable } from "react-native";
+import { ColorSchemeName } from "react-native";
 
 import Colors from "../constants/Colors";
 import useColorScheme from "../hooks/useColorScheme";
-import NotFoundScreen from "../screens/NotFoundScreen";
 import BasicScreen from "../screens/BasicScreen";
 import SwipeableScreen from "../screens/SwipeableScreen";
 import {
@@ -27,6 +26,7 @@ import {
 import LinkingConfiguration from "./LinkingConfiguration";
 import NestedScreen from "../screens/NestedScreen";
 import HorizontalScreen from "../screens/HorizontalScreen";
+import LockedScreen from "../screens/LockedScreen";
 
 export default function Navigation({
   colorScheme,
@@ -111,6 +111,14 @@ function BottomTabNavigator() {
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="arrows-h" color={color} />
           ),
+        }}
+      />
+      <BottomTab.Screen
+        name="Locked"
+        component={LockedScreen}
+        options={{
+          title: "Locked",
+          tabBarIcon: ({ color }) => <TabBarIcon name="lock" color={color} />,
         }}
       />
     </BottomTab.Navigator>

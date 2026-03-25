@@ -35,7 +35,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | :------------------------- | :---------------------------------------------------------------------------------------- | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | `data`                     | `T[]`                                                                                     | Items to be rendered.                                                                                                                                                                                              |
 | `ref`                     | `React.RefObject<FlatList<T>>`                                                                                     | FlatList ref to be forwarded to the underlying FlatList.                                                                                                                                                                                      |
-| `renderItem`               | `(params: { item: T, getIndex: () => number \| undefined, drag: () => void, isActive: boolean}) => JSX.Element` | Call `drag` when the row should become active (i.e. in an `onLongPress` or `onPressIn`).                                                                                                                           |
+| `renderItem`               | `(params: { item: T, getIndex: () => number \| undefined, drag: () => void, isActive: boolean, isLocked: boolean}) => JSX.Element` | Call `drag` when the row should become active (i.e. in an `onLongPress` or `onPressIn`). `isLocked` is `true` when the item is locked via `isItemLocked`.                                                         |
 | `renderPlaceholder`        | `(params: { item: T, index: number }) => React.ReactNode`                                 | Component to be rendered underneath the hovering component                                                                                                                                                         |
 | `keyExtractor`             | `(item: T, index: number) => string`                                                      | Unique key for each item (required)                                                                                                                                                                                          |
 | `onDragBegin`              | `(index: number) => void`                                                                 | Called when row becomes active.                                                                                                                                                                                    |
@@ -49,6 +49,7 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 | `onPlaceholderIndexChange` | `(index: number) => void`                                                                 | Called when the index of the placeholder changes                                                                                                                                                                   |
 | `dragItemOverflow`         | `boolean`                                                                                 | If true, dragged item follows finger beyond list boundary.                                                                                                                                                         |
 | `dragHitSlop`              | `object: {top: number, left: number, bottom: number, right: number}`                      | Enables control over what part of the connected view area can be used to begin recognizing the gesture. Numbers need to be non-positive (only possible to reduce responsive area).                                 |
+| `isItemLocked`             | `(item: T, index: number) => boolean`                                                     | If returns `true` for an item, that item cannot be dragged and will not move when other items are dragged past it. Other items reorder around locked items, which maintain their absolute position in the array.   |
 | `debug`                    | `boolean`                                                                                 | Enables debug logging and animation debugger.                                                                                                                                                                      |
 | `containerStyle`           | `StyleProp<ViewStyle>`                                                                    | Style of the main component.                                                                                                                                                                                       |
 | `simultaneousHandlers`     | `React.Ref<any>` or `React.Ref<any>[]`                                                    | References to other gesture handlers, mainly useful when using this component within a `ScrollView`. See [Cross handler interactions](https://docs.swmansion.com/react-native-gesture-handler/docs/interactions/). |
@@ -58,6 +59,31 @@ All props are spread onto underlying [FlatList](https://facebook.github.io/react
 |`enableLayoutAnimationExperimental`| `boolean`| Flag to turn on experimental support for `itemLayoutAnimation`.|
 
 
+
+## Locked Items
+
+Use the `isItemLocked` prop to fix items in place. Locked items cannot be dragged and stay at their absolute position while other items reorder around them.
+
+```tsx
+<DraggableFlatList
+  data={data}
+  keyExtractor={(item) => item.id}
+  isItemLocked={(item) => item.fixed === true}
+  renderItem={({ item, drag, isActive, isLocked }) => (
+    <ScaleDecorator>
+      <TouchableOpacity
+        onLongPress={drag}
+        disabled={isActive || isLocked}
+        style={styles.rowItem}
+      >
+        <Text>{item.label}</Text>
+        {isLocked && <Text>📌</Text>}
+      </TouchableOpacity>
+    </ScaleDecorator>
+  )}
+  onDragEnd={({ data }) => setData(data)}
+/>
+```
 
 ## Cell Decorators
 

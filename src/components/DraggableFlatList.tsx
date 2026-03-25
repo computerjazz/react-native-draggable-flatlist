@@ -52,9 +52,59 @@ type OnViewableItemsChangedCallback<T> = Exclude<
   undefined | null
 >;
 
-const AnimatedFlatList = (Animated.createAnimatedComponent(
+const AnimatedFlatList = Animated.createAnimatedComponent(
   FlatList
-) as unknown) as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
+) as unknown as <T>(props: RNGHFlatListProps<T>) => React.ReactElement;
+
+function reorderWithLockedItems<T>(
+  data: T[],
+  from: number,
+  to: number,
+  isItemLocked?: (item: T, index: number) => boolean
+): T[] {
+  if (from === to) return [...data];
+
+  if (!isItemLocked) {
+    const newData = [...data];
+    newData.splice(from, 1);
+    newData.splice(to, 0, data[from]);
+    return newData;
+  }
+
+  const lockedAt = new Map<number, T>();
+  data.forEach((item, i) => {
+    if (isItemLocked(item, i)) lockedAt.set(i, item);
+  });
+
+  const movable = data.filter((_, i) => !lockedAt.has(i));
+
+  let movableFrom = 0;
+  for (let i = 0; i < from; i++) {
+    if (!lockedAt.has(i)) movableFrom++;
+  }
+
+  let count = 0;
+  for (let i = 0; i < data.length; i++) {
+    if (i === from || lockedAt.has(i)) continue;
+    const gapIndex = i < from ? i : i - 1;
+    if (gapIndex < to) count++;
+  }
+  const movableTo = count;
+
+  const reordered = [...movable];
+  const [movedItem] = reordered.splice(movableFrom, 1);
+  reordered.splice(movableTo, 0, movedItem);
+
+  const result = new Array(data.length) as T[];
+  lockedAt.forEach((item, i) => {
+    result[i] = item;
+  });
+  let idx = 0;
+  for (let i = 0; i < result.length; i++) {
+    if (!lockedAt.has(i)) result[i] = reordered[idx++];
+  }
+  return result;
+}
 
 function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
@@ -82,6 +132,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     viewableIndexMin,
     viewableIndexMax,
     disabled,
+    lockedIndicesAnim,
   } = useAnimatedValues();
 
   const reset = useStableCallback(() => {
@@ -96,7 +147,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   const {
     dragHitSlop = DEFAULT_PROPS.dragHitSlop,
     scrollEnabled = DEFAULT_PROPS.scrollEnabled,
-    activationDistance: activationDistanceProp = DEFAULT_PROPS.activationDistance,
+    activationDistance:
+      activationDistanceProp = DEFAULT_PROPS.activationDistance,
   } = props;
 
   let [activeKey, setActiveKey] = useState<string | null>(null);
@@ -144,9 +196,22 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
     });
   }, [props.data, keyExtractor, keyToIndexRef]);
 
+  useLayoutEffect(() => {
+    const { isItemLocked, data } = propsRef.current;
+    lockedIndicesAnim.value = isItemLocked
+      ? data.map((item, index) => isItemLocked(item, index))
+      : [];
+  }, [props.data, props.isItemLocked]);
+
   const drag = useStableCallback((activeKey: string) => {
     if (disabled.value) return;
     const index = keyToIndexRef.current.get(activeKey);
+    if (
+      index !== undefined &&
+      propsRef.current.isItemLocked?.(propsRef.current.data[index], index)
+    ) {
+      return;
+    }
     const cellData = cellDataRef.current.get(activeKey);
     if (cellData) {
       activeCellOffset.value = cellData.measurements.offset;
@@ -200,7 +265,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       if (index !== keyToIndexRef.current.get(key)) {
         keyToIndexRef.current.set(key, index);
       }
-
+      const isLocked = props.isItemLocked?.(item, index) ?? false;
       return (
         <RowItem
           item={item}
@@ -208,10 +273,11 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
           renderItem={props.renderItem}
           drag={drag}
           extraData={props.extraData}
+          isLocked={isLocked}
         />
       );
     },
-    [props.renderItem, props.extraData, drag, keyExtractor]
+    [props.renderItem, props.extraData, props.isItemLocked, drag, keyExtractor]
   );
 
   const onRelease = useStableCallback((index: number) => {
@@ -220,16 +286,9 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
 
   const onDragEnd = useStableCallback(
     ({ from, to }: { from: number; to: number }) => {
-      const { onDragEnd, data } = props;
-
-      const newData = [...data];
-      if (from !== to) {
-        newData.splice(from, 1);
-        newData.splice(to, 0, data[from]);
-      }
-
+      const { onDragEnd, data, isItemLocked } = props;
+      const newData = reorderWithLockedItems(data, from, to, isItemLocked);
       onDragEnd?.({ from, to, data: newData });
-
       setActiveKey(null);
     }
   );
