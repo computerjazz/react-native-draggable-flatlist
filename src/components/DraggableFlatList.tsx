@@ -112,18 +112,31 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   });
 
   const dataRef = useRef(props.data);
+  const pendingDataResetRef = useRef(false);
   const dataHasChanged =
     dataRef.current.map(keyExtractor).join("") !==
     props.data.map(keyExtractor).join("");
   dataRef.current = props.data;
-  if (dataHasChanged && !activeKey) {
+  if (dataHasChanged) {
     // When data changes (and no drag is active) reset animated values.
     // Guard against activeKey to prevent reset() from racing with the
     // spring animation callback during an active drag.
+    if (activeKey) {
+      pendingDataResetRef.current = true;
+    } else {
+      InteractionManager.runAfterInteractions(() => {
+        reset();
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (activeKey || !pendingDataResetRef.current) return;
+    pendingDataResetRef.current = false;
     InteractionManager.runAfterInteractions(() => {
       reset();
     });
-  }
+  }, [activeKey, reset]);
 
   useEffect(() => {
     if (!propsRef.current.enableLayoutAnimationExperimental) return;
