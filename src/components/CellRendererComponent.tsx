@@ -4,6 +4,7 @@ import {
   LayoutChangeEvent,
   MeasureLayoutOnSuccessCallback,
   StyleProp,
+  UIManager,
   ViewStyle,
 } from "react-native";
 import Animated, {
@@ -88,13 +89,11 @@ function CellRendererComponent<T>(props: Props<T>) {
       }
     };
 
-    const containerNode = containerRef.current;
-    const viewNode = viewRef.current;
-    const nodeHandle = containerNode;
+    const viewHandle = findNodeHandle(viewRef.current);
+    const containerHandle = findNodeHandle(containerRef.current);
 
-    if (viewNode && nodeHandle) {
-      //@ts-ignore
-      viewNode.measureLayout(nodeHandle, onSuccess, onFail);
+    if (viewHandle && containerHandle) {
+      UIManager.measureLayout(viewHandle, containerHandle, onFail, onSuccess);
     }
   });
 
