@@ -80,12 +80,26 @@ function CellRendererComponent<T>(props: Props<T>) {
 
       size.value = cellSize;
       offset.value = cellOffset;
+      // Only release the held translate (see animStyle) once this cell's real,
+      // settled position is actually known — not merely once onCellLayout was
+      // called. onCellLayout is now also invoked speculatively, a frame after
+      // every index change (see the effect below), to force a re-measure for
+      // cells whose native onLayout doesn't refire on an index-only shift; that
+      // speculative call can land before the FlatList's own relayout has
+      // actually settled the cell into its new flow position. Clearing
+      // heldTanslate right there (rather than here) let the cell's transform
+      // drop to 0 a beat before its real position caught up, flashing/snapping
+      // visibly right as a reorder finished.
+      heldTanslate.value = 0;
     };
 
     const onFail = () => {
       if (propsRef.current?.debug) {
         console.log(`## on measure fail, index: ${index}`);
       }
+      // Still release the hold on failure so a cell can't get stuck visibly
+      // offset forever just because one measurement attempt didn't land.
+      heldTanslate.value = 0;
     };
 
     const containerNode = containerRef.current;
@@ -99,18 +113,19 @@ function CellRendererComponent<T>(props: Props<T>) {
   });
 
   const onCellLayout = useStableCallback((e?: LayoutChangeEvent) => {
-    heldTanslate.value = 0;
     updateCellMeasurements();
     if (onLayout && e) onLayout(e);
   });
 
   useEffect(() => {
-    if (isWeb) {
-      // onLayout isn't called on web when the cell index changes, so we manually re-measure
-      requestAnimationFrame(() => {
-        onCellLayout();
-      });
-    }
+    // onLayout isn't reliably called when a cell's index shifts (e.g. an item above it
+    // was removed) without its own dimensions changing, so we manually re-measure. This
+    // was previously gated to web only, but native FlatList cells left stale, un-refreshed
+    // offset/size measurements after a reflow just the same — corrupting drag-reorder
+    // position math for cells below a deleted item.
+    requestAnimationFrame(() => {
+      onCellLayout();
+    });
   }, [index, onCellLayout]);
 
   const baseStyle = useMemo(() => {
