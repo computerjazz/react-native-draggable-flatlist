@@ -17,8 +17,6 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     spacerIndexAnim,
     placeholderOffset,
     hoverAnim,
-    viewableIndexMin,
-    viewableIndexMax,
   } = useAnimatedValues();
 
   const { activeKey } = useDraggableFlatListContext();
@@ -27,11 +25,18 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
 
   const translate = useDerivedValue(() => {
     const isActiveCell = cellIndex === activeIndexAnim.value;
-    const isOutsideViewableRange =
-      !isActiveCell &&
-      (cellIndex < viewableIndexMin.value ||
-        cellIndex > viewableIndexMax.value);
-    if (!activeKey || activeIndexAnim.value < 0 || isOutsideViewableRange) {
+    // NOTE: the upstream isOutsideViewableRange check (bailing out for cells outside
+    // [viewableIndexMin, viewableIndexMax]) is intentionally removed here. FlatList's
+    // viewability tracking is driven by onScroll + initial layout and does not
+    // automatically re-fire when a container grows to reveal more content without an
+    // actual scroll event — which is exactly our case (the queue sheet expands via an
+    // outer animated height, not by scrolling the inner list). That left
+    // viewableIndexMax permanently stuck at whatever was visible in the very first
+    // (collapsed, barely-visible) layout pass, silently excluding every cell beyond it
+    // from ever being a valid drag target. Since our queue is always a short,
+    // fully-rendered list (never meaningfully virtualized), this optimization isn't
+    // needed and was actively breaking drag-to-reorder.
+    if (!activeKey || activeIndexAnim.value < 0) {
       return 0;
     }
 

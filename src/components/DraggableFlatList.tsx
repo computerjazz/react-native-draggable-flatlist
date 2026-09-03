@@ -138,11 +138,22 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
   }, [activeKey]);
 
   useLayoutEffect(() => {
+    const currentKeys = new Set<string>();
     props.data.forEach((d, i) => {
       const key = keyExtractor(d, i);
+      currentKeys.add(key);
       keyToIndexRef.current.set(key, i);
     });
-  }, [props.data, keyExtractor, keyToIndexRef]);
+    // Clean up entries for items no longer in `data` (e.g. removed via delete) so a
+    // removed row's stale offset/size measurement doesn't stick around and corrupt
+    // drag-reorder position math for the remaining items.
+    Array.from(keyToIndexRef.current.keys()).forEach((key) => {
+      if (!currentKeys.has(key)) {
+        keyToIndexRef.current.delete(key);
+        cellDataRef.current.delete(key);
+      }
+    });
+  }, [props.data, keyExtractor, keyToIndexRef, cellDataRef]);
 
   const drag = useStableCallback((activeKey: string) => {
     if (disabled.value) return;
