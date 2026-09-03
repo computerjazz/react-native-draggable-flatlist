@@ -15,7 +15,13 @@ export function useAutoScroll() {
   const {
     autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
     autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
+    minScrollOffset,
   } = useProps();
+
+  // Real list top (0) unless the consumer supplied a floor — see
+  // DraggableFlatListProps.minScrollOffset.
+  const DEFAULT_MIN_SCROLL_OFFSET = useSharedValue(0);
+  const minScrollOffsetSV = minScrollOffset || DEFAULT_MIN_SCROLL_OFFSET;
 
   const {
     scrollOffset,
@@ -31,7 +37,9 @@ export function useAutoScroll() {
   }, []);
 
   const isScrolledUp = useDerivedValue(() => {
-    return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
+    return (
+      scrollOffset.value - SCROLL_POSITION_TOLERANCE <= minScrollOffsetSV.value
+    );
   }, []);
 
   const isScrolledDown = useDerivedValue(() => {
@@ -103,7 +111,7 @@ export function useAutoScroll() {
     const speedPct = 1 - distFromEdge / autoscrollThreshold!;
     const offset = speedPct * autoscrollSpeed;
     const targetOffset = isAtTopEdge.value
-      ? Math.max(0, scrollOffset.value - offset)
+      ? Math.max(minScrollOffsetSV.value, scrollOffset.value - offset)
       : Math.min(
           scrollOffset.value + offset,
           scrollViewSize.value - containerSize.value

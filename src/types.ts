@@ -43,6 +43,11 @@ export type DraggableFlatListProps<T> = Modify<
     renderPlaceholder?: RenderPlaceholder<T>;
     simultaneousHandlers?: React.Ref<any> | React.Ref<any>[];
     outerScrollOffset?: Animated.SharedValue<number>;
+    // Floor for the built-in top-edge autoscroll (see useAutoScroll's isScrolledUp/
+    // scroll-target clamp) — lets a consumer whose list has non-reorderable content
+    // above the reorderable region (e.g. a ListHeaderComponent) tell autoscroll not
+    // to scroll back up into it while dragging. Defaults to 0 (the real list top).
+    minScrollOffset?: Animated.SharedValue<number>;
     onAnimValInit?: (animVals: ReturnType<typeof useAnimatedValues>) => void;
     itemEnteringAnimation?: AnimateProps<Animated.View>["entering"];
     itemExitingAnimation?: AnimateProps<Animated.View>["exiting"];
