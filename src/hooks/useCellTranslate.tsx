@@ -2,6 +2,7 @@ import Animated, { useDerivedValue, withSpring } from "react-native-reanimated";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useRefs } from "../context/refContext";
+import { webOnlyDeps } from "../utils";
 
 type Params = {
   cellIndex: number;
@@ -102,7 +103,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
       : 0;
 
     return withSpring(translationAmt, animationConfigRef.value);
-  }, [activeKey, cellIndex]);
+  }, webOnlyDeps([activeKey, cellIndex]));
 
   return translate;
 }

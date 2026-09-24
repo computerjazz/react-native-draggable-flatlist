@@ -9,7 +9,7 @@ import { useAnimatedValues } from "../context/animatedValueContext";
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { useRefs } from "../context/refContext";
 import { RenderPlaceholder } from "../types";
-import { typedMemo } from "../utils";
+import { typedMemo, webOnlyDeps } from "../utils";
 
 type Props<T> = {
   renderPlaceholder?: RenderPlaceholder<T>;
@@ -57,7 +57,13 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
         ],
       };
 
-  }, [spacerIndexAnim, placeholderOffset, horizontalAnim, scrollOffset, size]);
+  }, webOnlyDeps([
+    spacerIndexAnim,
+    placeholderOffset,
+    horizontalAnim,
+    scrollOffset,
+    size,
+  ]));
 
   const extraStyle = useMemo(() => {
     return horizontal ? { width: size } : { height: size };

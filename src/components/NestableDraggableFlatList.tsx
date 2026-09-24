@@ -8,7 +8,7 @@ import { DraggableFlatListProps } from "../types";
 import DraggableFlatList from "../components/DraggableFlatList";
 import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { useNestedAutoScroll } from "../hooks/useNestedAutoScroll";
-import { typedMemo } from "../utils";
+import { typedMemo, webOnlyDeps } from "../utils";
 import { useStableCallback } from "../hooks/useStableCallback";
 import { FlatList } from "react-native-gesture-handler";
 
@@ -40,7 +40,7 @@ function NestableDraggableFlatListInner<T>(
 
   const hoverOffset = useDerivedValue(() => {
     return listHoverOffset.value + listVerticalOffset.value;
-  }, [listHoverOffset]);
+  }, webOnlyDeps([listHoverOffset]));
 
   useNestedAutoScroll({
     ...animVals,

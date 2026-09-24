@@ -7,6 +7,7 @@ import Animated, {
 import { State as GestureState } from "react-native-gesture-handler";
 import { useSafeNestableScrollContainerContext } from "../context/nestableScrollContainerContext";
 import { SCROLL_POSITION_TOLERANCE } from "../constants";
+import { webOnlyDeps } from "../utils";
 
 // This is mostly copied over from the main react-native-draggable-flatlist
 // useAutoScroll hook with a few notable exceptions:
@@ -44,31 +45,31 @@ export function useNestedAutoScroll(params: {
 
   const hoverScreenOffset = useDerivedValue(() => {
     return hoverOffset.value - outerScrollOffset.value;
-  }, []);
+  }, webOnlyDeps([]));
 
   const isScrolledUp = useDerivedValue(() => {
     return outerScrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
-  }, []);
+  }, webOnlyDeps([]));
 
   const isScrolledDown = useDerivedValue(() => {
     return (
       outerScrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
       scrollViewSize.value
     );
-  }, []);
+  }, webOnlyDeps([]));
 
   const distToTopEdge = useDerivedValue(() => {
     return Math.max(0, hoverScreenOffset.value);
-  }, [hoverScreenOffset]);
+  }, webOnlyDeps([hoverScreenOffset]));
 
   const distToBottomEdge = useDerivedValue(() => {
     const dist = containerSize.value - (hoverScreenOffset.value + activeCellSize.value)
     return Math.max(0, dist);
-  }, [hoverScreenOffset, activeCellSize, containerSize]);
+  }, webOnlyDeps([hoverScreenOffset, activeCellSize, containerSize]));
 
   const isAtTopEdge = useDerivedValue(() => {
     return distToTopEdge.value <= autoscrollThreshold;
-  }, []);
+  }, webOnlyDeps([]));
 
   const isAtBottomEdge = useDerivedValue(() => {
     return distToBottomEdge.value <= autoscrollThreshold;
@@ -85,7 +86,7 @@ export function useNestedAutoScroll(params: {
         scrollTarget.value = outerScrollOffset.value;
       }
     },
-    [activeCellSize]
+    webOnlyDeps([activeCellSize])
   );
 
   function scrollToInternal(y: number) {
@@ -122,7 +123,7 @@ export function useNestedAutoScroll(params: {
       // scrollTo(scrollViewRef, 0, scrollTarget.value, true)
       runOnJS(scrollToInternal)(targetOffset);
     }
-  }, [autoscrollSpeed, autoscrollThreshold, isDraggingCell]);
+  }, webOnlyDeps([autoscrollSpeed, autoscrollThreshold, isDraggingCell]));
 
   return null;
 }
