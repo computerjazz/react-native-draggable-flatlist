@@ -8,6 +8,7 @@ import Animated, {
 import { DEFAULT_ANIMATION_CONFIG } from "../constants";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useIsActive } from "../context/cellContext";
+import { webOnlyDeps } from "../utils";
 
 type Params = {
   animationConfig: Partial<WithSpringConfig>;
@@ -32,7 +33,7 @@ export function useOnCellActiveAnimation(
       ...DEFAULT_ANIMATION_CONFIG,
       ...animationConfigRef.value,
     } as WithSpringConfig);
-  }, [isActive]);
+  }, webOnlyDeps([isActive]));
 
   return {
     isActive,

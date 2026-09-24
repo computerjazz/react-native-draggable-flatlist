@@ -7,6 +7,7 @@ import Animated, {
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 export { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
 import { useOnCellActiveAnimation } from "../hooks/useOnCellActiveAnimation";
+import { webOnlyDeps } from "../utils";
 
 type ScaleProps = {
   activeScale?: number;
@@ -25,7 +26,7 @@ export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
     return {
       transform: [{ scaleX: scale }, { scaleY: scale }],
     };
-  }, [isActive]);
+  }, webOnlyDeps([isActive]));
 
   return (
     <Animated.View style={[style, horizontal && styles.horizontal]}>
@@ -60,7 +61,7 @@ export const ShadowDecorator = ({
       shadowColor: isActive ? color : "transparent",
       shadowOpacity: isActive ? shadowOpacity : 0,
     };
-  }, [isActive, onActiveAnim]);
+  }, webOnlyDeps([isActive, onActiveAnim]));
 
   return (
     <Animated.View style={[style, horizontal && styles.horizontal]}>
@@ -85,7 +86,7 @@ export const OpacityDecorator = ({
     return {
       opacity: isActive ? opacity : 1,
     };
-  }, [isActive]);
+  }, webOnlyDeps([isActive]));
 
   return (
     <Animated.View style={[style, horizontal && styles.horizontal]}>

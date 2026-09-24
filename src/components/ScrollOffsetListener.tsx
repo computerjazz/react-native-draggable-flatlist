@@ -1,5 +1,5 @@
 import Animated, { runOnJS, useAnimatedReaction } from "react-native-reanimated";
-import { typedMemo } from "../utils";
+import { typedMemo, webOnlyDeps } from "../utils";
 
 type Props = {
   scrollOffset: Animated.SharedValue<number>;
@@ -17,7 +17,7 @@ const ScrollOffsetListener = ({
     if (cur !== prev) {
       runOnJS(onScrollOffsetChange)(cur)
     }
-  }, [scrollOffset])
+  }, webOnlyDeps([scrollOffset]))
 
   return null;
 };

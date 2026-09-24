@@ -6,6 +6,7 @@ import {
 } from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
 import { useProps } from "./propsContext";
+import { webOnlyDeps } from "../utils";
 
 const AnimatedValueContext = React.createContext<
   ReturnType<typeof useSetupAnimatedValues> | undefined
@@ -80,14 +81,14 @@ function useSetupAnimatedValues<T>() {
         outerScrollInit.value = outerScrollOffset.value;
       }
     },
-    [outerScrollOffset]
+    webOnlyDeps([outerScrollOffset])
   );
 
   const placeholderOffset = useSharedValue(0);
 
   const isDraggingCell = useDerivedValue(() => {
     return isTouchActiveNative.value && activeIndexAnim.value >= 0;
-  }, []);
+  }, webOnlyDeps([]));
 
   const autoScrollDistance = useDerivedValue(() => {
     if (!isDraggingCell.value) return 0;
@@ -96,14 +97,14 @@ function useSetupAnimatedValues<T>() {
     const outerScrollDiff = outerScrollOffset.value - outerScrollInit.value;
     const scrollDiff = innerScrollDiff + outerScrollDiff;
     return scrollDiff;
-  }, []);
+  }, webOnlyDeps([]));
 
   const touchPositionDiff = useDerivedValue(() => {
     const extraTranslate = isTouchActiveNative.value
       ? autoScrollDistance.value
       : 0;
     return touchTranslate.value + extraTranslate;
-  }, []);
+  }, webOnlyDeps([]));
 
   const touchPositionDiffConstrained = useDerivedValue(() => {
     const containerMinusActiveCell =
@@ -131,7 +132,7 @@ function useSetupAnimatedValues<T>() {
       Math.max(constrainedBase, maxTranslateNegative),
       maxTranslatePositive
     );
-  }, []);
+  }, webOnlyDeps([]));
 
   const dragItemOverflow = props.dragItemOverflow;
   const hoverAnim = useDerivedValue(() => {
@@ -139,11 +140,11 @@ function useSetupAnimatedValues<T>() {
     return dragItemOverflow
       ? touchPositionDiff.value
       : touchPositionDiffConstrained.value;
-  }, []);
+  }, webOnlyDeps([]));
 
   const hoverOffset = useDerivedValue(() => {
     return hoverAnim.value + activeCellOffset.value;
-  }, [hoverAnim, activeCellOffset]);
+  }, webOnlyDeps([hoverAnim, activeCellOffset]));
 
   useDerivedValue(() => {
     // Reset spacer index when we stop hovering
@@ -151,7 +152,7 @@ function useSetupAnimatedValues<T>() {
     if (!isHovering && spacerIndexAnim.value >= 0) {
       spacerIndexAnim.value = -1;
     }
-  }, []);
+  }, webOnlyDeps([]));
 
   // Note: this could use a refactor as it combines touch state + cell animation
   const resetTouchedCell = useCallback(() => {

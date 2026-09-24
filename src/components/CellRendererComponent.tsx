@@ -14,7 +14,7 @@ import Animated, {
 import { useDraggableFlatListContext } from "../context/draggableFlatListContext";
 import { isWeb } from "../constants";
 import { useCellTranslate } from "../hooks/useCellTranslate";
-import { typedMemo } from "../utils";
+import { typedMemo, webOnlyDeps } from "../utils";
 import { useRefs } from "../context/refContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import CellProvider from "../context/cellContext";
@@ -67,7 +67,7 @@ function CellRendererComponent<T>(props: Props<T>) {
     return {
       transform: [horizontalAnim.value ? { translateX: t } : { translateY: t }],
     };
-  }, [translate, activeKey]);
+  }, webOnlyDeps([translate, activeKey]));
 
   const updateCellMeasurements = useStableCallback(() => {
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {

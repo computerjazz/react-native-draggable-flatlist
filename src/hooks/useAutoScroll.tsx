@@ -8,6 +8,7 @@ import { DEFAULT_PROPS, SCROLL_POSITION_TOLERANCE } from "../constants";
 import { useProps } from "../context/propsContext";
 import { useAnimatedValues } from "../context/animatedValueContext";
 import { useRefs } from "../context/refContext";
+import { webOnlyDeps } from "../utils";
 
 export function useAutoScroll() {
   const { flatlistRef } = useRefs();
@@ -28,27 +29,27 @@ export function useAutoScroll() {
 
   const hoverScreenOffset = useDerivedValue(() => {
     return hoverOffset.value - scrollOffset.value;
-  }, []);
+  }, webOnlyDeps([]));
 
   const isScrolledUp = useDerivedValue(() => {
     return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
-  }, []);
+  }, webOnlyDeps([]));
 
   const isScrolledDown = useDerivedValue(() => {
     return (
       scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
       scrollViewSize.value
     );
-  }, []);
+  }, webOnlyDeps([]));
 
   const distToTopEdge = useDerivedValue(() => {
     return Math.max(0, hoverScreenOffset.value);
-  }, []);
+  }, webOnlyDeps([]));
 
   const distToBottomEdge = useDerivedValue(() => {
     const hoverPlusActiveCell = hoverScreenOffset.value + activeCellSize.value;
     return Math.max(0, containerSize.value - hoverPlusActiveCell);
-  }, []);
+  }, webOnlyDeps([]));
 
   const isAtTopEdge = useDerivedValue(() => {
     return distToTopEdge.value <= autoscrollThreshold;
@@ -56,12 +57,12 @@ export function useAutoScroll() {
 
   const isAtBottomEdge = useDerivedValue(() => {
     return distToBottomEdge.value <= autoscrollThreshold;
-  }, []);
+  }, webOnlyDeps([]));
 
   const scrollTarget = useSharedValue(0);
   const dragIsActive = useDerivedValue(() => {
     return activeIndexAnim.value >= 0;
-  }, []);
+  }, webOnlyDeps([]));
 
   useAnimatedReaction(
     () => {
@@ -86,7 +87,7 @@ export function useAutoScroll() {
     const cellIsActive = activeIndexAnim.value >= 0;
 
     return hasScrolledToTarget && isAtEdge && !isEdgeDisabled && cellIsActive;
-  }, []);
+  }, webOnlyDeps([]));
 
   function scrollToInternal(offset: number) {
     if (flatlistRef && "current" in flatlistRef) {
@@ -113,7 +114,7 @@ export function useAutoScroll() {
     // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
     // scrollTo(scrollViewRef, targetX, targetY, true);
     runOnJS(scrollToInternal)(targetOffset);
-  }, []);
+  }, webOnlyDeps([]));
 
   return null;
 }

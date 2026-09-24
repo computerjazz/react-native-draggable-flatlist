@@ -38,7 +38,7 @@ import DraggableFlatListProvider from "../context/draggableFlatListContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useStableCallback } from "../hooks/useStableCallback";
 import ScrollOffsetListener from "./ScrollOffsetListener";
-import { typedMemo } from "../utils";
+import { typedMemo, webOnlyDeps } from "../utils";
 
 type RNGHFlatListProps<T> = Animated.AnimateProps<
   FlatListProps<T> & {
@@ -255,7 +255,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         }
       }
     },
-    [isTouchActiveNative, onDragEnd, onRelease]
+    webOnlyDeps([isTouchActiveNative, onDragEnd, onRelease])
   );
 
   useAnimatedReaction(
@@ -267,7 +267,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         runOnJS(onPlaceholderIndexChange)(cur);
       }
     },
-    [spacerIndexAnim]
+    webOnlyDeps([spacerIndexAnim])
   );
 
   const gestureDisabled = useSharedValue(false);
@@ -346,7 +346,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
         runOnJS(onScroll)(scrollOffset.value);
       },
     },
-    [horizontalAnim]
+    webOnlyDeps([horizontalAnim])
   );
 
   useAutoScroll();
