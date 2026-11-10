@@ -321,6 +321,12 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
       // Turning this into a worklet causes timing issues. We want it to run
       // just after the finger lifts.
       runOnJS(onContainerTouchEnd)();
+    })
+    .onFinalize((_evt, success) => {
+      // A pan cancelled before it activates (e.g. an outer scroll view claims
+      // the touch) gets neither onEnd nor onTouchesUp, so without this the
+      // touch stays active and a cell lifted by drag() never drops.
+      if (!success) runOnJS(onContainerTouchEnd)();
     });
 
   if (dragHitSlop) panGesture.hitSlop(dragHitSlop);
