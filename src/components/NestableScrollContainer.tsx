@@ -4,6 +4,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import {
   NestableScrollContainerProvider,
+  useOuterScrollEnabled,
   useSafeNestableScrollContainerContext,
 } from "../context/nestableScrollContainerContext";
 import { useStableCallback } from "../hooks/useStableCallback";
@@ -16,8 +17,8 @@ function NestableScrollContainerInner(props: ScrollViewProps) {
     containerSize,
     scrollViewSize,
     scrollableRef,
-    outerScrollEnabled,
   } = useSafeNestableScrollContainerContext();
+  const outerScrollEnabled = useOuterScrollEnabled();
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: ({ contentOffset }) => {

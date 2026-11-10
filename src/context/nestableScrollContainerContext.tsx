@@ -4,10 +4,15 @@ import Animated, { useSharedValue } from "react-native-reanimated";
 
 type NestableScrollContainerContextVal = ReturnType<
   typeof useSetupNestableScrollContextValue
->;
+>["contextVal"];
 const NestableScrollContainerContext = React.createContext<
   NestableScrollContainerContextVal | undefined
 >(undefined);
+
+// Kept out of the context above: every nested list consumes that one, and the
+// outer scroll is toggled when each drag starts and ends, which would
+// otherwise re-render every nested list and all of its cells twice per drag.
+const OuterScrollEnabledContext = React.createContext(true);
 
 function useSetupNestableScrollContextValue({
   forwardedRef,
@@ -23,17 +28,16 @@ function useSetupNestableScrollContextValue({
 
   const contextVal = useMemo(
     () => ({
-      outerScrollEnabled,
       setOuterScrollEnabled,
       outerScrollOffset,
       scrollViewSize,
       scrollableRef,
       containerSize,
     }),
-    [outerScrollEnabled]
+    [scrollableRef]
   );
 
-  return contextVal;
+  return { contextVal, outerScrollEnabled };
 }
 
 export function NestableScrollContainerProvider({
@@ -43,10 +47,15 @@ export function NestableScrollContainerProvider({
   children: React.ReactNode;
   forwardedRef?: React.MutableRefObject<ScrollView>;
 }) {
-  const contextVal = useSetupNestableScrollContextValue({ forwardedRef });
+  const {
+    contextVal,
+    outerScrollEnabled,
+  } = useSetupNestableScrollContextValue({ forwardedRef });
   return (
     <NestableScrollContainerContext.Provider value={contextVal}>
-      {children}
+      <OuterScrollEnabledContext.Provider value={outerScrollEnabled}>
+        {children}
+      </OuterScrollEnabledContext.Provider>
     </NestableScrollContainerContext.Provider>
   );
 }
@@ -64,4 +73,8 @@ export function useSafeNestableScrollContainerContext() {
     );
   }
   return value;
+}
+
+export function useOuterScrollEnabled() {
+  return useContext(OuterScrollEnabledContext);
 }
