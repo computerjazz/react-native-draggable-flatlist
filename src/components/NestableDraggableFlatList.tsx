@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { findNodeHandle, LogBox } from "react-native";
+import { LogBox } from "react-native";
 import Animated, {
   useDerivedValue,
   useSharedValue,
@@ -48,7 +48,11 @@ function NestableDraggableFlatListInner<T>(
   });
 
   const onListContainerLayout = useStableCallback(async ({ containerRef }) => {
-    const nodeHandle = findNodeHandle(scrollableRef.current);
+    // On the new architecture measureLayout only accepts a native component
+    // ref: given a node handle number it warns and calls neither callback, so
+    // the offset stayed 0 and auto-scroll fired as if every list sat at the top.
+    const scrollable = scrollableRef.current as any;
+    const relativeTo = scrollable?.getNativeScrollRef?.() ?? scrollable;
 
     const onSuccess = (_x: number, y: number) => {
       listVerticalOffset.value = y;
@@ -57,7 +61,7 @@ function NestableDraggableFlatListInner<T>(
       console.log("## nested draggable list measure fail");
     };
     //@ts-ignore
-    containerRef.current.measureLayout(nodeHandle, onSuccess, onFail);
+    containerRef.current.measureLayout(relativeTo, onSuccess, onFail);
   });
 
   const onDragBegin: DraggableFlatListProps<T>["onDragBegin"] = useStableCallback(
