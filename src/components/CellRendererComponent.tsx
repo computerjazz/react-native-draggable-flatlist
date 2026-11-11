@@ -55,6 +55,15 @@ function CellRendererComponent<T>(props: Props<T>) {
 
   const isActive = activeKey === key;
 
+  // Reset held translate when drag ends, in case onCellLayout doesn't fire
+  // (e.g. when FlatList doesn't detect a geometry change for the cell).
+  // By this point the spring animation has already completed.
+  useEffect(() => {
+    if (!activeKey) {
+      heldTanslate.value = 0;
+    }
+  }, [activeKey]);
+
   const animStyle = useAnimatedStyle(() => {
     // When activeKey becomes null at the end of a drag and the list reorders,
     // the animated style may apply before the next paint, causing a flicker.

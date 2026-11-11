@@ -15,6 +15,7 @@ export function useAutoScroll() {
   const {
     autoscrollThreshold = DEFAULT_PROPS.autoscrollThreshold,
     autoscrollSpeed = DEFAULT_PROPS.autoscrollSpeed,
+    onAutoscrollRequest,
   } = useProps();
 
   const {
@@ -90,7 +91,12 @@ export function useAutoScroll() {
 
   function scrollToInternal(offset: number) {
     if (flatlistRef && "current" in flatlistRef) {
-      flatlistRef.current?.scrollToOffset({ offset, animated: true });
+      if (onAutoscrollRequest) {
+        const viewTag = flatlistRef.current?.getScrollableNode();
+        if (typeof viewTag === "number") onAutoscrollRequest(viewTag, offset);
+      } else {
+        flatlistRef.current?.scrollToOffset({ offset, animated: true });
+      }
     }
   }
 

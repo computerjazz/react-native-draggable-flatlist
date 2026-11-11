@@ -13,6 +13,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
   const {
     activeIndexAnim,
     activeCellSize,
+    activeCellOffset,
     hoverOffset,
     spacerIndexAnim,
     placeholderOffset,
@@ -75,7 +76,22 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
     }
 
     if (result !== -1 && result !== spacerIndexAnim.value) {
-      spacerIndexAnim.value = result;
+      // Direction-aware guard: during a drag reversal, both a before-active
+      // and after-active cell can match overlap conditions in the same frame.
+      // Only allow the write if the result is on the correct side relative
+      // to the hover direction, preventing the "wrong side" cell from winning.
+      const isHoverBelowOrigin = hoverOffset.value >= activeCellOffset.value;
+      const resultIsAfterActive = result > activeIndexAnim.value;
+      const resultIsBeforeActive = result < activeIndexAnim.value;
+      const resultIsAtActive = result === activeIndexAnim.value;
+
+      const directionMatch =
+        (isHoverBelowOrigin && (resultIsAfterActive || resultIsAtActive)) ||
+        (!isHoverBelowOrigin && (resultIsBeforeActive || resultIsAtActive));
+
+      if (spacerIndexAnim.value < 0 || directionMatch) {
+        spacerIndexAnim.value = result;
+      }
     }
 
     if (spacerIndexAnim.value === cellIndex) {
